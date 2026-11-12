@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "Meal Demand Forecasting and Food-Waste Reduction Platform (P05) - Track J",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -17,6 +19,8 @@
     "seed": "tsx src/scripts/seed.ts"
   },
   "dependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.3",
     "bullmq": "^5.30.0",
     "ioredis": "^5.4.1",
     "jose": "^5.9.6",

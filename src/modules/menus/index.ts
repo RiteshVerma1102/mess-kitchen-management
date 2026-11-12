@@ -3,11 +3,20 @@ export { listDishes, createDish } from './dish.service';
 export type { CreateDishInput } from './dish.schema';
 export * from './dish.model';
 export * from './dish.repository';
+export * from './dish.schema';
+
 export * from './ingredient.model';
 export * from './ingredient.repository';
+
 export * from './supplier.model';
 export * from './supplier.repository';
+
 export * from './recipe.model';
 export * from './recipe.repository';
+export * from './recipe.schema';
+export * from './recipe.service';
+
 export * from './menu.model';
 export * from './menu.repository';
+export * from './menu.schema';
+export * from './menu.service';

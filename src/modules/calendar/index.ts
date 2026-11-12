@@ -1,3 +1,5 @@
-// Public interface of the calendar module. Other modules import ONLY from here.
-// Implemented in a later prompt; see docs/modules.md for the dependency order.
-export const MODULE_NAME = 'calendar' as const;
+// Public interface of the calendar module (M3). Other modules import ONLY from here.
+export * from './calendar.model';
+export * from './calendar.repository';
+export * from './calendar.schema';
+export * from './calendar.service';
