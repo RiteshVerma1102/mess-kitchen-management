@@ -1,3 +1,5 @@
-// Public interface of the forecasting module. Other modules import ONLY from here.
-// Implemented in a later prompt; see docs/modules.md for the dependency order.
-export const MODULE_NAME = 'forecasting' as const;
+// Public interface of the forecasting module (M5). Other modules import ONLY from here.
+export * from './forecast.model';
+export * from './forecast.repository';
+export * from './forecast.schema';
+export * from './forecast.service';
