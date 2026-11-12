@@ -1,6 +1,13 @@
 import { Schema, model, models, type Model, type Types } from 'mongoose';
 import type { MealType } from '@/modules/attendance/attendance.model';
 
+export interface IIngredientConsumption {
+  ingredientId: Types.ObjectId;
+  ingredientName: string;
+  quantityConsumed: number;
+  unit: string;
+}
+
 export interface IServiceActual {
   institutionId: string;
   messHallId: string;
@@ -8,10 +15,14 @@ export interface IServiceActual {
   mealType: MealType;
   dishId: Types.ObjectId;
   dishName: string;
+  plannedPortions?: number;
   quantityPrepared: number;
   quantityServed: number;
   quantityLeftover: number;
+  quantitySpoiled?: number;
+  variancePercentage?: number;
   unit: 'portion' | 'kg';
+  ingredientConsumption?: IIngredientConsumption[];
   recordedBy: string;
   recordedAt: Date;
   notes?: string;
@@ -36,10 +47,22 @@ const serviceActualSchema = new Schema<IServiceActual>(
     },
     dishId: { type: Schema.Types.ObjectId, ref: 'Dish', required: true },
     dishName: { type: String, required: true, trim: true },
+    plannedPortions: { type: Number, min: 0 },
     quantityPrepared: { type: Number, required: true, min: 0 },
     quantityServed: { type: Number, required: true, min: 0 },
     quantityLeftover: { type: Number, required: true, min: 0 },
+    quantitySpoiled: { type: Number, min: 0, default: 0 },
+    variancePercentage: { type: Number },
     unit: { type: String, enum: ['portion', 'kg'], default: 'portion' },
+    ingredientConsumption: [
+      {
+        ingredientId: { type: Schema.Types.ObjectId, ref: 'Ingredient' },
+        ingredientName: { type: String },
+        quantityConsumed: { type: Number },
+        unit: { type: String },
+        _id: false,
+      },
+    ],
     recordedBy: { type: String, required: true, trim: true },
     recordedAt: { type: Date, default: () => new Date() },
     notes: { type: String, trim: true },

@@ -55,6 +55,18 @@ export function Sidebar({ role = 'student', isOpen, onClose }: SidebarProps) {
       requiredRoles: ['admin', 'mess_admin', 'mess_manager', 'kitchen_staff', 'finance_officer'],
     },
     {
+      name: 'Kitchen Operations',
+      href: '/kitchen',
+      icon: '🍳',
+      requiredRoles: ['admin', 'mess_admin', 'mess_manager', 'kitchen_staff'],
+    },
+    {
+      name: 'Inventory & Indents',
+      href: '/inventory',
+      icon: '📦',
+      requiredRoles: ['admin', 'mess_admin', 'mess_manager', 'kitchen_staff'],
+    },
+    {
       name: 'Students Directory',
       href: '/students',
       icon: '🎓',
