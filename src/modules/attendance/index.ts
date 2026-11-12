@@ -1,3 +1,5 @@
-// Public interface of the attendance module. Other modules import ONLY from here.
-// Implemented in a later prompt; see docs/modules.md for the dependency order.
-export const MODULE_NAME = 'attendance' as const;
+// Public interface of the attendance module (M2). Other modules import ONLY from here.
+export * from './attendance.model';
+export * from './attendance.repository';
+export * from './consumption.model';
+export * from './consumption.repository';

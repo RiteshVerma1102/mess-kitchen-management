@@ -1,3 +1,5 @@
-// Public interface of the planning module. Other modules import ONLY from here.
-// Implemented in a later prompt; see docs/modules.md for the dependency order.
-export const MODULE_NAME = 'planning' as const;
+// Public interface of the planning module (M6). Other modules import ONLY from here.
+export * from './plan.model';
+export * from './plan.repository';
+export * from './indent.model';
+export * from './indent.repository';

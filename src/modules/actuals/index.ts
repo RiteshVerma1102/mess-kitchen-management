@@ -1,3 +1,3 @@
-// Public interface of the actuals module. Other modules import ONLY from here.
-// Implemented in a later prompt; see docs/modules.md for the dependency order.
-export const MODULE_NAME = 'actuals' as const;
+// Public interface of the actuals module (M7). Other modules import ONLY from here.
+export * from './actual.model';
+export * from './actual.repository';
