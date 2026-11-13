@@ -67,6 +67,12 @@ export function Sidebar({ role = 'student', isOpen, onClose }: SidebarProps) {
       requiredRoles: ['admin', 'mess_admin', 'mess_manager', 'kitchen_staff'],
     },
     {
+      name: 'Waste & Analytics',
+      href: '/analytics',
+      icon: '📉',
+      requiredRoles: ['admin', 'mess_admin', 'mess_manager', 'finance_officer'],
+    },
+    {
       name: 'Students Directory',
       href: '/students',
       icon: '🎓',
