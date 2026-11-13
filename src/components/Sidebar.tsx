@@ -20,73 +20,21 @@ interface NavItem {
 export function Sidebar({ role = 'student', isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
 
-  const navItems: NavItem[] = [
-    {
-      name: 'Dashboard',
-      href: '/dashboard',
-      icon: '📊',
-    },
-    {
-      name: 'Attendance (Offline)',
-      href: '/attendance',
-      icon: '📱',
-      requiredRoles: ['admin', 'mess_admin', 'mess_manager', 'kitchen_staff'],
-    },
-    {
-      name: 'Menu Management',
-      href: '/menus',
-      icon: '🍽️',
-    },
-    {
-      name: 'Recipes & BOM',
-      href: '/recipes',
-      icon: '🥗',
-      requiredRoles: ['admin', 'mess_admin', 'mess_manager', 'kitchen_staff'],
-    },
-    {
-      name: 'Calendar & Schedule',
-      href: '/calendar',
-      icon: '📅',
-    },
-    {
-      name: 'Demand Forecast',
-      href: '/forecast',
-      icon: '📈',
-      requiredRoles: ['admin', 'mess_admin', 'mess_manager', 'kitchen_staff', 'finance_officer'],
-    },
-    {
-      name: 'Kitchen Operations',
-      href: '/kitchen',
-      icon: '🍳',
-      requiredRoles: ['admin', 'mess_admin', 'mess_manager', 'kitchen_staff'],
-    },
-    {
-      name: 'Inventory & Indents',
-      href: '/inventory',
-      icon: '📦',
-      requiredRoles: ['admin', 'mess_admin', 'mess_manager', 'kitchen_staff'],
-    },
-    {
-      name: 'Waste & Analytics',
-      href: '/analytics',
-      icon: '📉',
-      requiredRoles: ['admin', 'mess_admin', 'mess_manager', 'finance_officer'],
-    },
-    {
-      name: 'Students Directory',
-      href: '/students',
-      icon: '🎓',
-      requiredRoles: ['admin', 'mess_admin', 'mess_manager', 'kitchen_staff'],
-    },
-    {
-      name: 'User Management',
-      href: '/users',
-      icon: '👥',
-      requiredRoles: ['admin'],
-    },
+  const menuItems: NavItem[] = [
+    { name: 'Dashboard', href: '/dashboard', icon: '📊' },
+    { name: 'Analytics', href: '/analytics', icon: '📈', requiredRoles: ['admin', 'mess_admin', 'mess_manager', 'finance_officer'] },
+    { name: 'Attendance', href: '/attendance', icon: '📱', requiredRoles: ['admin', 'mess_admin', 'mess_manager', 'kitchen_staff'] },
+    { name: 'Menu Planner', href: '/menus', icon: '🍽️' },
+    { name: 'Recipes & BOM', href: '/recipes', icon: '🥗', requiredRoles: ['admin', 'mess_admin', 'mess_manager', 'kitchen_staff'] },
+    { name: 'Calendar', href: '/calendar', icon: '📅' },
+    { name: 'Kitchen Ops', href: '/kitchen', icon: '🍳', requiredRoles: ['admin', 'mess_admin', 'mess_manager', 'kitchen_staff'] },
+    { name: 'Inventory', href: '/inventory', icon: '📦', requiredRoles: ['admin', 'mess_admin', 'mess_manager', 'kitchen_staff'] },
+    { name: 'AI Forecast', href: '/forecast', icon: '🔮', requiredRoles: ['admin', 'mess_admin', 'mess_manager', 'kitchen_staff', 'finance_officer'] },
+    { name: 'Students', href: '/students', icon: '🎓', requiredRoles: ['admin', 'mess_admin', 'mess_manager', 'kitchen_staff'] },
+    { name: 'User Access', href: '/users', icon: '👥', requiredRoles: ['admin'] },
   ];
 
-  const visibleItems = navItems.filter(
+  const visibleMenuItems = menuItems.filter(
     (item) => !item.requiredRoles || item.requiredRoles.includes(role),
   );
 
@@ -95,7 +43,7 @@ export function Sidebar({ role = 'student', isOpen, onClose }: SidebarProps) {
       {/* Mobile backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm lg:hidden"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -103,59 +51,107 @@ export function Sidebar({ role = 'student', isOpen, onClose }: SidebarProps) {
 
       {/* Sidebar container */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-line bg-paper transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-100 bg-white shadow-sm transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        {/* Brand header */}
-        <div className="flex h-16 items-center justify-between border-b border-line px-6">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-lg text-white shadow">
-              🍲
-            </span>
-            <span className="font-bold tracking-tight text-ink text-base">SmartMess P05</span>
+        {/* Brand Header */}
+        <div className="flex h-16 items-center justify-between px-6 border-b border-slate-50">
+          <Link href="/dashboard" className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 text-white font-black text-lg shadow-sm shadow-blue-500/30">
+              A
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-slate-900 text-base tracking-tight leading-none">
+                Alpha
+              </span>
+              <span className="text-[10px] font-medium text-slate-400 mt-0.5">
+                Smart Mess & Kitchen
+              </span>
+            </div>
           </Link>
           <button
             type="button"
             onClick={onClose}
-            className="rounded p-1 text-ink/60 hover:bg-stone-200/50 dark:hover:bg-stone-800 lg:hidden"
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 lg:hidden"
             aria-label="Close sidebar"
           >
             ✕
           </button>
         </div>
 
-        {/* Navigation list */}
-        <nav className="flex-1 space-y-1.5 overflow-y-auto px-4 py-4">
-          <div className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-ink/50">
-            Operations
+        {/* Quick Search */}
+        <div className="px-5 pt-4">
+          <div className="flex items-center gap-2 rounded-xl bg-slate-50 border border-slate-200/60 px-3 py-2 text-xs text-slate-400 focus-within:border-blue-500 focus-within:bg-white focus-within:text-slate-800 transition">
+            <svg className="h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search here..."
+              className="w-full bg-transparent text-xs text-slate-700 placeholder-slate-400 focus:outline-none"
+            />
           </div>
-          {visibleItems.map((item) => {
-            const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname?.startsWith(item.href));
+        </div>
+
+        {/* Navigation list */}
+        <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-4 scrollbar-thin">
+          <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            Menu
+          </div>
+          {visibleMenuItems.map((item) => {
+            const isActive =
+              pathname === item.href ||
+              (item.href !== '/dashboard' && pathname?.startsWith(item.href));
+
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={onClose}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+                className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition ${
                   isActive
-                    ? 'bg-brand/10 font-semibold text-brand dark:bg-brand/20'
-                    : 'text-ink/80 hover:bg-stone-200/50 dark:hover:bg-stone-800/60 hover:text-ink'
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`}
               >
-                <span className="text-base">{item.icon}</span>
-                <span>{item.name}</span>
+                <span className="text-sm">{item.icon}</span>
+                <span className="truncate">{item.name}</span>
               </Link>
             );
           })}
+
+          <div className="pt-4 px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            Settings
+          </div>
+          <Link
+            href="/dashboard"
+            onClick={onClose}
+            className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition"
+          >
+            <span className="text-sm">⚙️</span>
+            <span>Settings</span>
+          </Link>
+          <a
+            href="https://github.com"
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition"
+          >
+            <span className="text-sm">💬</span>
+            <span>Help & Support</span>
+          </a>
         </nav>
 
-        {/* Bottom mess notice */}
-        <div className="border-t border-line p-4">
-          <div className="rounded-lg bg-brand/5 dark:bg-brand/10 p-3 border border-brand/20">
-            <p className="text-xs font-semibold text-brand">Goal: Zero Food Waste</p>
-            <p className="mt-1 text-[11px] text-ink/70">
-              Cook what will be eaten. Real-time scanning & dynamic forecasting.
+        {/* Bottom Banner */}
+        <div className="p-4 border-t border-slate-50">
+          <div className="rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50/60 p-3.5 border border-blue-100/60">
+            <div className="flex items-center gap-2 text-xs font-bold text-blue-900">
+              <span>🌱</span>
+              <span>Zero Food Waste</span>
+            </div>
+            <p className="mt-1 text-[11px] text-blue-700/80 leading-snug">
+              Forecast demand. Cook precisely. Save costs & campus resources.
             </p>
           </div>
         </div>

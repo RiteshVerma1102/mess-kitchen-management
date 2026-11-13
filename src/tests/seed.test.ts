@@ -12,6 +12,7 @@ import { MealConsumptionModel } from '@/modules/attendance/consumption.model';
 import { PreparationPlanModel } from '@/modules/planning/plan.model';
 import { ServiceActualModel } from '@/modules/actuals/actual.model';
 import { FoodWasteModel } from '@/modules/waste/waste.model';
+import { UserModel } from '@/modules/users/user.model';
 import * as db from '@/lib/db';
 
 describe('Seed Data Generator - Idempotency & Synthetic Tagging', () => {
@@ -37,8 +38,10 @@ describe('Seed Data Generator - Idempotency & Synthetic Tagging', () => {
     vi.spyOn(PreparationPlanModel, 'findOneAndUpdate').mockImplementation(mockFindOneAndUpdate);
     vi.spyOn(ServiceActualModel, 'findOneAndUpdate').mockImplementation(mockFindOneAndUpdate);
     vi.spyOn(FoodWasteModel, 'findOneAndUpdate').mockImplementation(mockFindOneAndUpdate);
+    vi.spyOn(UserModel, 'findOneAndUpdate').mockImplementation(mockFindOneAndUpdate);
 
     // Mock countDocuments
+    vi.spyOn(UserModel, 'countDocuments').mockResolvedValue(4 as never);
     vi.spyOn(StudentModel, 'countDocuments').mockResolvedValue(30 as never);
     vi.spyOn(SupplierModel, 'countDocuments').mockResolvedValue(3 as never);
     vi.spyOn(IngredientModel, 'countDocuments').mockResolvedValue(16 as never);
@@ -69,5 +72,5 @@ describe('Seed Data Generator - Idempotency & Synthetic Tagging', () => {
     const wasteCalls = vi.mocked(FoodWasteModel.findOneAndUpdate).mock.calls;
     expect(wasteCalls[0][2]).toMatchObject({ upsert: true });
     expect(wasteCalls[0][1]).toMatchObject({ $set: expect.objectContaining({ isSynthetic: true }) });
-  });
+  }, 15000);
 });

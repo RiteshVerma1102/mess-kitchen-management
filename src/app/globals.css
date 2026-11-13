@@ -3,15 +3,27 @@
 @tailwind utilities;
 
 :root {
-  --ink: 28 25 23;
-  --paper: 250 249 246;
-  --line: 214 208 196;
-  --brand: 22 101 52;
-  --warn: 180 83 9;
+  --ink: 30 41 59;
+  --paper: 244 247 254;
+  --line: 226 232 240;
+  --brand: 37 99 235;
+  --warn: 217 119 6;
 }
-@media (prefers-color-scheme: dark) {
-  :root { --ink: 245 243 238; --paper: 20 22 20; --line: 64 68 62; --brand: 134 214 160; --warn: 251 191 36; }
+
+html, body {
+  background: #F4F7FE;
+  color: #1e293b;
+  min-height: 100vh;
 }
-html, body { background: rgb(var(--paper)); color: rgb(var(--ink)); }
-:focus-visible { outline: 3px solid rgb(var(--brand)); outline-offset: 2px; }
-@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+:focus-visible {
+  outline: 2px solid #2563EB;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

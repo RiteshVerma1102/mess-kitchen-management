@@ -11,6 +11,8 @@ import { MealConsumptionModel } from '@/modules/attendance/consumption.model';
 import { PreparationPlanModel } from '@/modules/planning/plan.model';
 import { ServiceActualModel } from '@/modules/actuals/actual.model';
 import { FoodWasteModel } from '@/modules/waste/waste.model';
+import { UserModel } from '@/modules/users/user.model';
+import { hashPassword } from '@/modules/users/user.service';
 import { logger } from '@/lib/logger';
 
 export interface SeedResult {
@@ -57,6 +59,54 @@ export async function seedDemoData(targetInstId = 'inst_thapar_demo'): Promise<S
   );
 
   const institutionId = targetInstId || String(institution._id);
+
+  // 1b. Upsert Demo Portal Users
+  const defaultPasswordHash = await hashPassword('Password123!');
+  const demoUsers = [
+    {
+      email: 'admin@thapar.edu',
+      fullName: 'Dr. Rajesh Sharma (Dean of Student Affairs)',
+      role: 'admin' as const,
+      hallIds: ['hall_a', 'hall_b', 'hall_c'],
+    },
+    {
+      email: 'manager@thapar.edu',
+      fullName: 'Col. Vikram Singh (Mess Manager)',
+      role: 'mess_manager' as const,
+      hallIds: ['hall_a', 'hall_b', 'hall_c'],
+    },
+    {
+      email: 'kitchen@thapar.edu',
+      fullName: 'Chef Ramu Verma (Head Chef)',
+      role: 'kitchen_staff' as const,
+      hallIds: ['hall_a', 'hall_b'],
+    },
+    {
+      email: 'student@thapar.edu',
+      fullName: 'Aarav Mehta (Mess Committee Rep)',
+      role: 'student' as const,
+      hallIds: ['hall_a'],
+    },
+  ];
+
+  for (const u of demoUsers) {
+    await UserModel.findOneAndUpdate(
+      { institutionId, email: u.email },
+      {
+        $set: {
+          institutionId,
+          email: u.email,
+          fullName: u.fullName,
+          hashedPassword: defaultPasswordHash,
+          role: u.role,
+          hallIds: u.hallIds,
+          active: true,
+          isSynthetic: true,
+        },
+      },
+      { upsert: true },
+    );
+  }
 
   // 2. Upsert Suppliers
   const rawSuppliers = [
