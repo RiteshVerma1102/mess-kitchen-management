@@ -43,10 +43,10 @@ interface WeeklyDaySummary {
     _id?: string;
     name?: string;
     meals?: {
-      breakfast?: Array<{ dishId?: { name?: string } }>;
-      lunch?: Array<{ dishId?: { name?: string } }>;
-      snacks?: Array<{ dishId?: { name?: string } }>;
-      dinner?: Array<{ dishId?: { name?: string } }>;
+      breakfast?: Array<{ dishId?: { name?: string; category?: string } }>;
+      lunch?: Array<{ dishId?: { name?: string; category?: string } }>;
+      snacks?: Array<{ dishId?: { name?: string; category?: string } }>;
+      dinner?: Array<{ dishId?: { name?: string; category?: string } }>;
     };
   } | null;
 }
@@ -56,7 +56,7 @@ const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frida
 export default function MenuManagementPage() {
   const { success, error, info } = useToast();
 
-  const [activeTab, setActiveTab] = useState<'list' | 'weekly'>('list');
+  const [activeTab, setActiveTab] = useState<'weekly' | 'list'>('weekly');
   const [menus, setMenus] = useState<Menu[]>([]);
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [weeklyCalendar, setWeeklyCalendar] = useState<WeeklyDaySummary[]>([]);
@@ -71,8 +71,6 @@ export default function MenuManagementPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMenu, setEditingMenu] = useState<Menu | null>(null);
   const [saving, setSaving] = useState(false);
-
-  // Delete confirm dialog
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Form state
@@ -101,7 +99,7 @@ export default function MenuManagementPage() {
 
       if (menusRes.ok) {
         const body = await menusRes.json();
-        setMenus(body.data.menus || []);
+        setMenus(body.data || []);
       }
       if (dishesRes.ok) {
         const body = await dishesRes.json();
@@ -112,7 +110,7 @@ export default function MenuManagementPage() {
         setWeeklyCalendar(body.data || []);
       }
     } catch {
-      error('Network Error', 'Failed to retrieve menu data');
+      error('Network Error', 'Failed to load menu data');
     } finally {
       setLoading(false);
     }
@@ -127,14 +125,14 @@ export default function MenuManagementPage() {
     setFormName('');
     setFormCycleType('weekly');
     setFormDayOfWeek(1);
-    setFormEffectiveDate('');
+    setFormEffectiveDate(new Date().toISOString().slice(0, 10));
     setFormMessHallId('all');
     setFormStatus('draft');
     setFormNotice('');
-    setFormBreakfast(dishes.length > 0 ? [{ dishId: dishes[0]._id, portionGrams: 200, mandatory: true }] : []);
-    setFormLunch(dishes.length > 1 ? [{ dishId: dishes[1]._id, portionGrams: 250, mandatory: true }] : []);
+    setFormBreakfast([]);
+    setFormLunch([]);
     setFormSnacks([]);
-    setFormDinner(dishes.length > 2 ? [{ dishId: dishes[2]._id, portionGrams: 250, mandatory: true }] : []);
+    setFormDinner([]);
     setIsModalOpen(true);
   };
 
@@ -143,10 +141,11 @@ export default function MenuManagementPage() {
     setFormName(menu.name);
     setFormCycleType(menu.cycleType);
     setFormDayOfWeek(menu.dayOfWeek ?? 1);
-    setFormEffectiveDate(menu.effectiveDate ?? '');
-    setFormMessHallId(menu.messHallId ?? 'all');
+    setFormEffectiveDate(menu.effectiveDate ? menu.effectiveDate.slice(0, 10) : '');
+    setFormMessHallId(menu.messHallId || 'all');
     setFormStatus(menu.status);
-    setFormNotice(menu.specialNotice ?? '');
+    setFormNotice(menu.specialNotice || '');
+
     setFormBreakfast(menu.meals?.breakfast || []);
     setFormLunch(menu.meals?.lunch || []);
     setFormSnacks(menu.meals?.snacks || []);
@@ -156,27 +155,31 @@ export default function MenuManagementPage() {
 
   const handleSaveMenu = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
-
-    const payload = {
-      name: formName,
-      cycleType: formCycleType,
-      dayOfWeek: formDayOfWeek,
-      effectiveDate: formEffectiveDate || undefined,
-      messHallId: formMessHallId,
-      status: formStatus,
-      specialNotice: formNotice || undefined,
-      meals: {
-        breakfast: formBreakfast,
-        lunch: formLunch,
-        snacks: formSnacks,
-        dinner: formDinner,
-      },
-    };
+    if (!formName.trim()) {
+      error('Validation Error', 'Menu title is required');
+      return;
+    }
 
     try {
+      setSaving(true);
+      const payload = {
+        name: formName.trim(),
+        cycleType: formCycleType,
+        dayOfWeek: formCycleType === 'weekly' ? Number(formDayOfWeek) : undefined,
+        effectiveDate: formCycleType === 'special_event' ? formEffectiveDate : undefined,
+        messHallId: formMessHallId,
+        status: formStatus,
+        specialNotice: formNotice.trim() || undefined,
+        meals: {
+          breakfast: formBreakfast,
+          lunch: formLunch,
+          snacks: formSnacks,
+          dinner: formDinner,
+        },
+      };
+
       const url = editingMenu ? `/api/v1/menus/${editingMenu._id}` : '/api/v1/menus';
-      const method = editingMenu ? 'PATCH' : 'POST';
+      const method = editingMenu ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
         method,
@@ -184,21 +187,16 @@ export default function MenuManagementPage() {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
+      if (res.ok) {
+        success('Success', `Menu ${editingMenu ? 'updated' : 'created'} successfully`);
+        setIsModalOpen(false);
+        loadData();
+      } else {
         const body = await res.json();
-        error('Save Failed', body?.error?.message ?? 'Could not save menu');
-        setSaving(false);
-        return;
+        error('Error', body.error?.message || 'Failed to save menu');
       }
-
-      success(
-        editingMenu ? 'Menu Updated' : 'Menu Created',
-        `"${formName}" has been successfully saved`,
-      );
-      setIsModalOpen(false);
-      loadData();
     } catch {
-      error('Network Error', 'Could not reach server');
+      error('Network Error', 'Could not connect to server');
     } finally {
       setSaving(false);
     }
@@ -208,608 +206,561 @@ export default function MenuManagementPage() {
     try {
       const res = await fetch(`/api/v1/menus/${id}`, { method: 'DELETE' });
       if (res.ok) {
-        const body = await res.json();
-        if (body?.data?.archived) {
-          info('Menu Archived', 'Published menu was moved to archive');
-        } else {
-          success('Menu Deleted', 'Draft menu removed completely');
-        }
+        success('Menu Removed', 'Menu deleted or moved to archive status');
         setDeleteConfirmId(null);
         loadData();
       } else {
-        error('Action Failed', 'Could not delete menu');
+        const body = await res.json();
+        error('Delete Failed', body.error?.message || 'Cannot delete menu');
       }
     } catch {
-      error('Network Error', 'Failed to execute delete');
+      error('Network Error', 'Failed to reach server');
     }
   };
 
-  // Helper for adding dish to meal
   const addDishToMeal = (
-    mealType: 'breakfast' | 'lunch' | 'snacks' | 'dinner',
+    meal: 'breakfast' | 'lunch' | 'snacks' | 'dinner',
+    dishId: string,
   ) => {
-    if (dishes.length === 0) return;
+    const selectedDish = dishes.find((d) => d._id === dishId);
+    if (!selectedDish) return;
+
     const newItem: MealItem = {
-      dishId: dishes[0]._id,
-      portionGrams: 200,
+      dishId,
+      portionGrams: selectedDish.portionGrams || 150,
       mandatory: true,
     };
-    if (mealType === 'breakfast') setFormBreakfast([...formBreakfast, newItem]);
-    if (mealType === 'lunch') setFormLunch([...formLunch, newItem]);
-    if (mealType === 'snacks') setFormSnacks([...formSnacks, newItem]);
-    if (mealType === 'dinner') setFormDinner([...formDinner, newItem]);
+
+    if (meal === 'breakfast') setFormBreakfast([...formBreakfast, newItem]);
+    if (meal === 'lunch') setFormLunch([...formLunch, newItem]);
+    if (meal === 'snacks') setFormSnacks([...formSnacks, newItem]);
+    if (meal === 'dinner') setFormDinner([...formDinner, newItem]);
   };
 
   const removeDishFromMeal = (
-    mealType: 'breakfast' | 'lunch' | 'snacks' | 'dinner',
+    meal: 'breakfast' | 'lunch' | 'snacks' | 'dinner',
     index: number,
   ) => {
-    if (mealType === 'breakfast') setFormBreakfast(formBreakfast.filter((_, i) => i !== index));
-    if (mealType === 'lunch') setFormLunch(formLunch.filter((_, i) => i !== index));
-    if (mealType === 'snacks') setFormSnacks(formSnacks.filter((_, i) => i !== index));
-    if (mealType === 'dinner') setFormDinner(formDinner.filter((_, i) => i !== index));
+    if (meal === 'breakfast') setFormBreakfast(formBreakfast.filter((_, i) => i !== index));
+    if (meal === 'lunch') setFormLunch(formLunch.filter((_, i) => i !== index));
+    if (meal === 'snacks') setFormSnacks(formSnacks.filter((_, i) => i !== index));
+    if (meal === 'dinner') setFormDinner(formDinner.filter((_, i) => i !== index));
   };
 
   const filteredMenus = menus.filter((m) => {
-    const matchesSearch = !search || m.name.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = !statusFilter || m.status === statusFilter;
-    const matchesCycle = !cycleFilter || m.cycleType === cycleFilter;
+    const matchesSearch =
+      m.name.toLowerCase().includes(search.toLowerCase()) ||
+      (m.specialNotice && m.specialNotice.toLowerCase().includes(search.toLowerCase()));
+    const matchesStatus = statusFilter ? m.status === statusFilter : true;
+    const matchesCycle = cycleFilter ? m.cycleType === cycleFilter : true;
     return matchesSearch && matchesStatus && matchesCycle;
   });
 
+  // Week days for MenuMate calendar view (Monday - Sunday)
+  const menuMateDays = [
+    { dayOfWeek: 1, name: 'Monday', dateStr: 'May 11', defaultMain: 'Herb-Crusted Roast Chicken', defaultMain2: 'Paneer Butter Masala', defaultSide: 'Honey-Glazed Roasted Carrots', allergies: ['Gluten', 'Dairy'] },
+    { dayOfWeek: 2, name: 'Tuesday', dateStr: 'May 12', defaultMain: 'Thai Red Lentil Curry', defaultMain2: 'Pan-Seared Veg Cutlet', defaultSide: 'Garlic Mashed Potatoes', allergies: ['Gluten'] },
+    { dayOfWeek: 3, name: 'Wednesday', dateStr: 'May 13', defaultMain: 'Mushroom & Brie Tart', defaultMain2: 'Slow-Braised Veg Goulash', defaultSide: 'Green Beans with Almonds', allergies: ['Dairy', 'Nuts'] },
+    { dayOfWeek: 4, name: 'Thursday', dateStr: 'May 14', defaultMain: 'Baked Kofta with Tomato Salsa', defaultMain2: 'Roasted Aubergine Tagine', defaultSide: 'Saffron Jeera Rice Pilaf', allergies: ['Gluten'] },
+    { dayOfWeek: 5, name: 'Friday', dateStr: 'May 15', defaultMain: 'Courgette & Feta Fritters', defaultMain2: 'Golden Fried Corn Dumplings', defaultSide: 'Cucumber Mint Raita', allergies: ['Dairy'] },
+    { dayOfWeek: 6, name: 'Saturday', dateStr: 'May 16', defaultMain: 'Hyderabadi Dum Biryani', defaultMain2: 'Chole Bhature Special', defaultSide: 'Gulab Jamun Dessert', allergies: ['Gluten', 'Dairy'] },
+    { dayOfWeek: 0, name: 'Sunday', dateStr: 'May 17', defaultMain: 'Special Sunday Thali Feast', defaultMain2: 'Dal Makhani & Butter Naan', defaultSide: 'Moong Dal Halwa', allergies: ['Dairy'] },
+  ];
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-4">
+      {/* Top Header Bar (MenuMate Style) */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-ink">Menu & Meal Planning</h1>
-          <p className="text-xs text-ink/70 mt-1">
-            Standard rotating cycles, daily recipes, and dining hall allocations.
-          </p>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-600 text-white font-bold text-lg shadow-sm shadow-teal-500/20">
+              🍽️
+            </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-slate-900 leading-tight">
+                Weekly Menu Overview
+              </h1>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Plan and manage your weekly dining hall menu schedule and ingredient requirements
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Tab Switcher */}
-          <div className="flex rounded-lg border border-line bg-paper p-1 text-xs">
-            <button
-              type="button"
-              onClick={() => setActiveTab('list')}
-              className={`rounded-md px-3 py-1 font-semibold transition ${
-                activeTab === 'list'
-                  ? 'bg-brand text-white shadow-sm'
-                  : 'text-ink/70 hover:text-ink'
-              }`}
-            >
-              All Menus ({menus.length})
-            </button>
+        {/* Action Controls */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* View Mode Toggle Pills */}
+          <div className="flex rounded-xl bg-slate-100 p-1 text-xs font-semibold">
             <button
               type="button"
               onClick={() => setActiveTab('weekly')}
-              className={`rounded-md px-3 py-1 font-semibold transition ${
+              className={`rounded-lg px-3 py-1.5 transition ${
                 activeTab === 'weekly'
-                  ? 'bg-brand text-white shadow-sm'
-                  : 'text-ink/70 hover:text-ink'
+                  ? 'bg-white text-teal-800 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Weekly Calendar
+              📅 Weekly Schedule (MenuMate)
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('list')}
+              className={`rounded-lg px-3 py-1.5 transition ${
+                activeTab === 'list'
+                  ? 'bg-white text-teal-800 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              📋 All Menus Table (KasDapur)
             </button>
           </div>
 
           <button
             type="button"
             onClick={openCreateModal}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-2 text-xs font-semibold text-white shadow hover:opacity-95"
+            className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-teal-600/25 hover:bg-teal-700 transition"
           >
-            <span>+</span>
-            <span>Create Menu</span>
+            <span>➕</span>
+            <span>Add Menu Plan</span>
           </button>
         </div>
       </div>
 
-      {/* Tab 1: Menu List & Filter */}
+      {/* View 1: MenuMate 7-Day Weekly Grid View */}
+      {activeTab === 'weekly' && (
+        <div className="space-y-4">
+          {/* Week Selector Bar */}
+          <div className="flex items-center justify-between bg-white px-5 py-3 rounded-xl border border-slate-100 shadow-2xs">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={loadData}
+                className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+              >
+                ↻ Refresh
+              </button>
+              <button
+                type="button"
+                className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+              >
+                ← Previous
+              </button>
+            </div>
+
+            <div className="text-center">
+              <span className="text-xs font-bold text-slate-800">May 11 – May 17, 2026</span>
+              <span className="block text-[10px] text-slate-400">Week 20 • Standard Rotation Cycle</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="rounded-lg bg-teal-600 px-3 py-1 text-xs font-bold text-white shadow-sm hover:bg-teal-700"
+              >
+                Next →
+              </button>
+            </div>
+          </div>
+
+          {/* 7 Columns: Monday to Sunday (MenuMate UI) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-3.5 items-start">
+            {menuMateDays.map((day) => {
+              const liveSummary = weeklyCalendar.find((w) => w.dayOfWeek === day.dayOfWeek);
+              const lunchDish = liveSummary?.menu?.meals?.lunch?.[0]?.dishId?.name || day.defaultMain;
+              const dinnerDish = liveSummary?.menu?.meals?.dinner?.[0]?.dishId?.name || day.defaultMain2;
+              const sideDish = liveSummary?.menu?.meals?.breakfast?.[0]?.dishId?.name || day.defaultSide;
+
+              return (
+                <div
+                  key={day.dayOfWeek}
+                  className="rounded-2xl border border-slate-200/90 bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col"
+                >
+                  {/* Teal Header Tab */}
+                  <div className="bg-gradient-to-r from-teal-700 to-cyan-800 px-3.5 py-2.5 text-center text-white">
+                    <h3 className="text-xs font-bold uppercase tracking-wider">{day.name}</h3>
+                    <p className="text-[10px] text-teal-100 mt-0.5 font-medium">{day.dateStr}</p>
+                  </div>
+
+                  {/* Body Content */}
+                  <div className="p-3.5 space-y-3.5 flex-1 flex flex-col justify-between">
+                    {/* Main Dishes Block */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-teal-700 border-b border-teal-50 pb-1">
+                        <span>🍲</span>
+                        <span>Main Dishes</span>
+                      </div>
+
+                      {/* Main Dish 1 */}
+                      <div className="rounded-xl bg-slate-50/80 p-2.5 border border-slate-100">
+                        <p className="text-xs font-bold text-slate-800 leading-snug">{lunchDish}</p>
+                        <p className="text-[10px] text-slate-500 mt-1 line-clamp-2">
+                          Freshly prepared in kitchen hall with premium ghee & fresh spices.
+                        </p>
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {day.allergies.map((a) => (
+                            <span key={a} className="rounded bg-teal-50 px-1.5 py-0.5 text-[9px] font-semibold text-teal-700">
+                              {a}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Main Dish 2 */}
+                      <div className="rounded-xl bg-slate-50/80 p-2.5 border border-slate-100">
+                        <p className="text-xs font-bold text-slate-800 leading-snug">{dinnerDish}</p>
+                        <p className="text-[10px] text-slate-500 mt-1 line-clamp-2">
+                          Balanced dinner recipe with seasonal farm vegetables & lentils.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Side Dishes Block */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-teal-700 border-b border-teal-50 pb-1">
+                        <span>🥗</span>
+                        <span>Side Dishes</span>
+                      </div>
+
+                      <div className="rounded-xl bg-slate-50/80 p-2.5 border border-slate-100">
+                        <p className="text-xs font-bold text-slate-800 leading-snug">{sideDish}</p>
+                        <p className="text-[10px] text-slate-500 mt-1">Steamed basmati rice, tawa chapatis, cucumber salad</p>
+                      </div>
+                    </div>
+
+                    {/* Footer: Portions & Costing (KasDapur Style) */}
+                    <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
+                      <span className="font-semibold text-slate-400">Porsi: <strong className="text-slate-700">530</strong></span>
+                      <span className="font-bold text-teal-700">₹52.00 / meal</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* View 2: All Menus Table (KasDapur MBG Style) */}
       {activeTab === 'list' && (
         <div className="space-y-4">
-          {/* Filter Bar */}
-          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-paper p-4 shadow-sm">
-            <input
-              type="text"
-              placeholder="Search menus by name..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 min-w-[200px] rounded-lg border border-line bg-paper px-3 py-1.5 text-xs focus:border-brand focus:outline-none"
-            />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-lg border border-line bg-paper px-3 py-1.5 text-xs text-ink"
-            >
-              <option value="">All Statuses</option>
-              <option value="published">Published</option>
-              <option value="draft">Draft</option>
-              <option value="archived">Archived</option>
-            </select>
-            <select
-              value={cycleFilter}
-              onChange={(e) => setCycleFilter(e.target.value)}
-              className="rounded-lg border border-line bg-paper px-3 py-1.5 text-xs text-ink"
-            >
-              <option value="">All Cycles</option>
-              <option value="weekly">Weekly Rotation</option>
-              <option value="fortnightly">Fortnightly</option>
-              <option value="monthly">Monthly</option>
-              <option value="special_event">Special Event</option>
-            </select>
+          {/* Search & Filters */}
+          <div className="flex flex-col sm:flex-row gap-3 bg-white p-4 rounded-xl border border-slate-100 shadow-2xs">
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder="Search menus by title or dietary notice..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <select
+                aria-label="Filter by menu status"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"
+              >
+                <option value="">All Statuses</option>
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="archived">Archived</option>
+              </select>
+
+              <select
+                aria-label="Filter by menu rotation cycle"
+                value={cycleFilter}
+                onChange={(e) => setCycleFilter(e.target.value)}
+                className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"
+              >
+                <option value="">All Cycles</option>
+                <option value="weekly">Weekly Rotation</option>
+                <option value="fortnightly">Fortnightly</option>
+                <option value="monthly">Monthly</option>
+                <option value="special_event">Special Event</option>
+              </select>
+            </div>
           </div>
 
           {/* Table */}
-          {loading ? (
-            <div className="rounded-xl border border-line bg-paper p-12 text-center text-xs text-ink/60 animate-pulse">
-              Loading menu catalog...
-            </div>
-          ) : filteredMenus.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-line bg-paper p-12 text-center">
-              <span className="text-3xl">🍽️</span>
-              <p className="mt-2 text-sm font-semibold text-ink">No menus found</p>
-              <p className="text-xs text-ink/60 mt-1">Adjust filters or create your first menu</p>
-              <button
-                type="button"
-                onClick={openCreateModal}
-                className="mt-4 inline-block rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white"
-              >
-                + Create Menu
-              </button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto rounded-xl border border-line bg-paper shadow-sm">
-              <table className="w-full text-left text-xs">
-                <thead className="border-b border-line bg-stone-50 dark:bg-stone-900/60 text-ink/70 font-semibold uppercase tracking-wider">
-                  <tr>
-                    <th className="px-4 py-3">Menu Name</th>
-                    <th className="px-4 py-3">Cycle & Day</th>
-                    <th className="px-4 py-3">Mess Hall</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Meals Included</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line text-ink">
-                  {filteredMenus.map((menu) => (
-                    <tr key={menu._id} className="hover:bg-stone-50/50 dark:hover:bg-stone-900/40 transition">
-                      <td className="px-4 py-3.5 font-semibold">
-                        <div>{menu.name}</div>
-                        {menu.specialNotice && (
-                          <div className="text-[11px] font-normal text-amber-600">{menu.specialNotice}</div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 capitalize">
-                        {menu.cycleType}{' '}
-                        {menu.dayOfWeek !== undefined ? `(${dayNames[menu.dayOfWeek]})` : ''}
-                      </td>
-                      <td className="px-4 py-3 uppercase text-[11px] font-mono">
-                        {menu.messHallId === 'all' ? 'All Dining Halls' : menu.messHallId}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                            menu.status === 'published'
-                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                              : menu.status === 'draft'
-                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                              : 'bg-stone-200 text-stone-700 dark:bg-stone-800 dark:text-stone-300'
-                          }`}
+          <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-white shadow-sm">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-slate-100 bg-slate-50/70 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                <tr>
+                  <th className="px-5 py-3.5">Menu Name</th>
+                  <th className="px-4 py-3.5">Cycle Type</th>
+                  <th className="px-4 py-3.5">Day / Date</th>
+                  <th className="px-4 py-3.5">Status</th>
+                  <th className="px-4 py-3.5">Meal Breakdown</th>
+                  <th className="px-5 py-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {filteredMenus.map((menu) => (
+                  <tr key={menu._id} className="hover:bg-slate-50/80 transition">
+                    <td className="px-5 py-3.5 font-bold text-slate-900">{menu.name}</td>
+                    <td className="px-4 py-3.5 capitalize">{menu.cycleType.replace('_', ' ')}</td>
+                    <td className="px-4 py-3.5">
+                      {menu.cycleType === 'weekly' && menu.dayOfWeek !== undefined
+                        ? dayNames[menu.dayOfWeek]
+                        : menu.effectiveDate
+                        ? menu.effectiveDate.slice(0, 10)
+                        : 'Rotating'}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                          menu.status === 'published'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : menu.status === 'draft'
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                            : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        {menu.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-slate-500">
+                      {menu.meals?.breakfast?.length || 0} breakfast, {menu.meals?.lunch?.length || 0} lunch, {menu.meals?.dinner?.length || 0} dinner
+                    </td>
+                    <td className="px-5 py-3.5 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(menu)}
+                          className="rounded-lg px-2.5 py-1 font-bold text-teal-700 hover:bg-teal-50"
                         >
-                          {menu.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-[11px] text-ink/70">
-                        {menu.meals?.breakfast?.length || 0} breakfast,{' '}
-                        {menu.meals?.lunch?.length || 0} lunch,{' '}
-                        {menu.meals?.dinner?.length || 0} dinner
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openEditModal(menu)}
-                            className="rounded px-2.5 py-1 font-semibold text-brand hover:bg-brand/10 transition"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDeleteConfirmId(menu._id)}
-                            className="rounded px-2 py-1 font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Tab 2: Weekly Calendar Grid */}
-      {activeTab === 'weekly' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-3">
-          {weeklyCalendar.map((day) => (
-            <div
-              key={day.dayOfWeek}
-              className="rounded-xl border border-line bg-paper p-3.5 shadow-sm flex flex-col justify-between"
-            >
-              <div>
-                <div className="border-b border-line pb-2 flex items-center justify-between">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-brand">
-                    {day.dayName}
-                  </h3>
-                  <span className="text-[10px] text-ink/50 font-mono">Day {day.dayOfWeek}</span>
-                </div>
-
-                <div className="mt-3 space-y-2.5">
-                  {/* Breakfast */}
-                  <div>
-                    <span className="text-[10px] font-semibold text-ink/60 uppercase">Breakfast</span>
-                    <p className="text-xs text-ink mt-0.5 leading-snug">
-                      {day.menu?.meals?.breakfast?.map((b) => b.dishId?.name).filter(Boolean).join(', ') ||
-                        'Aloo Paratha, Curd'}
-                    </p>
-                  </div>
-
-                  {/* Lunch */}
-                  <div>
-                    <span className="text-[10px] font-semibold text-ink/60 uppercase">Lunch</span>
-                    <p className="text-xs text-ink mt-0.5 leading-snug">
-                      {day.menu?.meals?.lunch?.map((l) => l.dishId?.name).filter(Boolean).join(', ') ||
-                        'Dal Makhani, Rice, Roti'}
-                    </p>
-                  </div>
-
-                  {/* Snacks */}
-                  <div>
-                    <span className="text-[10px] font-semibold text-ink/60 uppercase">Snacks</span>
-                    <p className="text-xs text-ink mt-0.5 leading-snug">
-                      {day.menu?.meals?.snacks?.map((s) => s.dishId?.name).filter(Boolean).join(', ') ||
-                        'Samosa & Tea'}
-                    </p>
-                  </div>
-
-                  {/* Dinner */}
-                  <div>
-                    <span className="text-[10px] font-semibold text-ink/60 uppercase">Dinner</span>
-                    <p className="text-xs text-ink mt-0.5 leading-snug">
-                      {day.menu?.meals?.dinner?.map((d) => d.dishId?.name).filter(Boolean).join(', ') ||
-                        'Paneer Curry, Roti, Kheer'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-2 border-t border-line text-[10px] text-brand font-medium">
-                {day.menu ? `Active: ${day.menu.name}` : 'Rotating Template'}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Confirmation Dialog for Delete */}
-      {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-sm rounded-xl border border-line bg-paper p-6 shadow-xl">
-            <h3 className="text-base font-bold text-ink">Confirm Deletion / Archive</h3>
-            <p className="mt-2 text-xs text-ink/70">
-              Published menus will be safely moved to &apos;Archived&apos; status so historical attendance and recipe records remain valid. Draft menus will be removed.
-            </p>
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setDeleteConfirmId(null)}
-                className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-ink hover:bg-stone-100 dark:hover:bg-stone-800"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDeleteMenu(deleteConfirmId)}
-                className="rounded-lg bg-red-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow hover:opacity-90"
-              >
-                Proceed
-              </button>
-            </div>
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmId(menu._id)}
+                          className="rounded-lg px-2.5 py-1 font-bold text-rose-600 hover:bg-rose-50"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
 
-      {/* Create / Edit Menu Modal */}
+      {/* Modal for Create/Edit Menu */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-2xl border border-line bg-paper p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-line pb-3">
-              <h2 className="text-lg font-bold text-ink">
-                {editingMenu ? 'Edit Menu' : 'Create New Menu'}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h2 className="text-base font-bold text-slate-900">
+                {editingMenu ? 'Edit Menu Plan' : 'Create New Menu Plan'}
               </h2>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="text-sm text-ink/60 hover:text-ink"
+                className="text-slate-400 hover:text-slate-600"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSaveMenu} className="mt-4 space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-semibold text-ink/80">Menu Title</label>
-                  <input
-                    type="text"
-                    required
-                    value={formName}
-                    onChange={(e) => setFormName(e.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs"
-                    placeholder="e.g. Regular Monday Menu"
-                  />
-                </div>
+            <form onSubmit={handleSaveMenu} className="mt-4 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Menu Plan Title</label>
+                <input
+                  type="text"
+                  required
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  placeholder="e.g. Wednesday Balanced Campus Rotation"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
 
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-ink/80">Cycle Type</label>
+                  <label className="block text-xs font-bold text-slate-700">Cycle Type</label>
                   <select
                     value={formCycleType}
-                    onChange={(e) => setFormCycleType(e.target.value as 'weekly' | 'fortnightly' | 'monthly' | 'special_event')}
-                    className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs"
+                    onChange={(e) => setFormCycleType(e.target.value as any)}
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"
                   >
-                    <option value="weekly">Weekly Rotation</option>
+                    <option value="weekly">Weekly</option>
                     <option value="fortnightly">Fortnightly</option>
                     <option value="monthly">Monthly</option>
                     <option value="special_event">Special Event</option>
                   </select>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block font-semibold text-ink/80">Day of Week</label>
+                  <label className="block text-xs font-bold text-slate-700">Day of Week</label>
                   <select
                     value={formDayOfWeek}
                     onChange={(e) => setFormDayOfWeek(Number(e.target.value))}
-                    className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"
                   >
-                    {dayNames.map((name, idx) => (
-                      <option key={idx} value={idx}>
-                        {name} ({idx})
+                    {dayNames.map((name, i) => (
+                      <option key={name} value={i}>
+                        {name}
                       </option>
                     ))}
                   </select>
                 </div>
+              </div>
 
-                <div>
-                  <label className="block font-semibold text-ink/80">Effective Date (Optional)</label>
-                  <input
-                    type="date"
-                    value={formEffectiveDate}
-                    onChange={(e) => setFormEffectiveDate(e.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-ink/80">Publish Status</label>
+              {/* Breakfast Dishes Assignment */}
+              <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <span className="text-xs font-bold text-teal-800">🍳 Breakfast Dishes</span>
                   <select
-                    value={formStatus}
-                    onChange={(e) => setFormStatus(e.target.value as 'draft' | 'published' | 'archived')}
-                    className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs"
+                    aria-label="Add breakfast dish"
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        addDishToMeal('breakfast', e.target.value);
+                        e.target.value = '';
+                      }
+                    }}
+                    className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-teal-700"
                   >
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
-                    <option value="archived">Archived</option>
+                    <option value="">+ Add Dish</option>
+                    {dishes.map((d) => (
+                      <option key={d._id} value={d._id}>
+                        {d.name} ({d.portionGrams}g)
+                      </option>
+                    ))}
                   </select>
                 </div>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-ink/80">Mess Hall Allocation</label>
-                <select
-                  value={formMessHallId}
-                  onChange={(e) => setFormMessHallId(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs"
-                >
-                  <option value="all">All Dining Halls (Default)</option>
-                  <option value="hall_a">Hostel A & B (Boys Mess)</option>
-                  <option value="hall_b">Hostel C & D (Girls Mess)</option>
-                  <option value="hall_c">Post-Graduate Dining Hall</option>
-                </select>
-              </div>
-
-              {/* Meal Item Selectors */}
-              <div className="space-y-4 pt-2 border-t border-line">
-                <h3 className="font-bold text-ink text-sm">Dishes per Meal</h3>
-
-                {/* Breakfast */}
-                <div className="rounded-lg border border-line p-3 bg-stone-50/50 dark:bg-stone-900/40">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-bold text-brand">Breakfast Items</span>
-                    <button
-                      type="button"
-                      onClick={() => addDishToMeal('breakfast')}
-                      className="rounded bg-brand/10 px-2 py-0.5 text-[11px] font-semibold text-brand hover:bg-brand/20"
-                    >
-                      + Add Dish
-                    </button>
-                  </div>
-                  {formBreakfast.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2 mb-2">
-                      <select
-                        value={item.dishId}
-                        onChange={(e) => {
-                          const updated = [...formBreakfast];
-                          updated[idx].dishId = e.target.value;
-                          setFormBreakfast(updated);
-                        }}
-                        className="flex-1 rounded border border-line bg-paper px-2 py-1 text-xs"
-                      >
-                        {dishes.map((d) => (
-                          <option key={d._id} value={d._id}>
-                            {d.name} ({d.category})
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        type="number"
-                        placeholder="Portion (g)"
-                        value={item.portionGrams}
-                        onChange={(e) => {
-                          const updated = [...formBreakfast];
-                          updated[idx].portionGrams = Number(e.target.value);
-                          setFormBreakfast(updated);
-                        }}
-                        className="w-24 rounded border border-line bg-paper px-2 py-1 text-xs"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeDishFromMeal('breakfast', idx)}
-                        className="text-red-500 font-bold px-1"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Lunch */}
-                <div className="rounded-lg border border-line p-3 bg-stone-50/50 dark:bg-stone-900/40">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-bold text-brand">Lunch Items</span>
-                    <button
-                      type="button"
-                      onClick={() => addDishToMeal('lunch')}
-                      className="rounded bg-brand/10 px-2 py-0.5 text-[11px] font-semibold text-brand hover:bg-brand/20"
-                    >
-                      + Add Dish
-                    </button>
-                  </div>
-                  {formLunch.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2 mb-2">
-                      <select
-                        value={item.dishId}
-                        onChange={(e) => {
-                          const updated = [...formLunch];
-                          updated[idx].dishId = e.target.value;
-                          setFormLunch(updated);
-                        }}
-                        className="flex-1 rounded border border-line bg-paper px-2 py-1 text-xs"
-                      >
-                        {dishes.map((d) => (
-                          <option key={d._id} value={d._id}>
-                            {d.name} ({d.category})
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        type="number"
-                        placeholder="Portion (g)"
-                        value={item.portionGrams}
-                        onChange={(e) => {
-                          const updated = [...formLunch];
-                          updated[idx].portionGrams = Number(e.target.value);
-                          setFormLunch(updated);
-                        }}
-                        className="w-24 rounded border border-line bg-paper px-2 py-1 text-xs"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeDishFromMeal('lunch', idx)}
-                        className="text-red-500 font-bold px-1"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Dinner */}
-                <div className="rounded-lg border border-line p-3 bg-stone-50/50 dark:bg-stone-900/40">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-bold text-brand">Dinner Items</span>
-                    <button
-                      type="button"
-                      onClick={() => addDishToMeal('dinner')}
-                      className="rounded bg-brand/10 px-2 py-0.5 text-[11px] font-semibold text-brand hover:bg-brand/20"
-                    >
-                      + Add Dish
-                    </button>
-                  </div>
-                  {formDinner.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2 mb-2">
-                      <select
-                        value={item.dishId}
-                        onChange={(e) => {
-                          const updated = [...formDinner];
-                          updated[idx].dishId = e.target.value;
-                          setFormDinner(updated);
-                        }}
-                        className="flex-1 rounded border border-line bg-paper px-2 py-1 text-xs"
-                      >
-                        {dishes.map((d) => (
-                          <option key={d._id} value={d._id}>
-                            {d.name} ({d.category})
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        type="number"
-                        placeholder="Portion (g)"
-                        value={item.portionGrams}
-                        onChange={(e) => {
-                          const updated = [...formDinner];
-                          updated[idx].portionGrams = Number(e.target.value);
-                          setFormDinner(updated);
-                        }}
-                        className="w-24 rounded border border-line bg-paper px-2 py-1 text-xs"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeDishFromMeal('dinner', idx)}
-                        className="text-red-500 font-bold px-1"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
+                <div className="mt-2 space-y-1.5">
+                  {formBreakfast.map((item, idx) => {
+                    const dish = dishes.find((d) => d._id === item.dishId);
+                    return (
+                      <div key={idx} className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-slate-100 text-xs">
+                        <span>{dish?.name || 'Selected Dish'}</span>
+                        <button type="button" onClick={() => removeDishFromMeal('breakfast', idx)} className="text-rose-500 hover:text-rose-700">✕</button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
-              <div>
-                <label className="block font-semibold text-ink/80">Special Notice (Optional)</label>
-                <textarea
-                  rows={2}
-                  value={formNotice}
-                  onChange={(e) => setFormNotice(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs"
-                  placeholder="e.g. Special festive sweet served with dinner"
-                />
+              {/* Lunch Dishes Assignment */}
+              <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <span className="text-xs font-bold text-teal-800">🍛 Lunch Dishes</span>
+                  <select
+                    aria-label="Add lunch dish"
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        addDishToMeal('lunch', e.target.value);
+                        e.target.value = '';
+                      }
+                    }}
+                    className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-teal-700"
+                  >
+                    <option value="">+ Add Dish</option>
+                    {dishes.map((d) => (
+                      <option key={d._id} value={d._id}>
+                        {d.name} ({d.portionGrams}g)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="mt-2 space-y-1.5">
+                  {formLunch.map((item, idx) => {
+                    const dish = dishes.find((d) => d._id === item.dishId);
+                    return (
+                      <div key={idx} className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-slate-100 text-xs">
+                        <span>{dish?.name || 'Selected Dish'}</span>
+                        <button type="button" onClick={() => removeDishFromMeal('lunch', idx)} className="text-rose-500 hover:text-rose-700">✕</button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-line">
+              {/* Dinner Dishes Assignment */}
+              <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <span className="text-xs font-bold text-teal-800">🍲 Dinner Dishes</span>
+                  <select
+                    aria-label="Add dinner dish"
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        addDishToMeal('dinner', e.target.value);
+                        e.target.value = '';
+                      }
+                    }}
+                    className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-teal-700"
+                  >
+                    <option value="">+ Add Dish</option>
+                    {dishes.map((d) => (
+                      <option key={d._id} value={d._id}>
+                        {d.name} ({d.portionGrams}g)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="mt-2 space-y-1.5">
+                  {formDinner.map((item, idx) => {
+                    const dish = dishes.find((d) => d._id === item.dishId);
+                    return (
+                      <div key={idx} className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-slate-100 text-xs">
+                        <span>{dish?.name || 'Selected Dish'}</span>
+                        <button type="button" onClick={() => removeDishFromMeal('dinner', idx)} className="text-rose-500 hover:text-rose-700">✕</button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="rounded-lg border border-line px-4 py-2 text-xs font-semibold text-ink hover:bg-stone-100 dark:hover:bg-stone-800"
+                  className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-lg bg-brand px-4 py-2 text-xs font-semibold text-white shadow hover:opacity-90 disabled:opacity-50"
+                  className="rounded-xl bg-teal-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-teal-600/20 hover:bg-teal-700"
                 >
-                  {saving ? 'Saving...' : editingMenu ? 'Update Menu' : 'Create Menu'}
+                  {saving ? 'Saving Plan...' : 'Save Menu Plan'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl border border-slate-100">
+            <h3 className="text-base font-bold text-slate-900">Confirm Deletion</h3>
+            <p className="mt-2 text-xs text-slate-500">
+              Published menus will be archived so historical data is protected. Draft menus will be removed permanently.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmId(null)}
+                className="rounded-xl border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteMenu(deleteConfirmId)}
+                className="rounded-xl bg-rose-600 px-4 py-1.5 text-xs font-bold text-white shadow hover:bg-rose-700"
+              >
+                Proceed
+              </button>
+            </div>
           </div>
         </div>
       )}
