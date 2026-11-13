@@ -15,6 +15,8 @@ const schema = z.object({
   REMINDER_CRON: z.string().default('30 22 * * *'),
   SENTRY_DSN: z.string().optional(),
   RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(300),
+  GEMINI_API_KEY: z.string().optional(),
+  GOOGLE_API_KEY: z.string().optional(),
 });
 
 export type Env = z.infer<typeof schema>;

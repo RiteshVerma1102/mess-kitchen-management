@@ -6,7 +6,22 @@ let client: IORedis | undefined;
 
 // Shared client used only for lightweight operations like rate limiting.
 export function getRedis(): IORedis {
-  client ??= new IORedis(getEnv().REDIS_URL, { maxRetriesPerRequest: null });
+  if (!client) {
+    client = new IORedis(getEnv().REDIS_URL, {
+      maxRetriesPerRequest: null,
+      enableOfflineQueue: false,
+      connectTimeout: 500,
+      retryStrategy(times) {
+        if (times > 3) return null; // stop reconnecting if redis not available
+        return Math.min(times * 100, 1000);
+      },
+    });
+
+    // Suppress unhandled error crashes when Redis is offline
+    client.on('error', () => {
+      // Intentionally silent fallback
+    });
+  }
   return client;
 }
 

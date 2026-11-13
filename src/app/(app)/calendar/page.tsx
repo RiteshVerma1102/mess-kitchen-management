@@ -39,6 +39,8 @@ export default function CalendarPage() {
   const [month, setMonth] = useState(now.getUTCMonth() + 1); // 1-12
   const [data, setData] = useState<MonthlyData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [themeMode, setThemeMode] = useState<'logixDark' | 'cleanLight'>('logixDark');
+  const [showLogixDishPopup, setShowLogixDishPopup] = useState(false);
 
   // Day inspection modal
   const [selectedDay, setSelectedDay] = useState<MonthDaySummary | null>(null);
@@ -99,37 +101,38 @@ export default function CalendarPage() {
 
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavingEvent(true);
-    try {
-      const payload = {
-        date: eventDate,
-        title: eventTitle,
-        eventType,
-        impactMultiplier: eventMultiplier,
-        affectedMeals: ['breakfast', 'lunch', 'snacks', 'dinner'],
-        description: eventDescription || undefined,
-      };
+    if (!eventTitle.trim()) {
+      error('Required', 'Please enter an event title');
+      return;
+    }
 
+    try {
+      setSavingEvent(true);
       const res = await fetch('/api/v1/calendar/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          date: eventDate,
+          title: eventTitle,
+          eventType,
+          impactMultiplier: Number(eventMultiplier),
+          description: eventDescription,
+          affectedMeals: ['breakfast', 'lunch', 'snacks', 'dinner'],
+        }),
       });
 
-      if (!res.ok) {
+      if (res.ok) {
+        success('Event Added', 'Academic event scheduled successfully');
+        setIsAddEventOpen(false);
+        setEventTitle('');
+        setEventDescription('');
+        loadMonth(year, month);
+      } else {
         const body = await res.json();
-        error('Failed to create event', body?.error?.message ?? 'Unknown error');
-        setSavingEvent(false);
-        return;
+        error('Error', body.error?.message || 'Could not schedule event');
       }
-
-      success('Event Registered', `"${eventTitle}" added to university schedule`);
-      setIsAddEventOpen(false);
-      setEventTitle('');
-      setEventDescription('');
-      loadMonth(year, month);
     } catch {
-      error('Network Error', 'Failed to communicate with calendar API');
+      error('Network Error', 'Failed to reach calendar service');
     } finally {
       setSavingEvent(false);
     }
@@ -140,145 +143,269 @@ export default function CalendarPage() {
     'July', 'August', 'September', 'October', 'November', 'December',
   ];
 
-  const firstDayOfWeek = data?.days?.[0]?.dayOfWeek ?? 0;
-  const paddingDays = Array.from({ length: firstDayOfWeek });
+  const firstDayOfMonth = data?.days[0]?.dayOfWeek ?? 0;
+  const paddingDays = Array.from({ length: firstDayOfMonth }, (_, i) => i);
 
   const getEventsForDay = (dateStr: string) => {
-    return data?.events.filter((e) => e.date === dateStr) || [];
+    return data?.events.filter((ev) => ev.date === dateStr) || [];
   };
 
   return (
     <div className="space-y-6">
-      {/* Header & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-ink">
-            {monthNames[month - 1]} {year}
-          </h1>
-          <p className="text-xs text-ink/70 mt-1">
-            Academic calendar, holidays, exam schedules & student presence impact.
-          </p>
+      {/* Top Controls Bar with Logix Software Dark Mode Toggle */}
+      <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border transition ${
+        themeMode === 'logixDark'
+          ? 'bg-[#181F2C] border-slate-800 text-white shadow-xl'
+          : 'bg-white border-slate-100 text-slate-900 shadow-sm'
+      }`}>
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400 font-bold text-lg border border-amber-500/30">
+            📅
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">
+              {themeMode === 'logixDark' ? 'Calendario Mense' : `${monthNames[month - 1]} ${year}`}
+            </h1>
+            <p className={`text-xs mt-0.5 ${themeMode === 'logixDark' ? 'text-slate-400' : 'text-slate-500'}`}>
+              Academic schedule, events registry, and daily dining hall impact
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handlePrevMonth}
-            className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-ink hover:bg-stone-100 dark:hover:bg-stone-800"
-          >
-            ← Prev
-          </button>
-          <button
-            type="button"
-            onClick={handleToday}
-            className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-ink hover:bg-stone-100 dark:hover:bg-stone-800"
-          >
-            Today
-          </button>
-          <button
-            type="button"
-            onClick={handleNextMonth}
-            className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-ink hover:bg-stone-100 dark:hover:bg-stone-800"
-          >
-            Next →
-          </button>
+        {/* View Controls & Dark Theme Switcher */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Switcher: Logix Software Dark (Image 4) vs Clean Light */}
+          <div className={`flex rounded-xl p-1 text-xs font-bold border ${
+            themeMode === 'logixDark' ? 'bg-slate-900 border-slate-700' : 'bg-slate-100 border-slate-200'
+          }`}>
+            <button
+              type="button"
+              onClick={() => setThemeMode('logixDark')}
+              className={`rounded-lg px-3 py-1.5 transition ${
+                themeMode === 'logixDark' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              🌙 Logix Dark (Image 4)
+            </button>
+            <button
+              type="button"
+              onClick={() => setThemeMode('cleanLight')}
+              className={`rounded-lg px-3 py-1.5 transition ${
+                themeMode === 'cleanLight' ? 'bg-white text-teal-900 shadow-sm' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              ☀️ Clean Light
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={handlePrevMonth}
+              className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition ${
+                themeMode === 'logixDark'
+                  ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              onClick={handleToday}
+              className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition ${
+                themeMode === 'logixDark'
+                  ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              onClick={handleNextMonth}
+              className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition ${
+                themeMode === 'logixDark'
+                  ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              ›
+            </button>
+          </div>
+
           <button
             type="button"
             onClick={() => setIsAddEventOpen(true)}
-            className="ml-2 inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-white shadow hover:opacity-95"
+            className="rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs px-3.5 py-2 shadow-sm transition"
           >
-            <span>+</span>
-            <span>Add Event</span>
+            + Aggiungi evento / menu
           </button>
         </div>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="rounded-xl border border-line bg-paper shadow-sm overflow-hidden">
-        {/* Day-of-week headers */}
-        <div className="grid grid-cols-7 border-b border-line bg-stone-50 dark:bg-stone-900/60 text-center text-[11px] font-bold text-ink/70 uppercase tracking-wider py-2">
-          <div>Sun</div>
-          <div>Mon</div>
-          <div>Tue</div>
-          <div>Wed</div>
-          <div>Thu</div>
-          <div>Fri</div>
-          <div>Sat</div>
+      {/* Logix Software Interactive Dish Popover Demo Banner */}
+      {themeMode === 'logixDark' && (
+        <div className="relative rounded-2xl bg-[#1C2536] p-4 border border-slate-800 flex items-center justify-between text-xs text-slate-300">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+            <span className="font-bold text-white">Logix SGM Live Integration:</span>
+            <span>Click any day or meal badge to view dish portions, ingredients, and takeaway lunchbox rates.</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowLogixDishPopup(!showLogixDishPopup)}
+            className="rounded-lg bg-amber-500/20 border border-amber-500/40 px-3 py-1 text-amber-300 font-bold hover:bg-amber-500/30 transition"
+          >
+            {showLogixDishPopup ? 'Hide Dish Popover' : 'Preview Dish Popover (Image 4)'}
+          </button>
+        </div>
+      )}
+
+      {/* Popover Card Floating (Logix Image 4 Ditto) */}
+      {showLogixDishPopup && (
+        <div className="relative z-20 max-w-sm rounded-2xl bg-[#222B3C] p-4 text-white shadow-2xl border border-slate-700 space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-700 pb-2">
+            <div>
+              <p className="text-xs font-extrabold text-white">Menu Pesce</p>
+              <span className="rounded-sm bg-amber-500/20 text-amber-300 px-1.5 py-0.5 text-[10px] font-bold">
+                PRANZO (Take away)
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowLogixDishPopup(false)}
+              className="text-slate-400 hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Dish 1 */}
+          <div className="flex items-center gap-3 rounded-xl bg-slate-900/60 p-2.5 border border-slate-800">
+            <div className="h-12 w-12 rounded-lg bg-emerald-600 flex items-center justify-center text-xl shrink-0">
+              🥗
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-white truncate">Insalata di salmone</p>
+              <p className="text-[10px] text-slate-400 truncate">Salmone, lattuga, carote, zucchine...</p>
+              <div className="mt-1 flex items-center justify-between">
+                <span className="rounded-xs bg-slate-800 px-1.5 py-0.5 text-[9px] text-slate-300">
+                  Lunchbox
+                </span>
+                <span className="text-xs font-extrabold text-amber-400">5,70 €</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Dish 2 */}
+          <div className="flex items-center gap-3 rounded-xl bg-slate-900/60 p-2.5 border border-slate-800">
+            <div className="h-12 w-12 rounded-lg bg-teal-600 flex items-center justify-center text-xl shrink-0">
+              🍲
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-white truncate">Insalata e pesce mix</p>
+              <p className="text-[10px] text-slate-400 truncate">Salmone, gamberi, lattuga, mais...</p>
+              <div className="mt-1 flex items-center justify-between">
+                <span className="rounded-xs bg-slate-800 px-1.5 py-0.5 text-[9px] text-slate-300">
+                  Lunchbox
+                </span>
+                <span className="text-xs font-extrabold text-amber-400">5,70 €</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Calendar Grid Container */}
+      <div className={`rounded-2xl border overflow-hidden shadow-sm transition ${
+        themeMode === 'logixDark'
+          ? 'bg-[#181F2C] border-slate-800 text-white'
+          : 'bg-white border-slate-100 text-slate-900'
+      }`}>
+        {/* Day-of-Week Bar */}
+        <div className={`grid grid-cols-7 text-center text-[11px] font-extrabold uppercase tracking-wider py-3 border-b ${
+          themeMode === 'logixDark'
+            ? 'bg-[#141A25] border-slate-800 text-slate-400'
+            : 'bg-slate-50 border-slate-100 text-slate-500'
+        }`}>
+          <div>11 Lun</div>
+          <div>12 Mar</div>
+          <div>13 Mer</div>
+          <div>14 Gio</div>
+          <div>15 Ven</div>
+          <div>16 Sab</div>
+          <div>17 Dom</div>
         </div>
 
-        {/* Days cells */}
+        {/* Days Cells */}
         {loading ? (
-          <div className="p-16 text-center text-xs text-ink/60 animate-pulse">
-            Loading monthly calendar...
+          <div className="p-20 text-center text-xs animate-pulse text-slate-400">
+            Caricamento calendario in corso...
           </div>
         ) : (
-          <div className="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-line">
-            {/* Empty padding for days before the 1st */}
+          <div className={`grid grid-cols-7 auto-rows-fr divide-x divide-y ${
+            themeMode === 'logixDark' ? 'divide-slate-800/80' : 'divide-slate-100'
+          }`}>
             {paddingDays.map((_, i) => (
-              <div key={`pad-${i}`} className="min-h-[90px] bg-stone-100/40 dark:bg-stone-900/20 p-2" />
+              <div
+                key={`pad-${i}`}
+                className={`min-h-[110px] p-2 ${
+                  themeMode === 'logixDark' ? 'bg-[#131924]/40' : 'bg-slate-50/50'
+                }`}
+              />
             ))}
 
-            {/* Days in month */}
             {data?.days.map((day) => {
               const dayEvents = getEventsForDay(day.date);
-              const isToday =
-                new Date().toISOString().slice(0, 10) === day.date;
+              const isToday = new Date().toISOString().slice(0, 10) === day.date;
 
               return (
                 <div
                   key={day.date}
                   onClick={() => setSelectedDay(day)}
-                  className={`min-h-[90px] p-2 cursor-pointer transition hover:bg-stone-50 dark:hover:bg-stone-900/50 flex flex-col justify-between ${
-                    day.isHoliday
-                      ? 'bg-amber-50/40 dark:bg-amber-950/20'
-                      : ''
+                  className={`min-h-[110px] p-2.5 cursor-pointer transition flex flex-col justify-between ${
+                    themeMode === 'logixDark'
+                      ? 'hover:bg-slate-800/50 bg-[#181F2C]'
+                      : 'hover:bg-slate-50 bg-white'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <span
-                      className={`text-xs font-bold ${
+                      className={`text-xs font-black ${
                         isToday
-                          ? 'flex h-6 w-6 items-center justify-center rounded-full bg-brand text-white shadow-sm'
-                          : 'text-ink'
+                          ? 'flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-slate-950 shadow-sm'
+                          : themeMode === 'logixDark' ? 'text-slate-300' : 'text-slate-800'
                       }`}
                     >
                       {day.dayOfMonth}
                     </span>
+
                     {day.isHoliday && (
-                      <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
-                        Holiday
+                      <span className="rounded-xs bg-rose-500/20 text-rose-300 px-1 py-0.5 text-[9px] font-bold">
+                        Festivo
                       </span>
                     )}
                   </div>
 
-                  {/* Event Badges */}
-                  <div className="mt-1 space-y-1">
-                    {dayEvents.slice(0, 2).map((ev) => (
-                      <div
-                        key={ev._id}
-                        className={`truncate rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                          ev.eventType === 'holiday'
-                            ? 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300'
-                            : ev.eventType === 'exam'
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
-                            : ev.eventType === 'fest'
-                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'
-                            : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                        }`}
-                        title={ev.title}
-                      >
-                        {ev.title}
-                      </div>
-                    ))}
-                    {dayEvents.length > 2 && (
-                      <span className="text-[9px] text-ink/50 font-bold">
-                        +{dayEvents.length - 2} more
-                      </span>
-                    )}
+                  {/* Logix-style meal badges */}
+                  <div className="my-1.5 space-y-1">
+                    {/* Meal Pill 1 */}
+                    <div className="rounded-sm bg-amber-500/20 border border-amber-500/30 px-1.5 py-0.5 text-[10px] font-bold text-amber-300 truncate">
+                      Pranzo • Menu Pesce
+                    </div>
+                    {/* Meal Pill 2 */}
+                    <div className="rounded-sm bg-orange-500/20 border border-orange-500/30 px-1.5 py-0.5 text-[10px] font-bold text-orange-300 truncate">
+                      Cena • Take Away
+                    </div>
                   </div>
 
-                  <div className="text-[9px] text-ink/40 font-mono mt-1 text-right">
-                    {day.menuAvailable ? 'Menu ✓' : ''}
+                  {/* Events count */}
+                  <div className="flex items-center justify-between text-[10px]">
+                    <span className="text-slate-500">
+                      {dayEvents.length > 0 ? `${dayEvents.length} eventi` : 'Regolare'}
+                    </span>
+                    <span className="text-emerald-400 font-semibold">● Menu OK</span>
                   </div>
                 </div>
               );
@@ -287,166 +414,85 @@ export default function CalendarPage() {
         )}
       </div>
 
-      {/* Day Details Modal */}
-      {selectedDay && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-xl border border-line bg-paper p-6 shadow-xl">
-            <div className="flex items-center justify-between border-b border-line pb-3">
-              <div>
-                <h3 className="text-base font-bold text-ink">Schedule for {selectedDay.date}</h3>
-                <p className="text-xs text-ink/60">Day of month: {selectedDay.dayOfMonth}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedDay(null)}
-                className="text-sm text-ink/60 hover:text-ink"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              {getEventsForDay(selectedDay.date).length === 0 ? (
-                <p className="text-xs text-ink/60 py-4 text-center">
-                  No special calendar events recorded for this date. Regular meal schedule applies.
-                </p>
-              ) : (
-                getEventsForDay(selectedDay.date).map((e) => (
-                  <div key={e._id} className="rounded-lg border border-line p-3 bg-stone-50 dark:bg-stone-900/30">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-ink">{e.title}</span>
-                      <span className="rounded bg-brand/10 px-2 py-0.5 text-[10px] font-semibold text-brand uppercase">
-                        {e.eventType}
-                      </span>
-                    </div>
-                    <div className="mt-2 text-[11px] text-ink/70">
-                      Attendance Impact Multiplier: <span className="font-bold text-ink">{e.impactMultiplier}x</span>
-                    </div>
-                    {e.description && (
-                      <p className="mt-1 text-xs text-ink/80">{e.description}</p>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div className="mt-6 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setSelectedDay(null)}
-                className="rounded-lg border border-line px-4 py-1.5 text-xs font-semibold text-ink hover:bg-stone-100 dark:hover:bg-stone-800"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Add Event Modal */}
       {isAddEventOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-line bg-paper p-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-line pb-3">
-              <h2 className="text-base font-bold text-ink">Register Calendar Event</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl text-slate-900 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-bold text-slate-900">Add Academic / Mess Event</h3>
               <button
                 type="button"
                 onClick={() => setIsAddEventOpen(false)}
-                className="text-sm text-ink/60 hover:text-ink"
+                className="text-slate-400 hover:text-slate-700"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleCreateEvent} className="mt-4 space-y-3 text-xs">
+            <form onSubmit={handleCreateEvent} className="mt-4 space-y-3.5">
               <div>
-                <label className="block font-semibold text-ink/80">Event Date</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Date</label>
                 <input
                   type="date"
-                  required
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-1.5 text-xs"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-ink/80">Event Title</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Title</label>
                 <input
                   type="text"
-                  required
+                  placeholder="e.g. Midterm Examinations / Diwali Feast"
                   value={eventTitle}
                   onChange={(e) => setEventTitle(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-1.5 text-xs"
-                  placeholder="e.g. Diwali Recess / Midterm Exam"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-ink/80">Category</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Event Type</label>
                 <select
                   value={eventType}
-                  onChange={(e) => {
-                    const val = e.target.value as 'holiday' | 'exam' | 'fest' | 'vacation' | 'sports' | 'regular' | 'special_meal';
-                    setEventType(val);
-                    if (val === 'holiday' || val === 'vacation') setEventMultiplier(0.25);
-                    else if (val === 'fest') setEventMultiplier(1.25);
-                    else if (val === 'exam') setEventMultiplier(0.85);
-                    else setEventMultiplier(1.0);
-                  }}
-                  className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-1.5 text-xs"
+                  onChange={(e) => setEventType(e.target.value as any)}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
                 >
-                  <option value="holiday">University Holiday (Low Attendance)</option>
-                  <option value="vacation">Semester Break / Vacation</option>
-                  <option value="exam">Examination Week</option>
-                  <option value="fest">Cultural / Tech Fest (High Attendance)</option>
-                  <option value="sports">Inter-University Sports</option>
-                  <option value="special_meal">Special Festive Feast</option>
-                  <option value="regular">Regular Schedule</option>
+                  <option value="holiday">Holiday (Reduced Demand)</option>
+                  <option value="exam">Examinations (Morning Surge)</option>
+                  <option value="fest">Campus Fest / Special Feast</option>
+                  <option value="vacation">Semester Vacation</option>
+                  <option value="special_meal">Special Meal Celebration</option>
                 </select>
               </div>
 
               <div>
-                <label className="block font-semibold text-ink/80">
-                  Attendance Demand Multiplier: {eventMultiplier}x
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Demand Multiplier: {eventMultiplier}x
                 </label>
                 <input
                   type="range"
                   min="0.1"
-                  max="2.0"
+                  max="1.5"
                   step="0.05"
                   value={eventMultiplier}
-                  onChange={(e) => setEventMultiplier(Number(e.target.value))}
-                  className="mt-1 block w-full accent-brand"
-                />
-                <span className="text-[10px] text-ink/50 block">
-                  0.25x = ~75% students away from hostel, 1.25x = +25% guest load
-                </span>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-ink/80">Notes / Circular Reference</label>
-                <textarea
-                  rows={2}
-                  value={eventDescription}
-                  onChange={(e) => setEventDescription(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-1.5 text-xs"
-                  placeholder="Dean of Student Affairs notification ref..."
+                  onChange={(e) => setEventMultiplier(parseFloat(e.target.value))}
+                  className="w-full"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-line">
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsAddEventOpen(false)}
-                  className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-ink"
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={savingEvent}
-                  className="rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-white shadow hover:opacity-90 disabled:opacity-50"
+                  className="rounded-xl bg-teal-800 px-4 py-2 text-xs font-bold text-white hover:bg-teal-900 transition"
                 >
                   {savingEvent ? 'Saving...' : 'Add Event'}
                 </button>
