@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/components/Toast';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
@@ -146,32 +147,24 @@ export default function UserManagementPage() {
   return (
     <div className="space-y-6">
       {/* Header Bar */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 border border-teal-100 text-teal-800 font-bold text-lg">
-              👥
-            </div>
-            <div>
-              <CardTitle>Staff & User Access Management</CardTitle>
-              <CardDescription>
-                Assign staff roles, mess hall permissions, and institutional security access
-              </CardDescription>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => setIsCreateOpen(true)}
-              icon={<span>+</span>}
-            >
-              Enrol New Staff
-            </Button>
-          </div>
-        </CardHeader>
+      <PageHeader
+        icon="👥"
+        title="Staff & User Access Management"
+        description="Assign staff roles, mess hall permissions, and institutional security access"
+        actions={
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setIsCreateOpen(true)}
+            icon={<span>+</span>}
+          >
+            Enrol New Staff
+          </Button>
+        }
+      />
 
-        <CardContent>
+      <Card>
+        <CardContent className="p-5">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-[240px]">
               <Input

@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/components/Toast';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Button } from '@/components/ui/Button';
 
 interface ComprehensiveAnalytics {
   dateRange: { startDate: string; endDate: string };
@@ -173,52 +175,50 @@ export default function AnalyticsDashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header and Controls */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Food Waste, Cost & Demand Analytics</h1>
-          <p className="text-sm text-slate-500">
-            Real-time financial audits, plate & prep wastage metrics, forecast accuracy (MAPE), and CSV reports
-          </p>
-        </div>
+      {/* Header and Controls (Unified PageHeader) */}
+      <PageHeader
+        icon="📈"
+        title="Food Waste, Cost & Demand Analytics"
+        description="Real-time financial audits, plate & prep wastage metrics, forecast accuracy (MAPE), and CSV reports"
+        actions={
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 shadow-2xs text-xs">
+              <span className="font-bold text-slate-500">Range:</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="bg-transparent font-medium focus:outline-none text-slate-800"
+              />
+              <span className="text-slate-400">to</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="bg-transparent font-medium focus:outline-none text-slate-800"
+              />
+            </div>
 
-        {/* Global Controls */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 rounded-xl border border-slate-100 bg-white px-3 py-1.5 shadow-sm text-xs">
-            <span className="font-semibold text-slate-500">Range:</span>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="bg-transparent font-medium focus:outline-none"
-            />
-            <span className="text-slate-400">to</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="bg-transparent font-medium focus:outline-none"
-            />
+            <select
+              value={messHallId}
+              onChange={(e) => setMessHallId(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold shadow-2xs text-slate-800 focus:border-teal-700 focus:outline-none"
+            >
+              <option value="hall_a">Main Dining Hall (Hall A)</option>
+              <option value="hall_b">Annex Kitchen (Hall B)</option>
+            </select>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleExportCSV('daily_operations')}
+              icon={<span>📥</span>}
+            >
+              Export CSV
+            </Button>
           </div>
-
-          <select
-            value={messHallId}
-            onChange={(e) => setMessHallId(e.target.value)}
-            className="rounded-xl border border-slate-100 bg-white px-3 py-2 text-xs font-medium shadow-sm focus:border-brand focus:outline-none"
-          >
-            <option value="hall_a">Main Dining Hall (Hall A)</option>
-            <option value="hall_b">Annex Kitchen (Hall B)</option>
-          </select>
-
-          <button
-            onClick={() => handleExportCSV('daily_operations')}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-100 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
-          >
-            <span>📥</span>
-            <span>Export CSV</span>
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* KPI Cards Ribbon (Inspired by screenshots 1, 5, 7, 11) */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-8">

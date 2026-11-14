@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/components/Toast';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Button } from '@/components/ui/Button';
 
 interface Dish {
   _id: string;
@@ -269,62 +271,50 @@ export default function MenuManagementPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header Bar (MenuMate Style) */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-600 text-white font-bold text-lg shadow-sm shadow-teal-500/20">
-              🍽️
+      {/* Top Header Bar (Unified Design) */}
+      <PageHeader
+        icon="🍽️"
+        title="Weekly Menu Overview"
+        description="Plan and manage your weekly dining hall menu schedule, allergen declarations, and portion recipes"
+        actions={
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* View Mode Toggle Pills */}
+            <div className="flex rounded-xl bg-slate-100 p-1 text-xs font-bold border border-slate-200/60">
+              <button
+                type="button"
+                onClick={() => setActiveTab('weekly')}
+                className={`rounded-lg px-3 py-1.5 transition ${
+                  activeTab === 'weekly'
+                    ? 'bg-white text-teal-800 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                📅 Weekly Schedule
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('list')}
+                className={`rounded-lg px-3 py-1.5 transition ${
+                  activeTab === 'list'
+                    ? 'bg-white text-teal-800 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                📋 All Menus Table
+              </button>
             </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900 leading-tight">
-                Weekly Menu Overview
-              </h1>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Plan and manage your weekly dining hall menu schedule and ingredient requirements
-              </p>
-            </div>
-          </div>
-        </div>
 
-        {/* Action Controls */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* View Mode Toggle Pills */}
-          <div className="flex rounded-xl bg-slate-100 p-1 text-xs font-semibold">
-            <button
-              type="button"
-              onClick={() => setActiveTab('weekly')}
-              className={`rounded-lg px-3 py-1.5 transition ${
-                activeTab === 'weekly'
-                  ? 'bg-white text-teal-800 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={openCreateModal}
+              icon={<span>➕</span>}
             >
-              📅 Weekly Schedule (MenuMate)
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('list')}
-              className={`rounded-lg px-3 py-1.5 transition ${
-                activeTab === 'list'
-                  ? 'bg-white text-teal-800 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              📋 All Menus Table (KasDapur)
-            </button>
+              Add Menu Plan
+            </Button>
           </div>
-
-          <button
-            type="button"
-            onClick={openCreateModal}
-            className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-teal-600/25 hover:bg-teal-700 transition"
-          >
-            <span>➕</span>
-            <span>Add Menu Plan</span>
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* View 1: MenuMate 7-Day Weekly Grid View */}
       {activeTab === 'weekly' && (

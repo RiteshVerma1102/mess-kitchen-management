@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/components/Toast';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { AiAssistantModal } from '@/components/ui/AiAssistantModal';
 
 interface DemandPoint {
@@ -279,72 +280,67 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6 pb-12">
       {/* Top Header & View Switcher Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-              Dashboard Overview
-            </h1>
-            <span className="rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-bold text-teal-700 border border-teal-200/60">
-              FoodFlow Edition
-            </span>
-          </div>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Welcome back! Here&apos;s what&apos;s happening with your food management today.
-          </p>
-        </div>
+      <PageHeader
+        icon="📊"
+        title="Dashboard Overview"
+        badge={
+          <span className="rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-bold text-teal-700 border border-teal-200/60">
+            FoodFlow Edition
+          </span>
+        }
+        description="Welcome back! Here's what's happening with your food management today."
+        actions={
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Reference Mode Tabs */}
+            <div className="flex items-center rounded-xl bg-slate-100 p-1 border border-slate-200/60">
+              <button
+                type="button"
+                onClick={() => setActiveTab('foodflow')}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  activeTab === 'foodflow'
+                    ? 'bg-white text-teal-800 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                FoodFlow
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('alpha')}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  activeTab === 'alpha'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Alpha Waves
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('tray')}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  activeTab === 'tray'
+                    ? 'bg-white text-emerald-600 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Tray Live
+              </button>
+            </div>
 
-        {/* Action Controls: Reference View Tabs & Currency Toggle */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Reference Mode Tabs */}
-          <div className="flex items-center rounded-xl bg-slate-100 p-1 border border-slate-200/60">
+            {/* Currency Toggle ($ / ₹) */}
             <button
               type="button"
-              onClick={() => setActiveTab('foodflow')}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                activeTab === 'foodflow'
-                  ? 'bg-white text-teal-800 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+              onClick={() => setCurrencyMode(currencyMode === 'USD' ? 'INR' : 'USD')}
+              className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition"
+              title="Toggle between USD ($) and INR (₹)"
             >
-              FoodFlow (Image 1)
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('alpha')}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                activeTab === 'alpha'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Alpha Waves (Image 5)
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('tray')}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                activeTab === 'tray'
-                  ? 'bg-white text-emerald-600 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Tray Live (Image 7)
+              <span className="text-slate-400">Currency:</span>
+              <span className="text-teal-700">{currencyMode === 'USD' ? '$ USD' : '₹ INR'}</span>
             </button>
           </div>
-
-          {/* Currency Toggle ($ / ₹) */}
-          <button
-            type="button"
-            onClick={() => setCurrencyMode(currencyMode === 'USD' ? 'INR' : 'USD')}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition"
-            title="Toggle between USD ($) and INR (₹)"
-          >
-            <span className="text-slate-400">Currency:</span>
-            <span className="text-teal-700">{currencyMode === 'USD' ? '$ USD' : '₹ INR'}</span>
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Google Gemini AI Live Forecasting Intelligence Pill Banner */}
       <div className="rounded-2xl border border-teal-200/80 bg-gradient-to-r from-teal-50 via-emerald-50/50 to-white p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">

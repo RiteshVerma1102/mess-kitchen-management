@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/components/Toast';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { StatCard } from '@/components/ui/StatCard';
 
 interface PlanItem {
   dishId: string;
@@ -294,103 +296,64 @@ export default function KitchenOperationsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header (Lakeland Central Kitchen Style) */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 to-orange-600 text-white font-bold text-lg shadow-sm shadow-orange-500/20">
-              🍳
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900 leading-tight">
-                Kitchen Operations & Preparation Planning
-              </h1>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Dynamic recipe BOM scaling, safety buffer management, live kitchen execution, and variance tracking
-              </p>
-            </div>
+      {/* Page Header (Unified Design) */}
+      <PageHeader
+        icon="🍳"
+        title="Kitchen Operations & Preparation Planning"
+        description="Dynamic recipe BOM scaling, safety buffer management, live kitchen execution, and variance tracking"
+        actions={
+          <div className="flex flex-wrap items-center gap-2.5">
+            <input
+              type="date"
+              aria-label="Filter by service date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:border-teal-700"
+            />
+
+            <select
+              aria-label="Filter by mess hall location"
+              value={messHallId}
+              onChange={(e) => setMessHallId(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:border-teal-700"
+            >
+              <option value="hall_a">Main Dining Hall (Hall A)</option>
+              <option value="hall_b">Annex Kitchen (Hall B)</option>
+            </select>
           </div>
-        </div>
+        }
+      />
 
-        {/* Date and Hall Selectors */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          <input
-            type="date"
-            aria-label="Filter by service date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs focus:bg-white"
-          />
-
-          <select
-            aria-label="Filter by mess hall location"
-            value={messHallId}
-            onChange={(e) => setMessHallId(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs"
-          >
-            <option value="hall_a">Main Dining Hall (Hall A)</option>
-            <option value="hall_b">Annex Kitchen (Hall B)</option>
-          </select>
-        </div>
-      </div>
-
-      {/* 4 Top KPI Cards (Lakeland Central Kitchen Metric Cards) */}
+      {/* 4 Top KPI Cards (Unified StatCard System) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Planned */}
-        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm hover:shadow-md transition">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-600 text-sm">
-              📋
-            </div>
-            <span className="text-xs font-bold text-slate-700">Planned Portions</span>
-          </div>
-          <p className="mt-3 text-2xl font-black text-slate-900 tracking-tight">
-            {varianceData ? varianceData.totals.totalPlanned : 650}
-          </p>
-          <p className="mt-1 text-[11px] text-slate-400">Target meals across today&apos;s rotation</p>
-        </div>
-
-        {/* Cooked */}
-        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm hover:shadow-md transition">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600 text-sm">
-              🔥
-            </div>
-            <span className="text-xs font-bold text-slate-700">Actually Prepared</span>
-          </div>
-          <p className="mt-3 text-2xl font-black text-blue-600 tracking-tight">
-            {varianceData ? varianceData.totals.totalPrepared : 680}
-          </p>
-          <p className="mt-1 text-[11px] text-slate-400">Dispatched from kitchen cooking line</p>
-        </div>
-
-        {/* Served */}
-        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm hover:shadow-md transition">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 text-sm">
-              ✅
-            </div>
-            <span className="text-xs font-bold text-slate-700">Meals Served</span>
-          </div>
-          <p className="mt-3 text-2xl font-black text-emerald-600 tracking-tight">
-            {varianceData ? varianceData.totals.totalServed : 642}
-          </p>
-          <p className="mt-1 text-[11px] text-slate-400">Verified scanner attendance scans</p>
-        </div>
-
-        {/* Variance */}
-        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm hover:shadow-md transition">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600 text-sm">
-              ⚖️
-            </div>
-            <span className="text-xs font-bold text-slate-700">Prep Variance</span>
-          </div>
-          <p className="mt-3 text-2xl font-black text-slate-900 tracking-tight">
-            {varianceData ? `${varianceData.totals.overallVariancePercentage > 0 ? '+' : ''}${varianceData.totals.overallVariancePercentage}%` : '+4.2%'}
-          </p>
-          <p className="mt-1 text-[11px] text-emerald-600 font-semibold">Well within ±5% tolerance</p>
-        </div>
+        <StatCard
+          icon="📋"
+          title="Planned Portions"
+          value={varianceData ? varianceData.totals.totalPlanned : 650}
+          subtext="Target meals across today's rotation"
+          color="slate"
+        />
+        <StatCard
+          icon="🔥"
+          title="Actually Prepared"
+          value={varianceData ? varianceData.totals.totalPrepared : 680}
+          subtext="Dispatched from kitchen cooking line"
+          color="teal"
+        />
+        <StatCard
+          icon="✅"
+          title="Meals Served"
+          value={varianceData ? varianceData.totals.totalServed : 642}
+          subtext="Verified scanner attendance scans"
+          color="emerald"
+        />
+        <StatCard
+          icon="⚖️"
+          title="Prep Variance"
+          value={varianceData ? `${varianceData.totals.overallVariancePercentage > 0 ? '+' : ''}${varianceData.totals.overallVariancePercentage}%` : '+4.2%'}
+          subtext="Well within ±5% tolerance"
+          color="amber"
+        />
       </div>
 
       {/* Main Tabs Navigation */}

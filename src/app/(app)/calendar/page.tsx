@@ -39,7 +39,7 @@ export default function CalendarPage() {
   const [month, setMonth] = useState(now.getUTCMonth() + 1); // 1-12
   const [data, setData] = useState<MonthlyData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [themeMode, setThemeMode] = useState<'logixDark' | 'cleanLight'>('logixDark');
+  const [themeMode, setThemeMode] = useState<'logixDark' | 'cleanLight'>('cleanLight');
   const [showLogixDishPopup, setShowLogixDishPopup] = useState(false);
 
   // Day inspection modal

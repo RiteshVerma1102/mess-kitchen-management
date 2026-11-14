@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/components/Toast';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { Input, Select } from '@/components/ui/Input';
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeaderCell } from '@/components/ui/Table';
@@ -72,29 +73,21 @@ export default function StudentsDirectoryPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header Card */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 border border-teal-100 text-teal-800 font-bold text-lg">
-              🎓
-            </div>
-            <div>
-              <CardTitle>Hostel Students Directory</CardTitle>
-              <CardDescription>
-                Enrolled hostel residents, dining hall subscriptions, RFID card associations & dietary preferences
-              </CardDescription>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="primary" withDot>
-              {total} Enrolled Students
-            </Badge>
-          </div>
-        </CardHeader>
+      {/* Top Header */}
+      <PageHeader
+        icon="🎓"
+        title="Hostel Students Directory"
+        description="Enrolled hostel residents, dining hall subscriptions, RFID card associations & dietary preferences"
+        badge={
+          <Badge variant="primary" withDot>
+            {total} Enrolled Students
+          </Badge>
+        }
+      />
 
-        {/* Filter Controls Bar */}
-        <CardContent>
+      {/* Filter Controls Bar */}
+      <Card>
+        <CardContent className="p-5">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-[260px]">
               <Input

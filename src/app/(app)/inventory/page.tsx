@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/components/Toast';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { StatCard } from '@/components/ui/StatCard';
+import { Button } from '@/components/ui/Button';
 
 interface InventoryItem {
   id: string;
@@ -331,93 +334,63 @@ export default function InventoryIndentsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header (Sam Akinlolu Style) */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-600 text-white font-bold text-lg shadow-sm shadow-emerald-500/20">
-              📦
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900 leading-tight">
-                Inventory Management
-              </h1>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Today, {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-              </p>
-            </div>
+      {/* Page Header (Unified Design) */}
+      <PageHeader
+        icon="📦"
+        title="Inventory Management"
+        description={`Today, ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} • Stock monitoring, shelf-life audits & automated replenishment`}
+        actions={
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAutoGenerateIndent}
+              icon={<span>⚡</span>}
+            >
+              Auto-Generate Indent
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShowManualIndentModal(true)}
+              icon={<span>➕</span>}
+            >
+              Add Item / Indent
+            </Button>
           </div>
-        </div>
+        }
+      />
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          <button
-            onClick={handleAutoGenerateIndent}
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-50 border border-indigo-200 px-3.5 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition shadow-2xs"
-          >
-            <span>⚡</span>
-            <span>Auto-Generate Indent</span>
-          </button>
-
-          <button
-            onClick={() => setShowManualIndentModal(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-teal-600/20 hover:bg-teal-700 transition"
-          >
-            <span>➕</span>
-            <span>Add Item / Indent</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 4 Top KPI Cards (Matching Image 3: Sam Akinlolu Dribbble Layout) */}
+      {/* 4 Top KPI Cards (Unified StatCard System) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* 1. Total Items */}
-        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm hover:shadow-md transition">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-50 text-teal-600 text-sm">
-              📋
-            </div>
-            <span className="text-xs font-bold text-slate-700">Total Items</span>
-          </div>
-          <p className="mt-3 text-2xl font-black text-slate-900 tracking-tight">{kpis.totalItems}</p>
-          <p className="mt-1 text-[11px] text-slate-400">Total items in stock catalog</p>
-        </div>
-
-        {/* 2. Low Stock Items */}
-        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm hover:shadow-md transition">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600 text-sm">
-              ⚠️
-            </div>
-            <span className="text-xs font-bold text-slate-700">Low Stock Items</span>
-          </div>
-          <p className="mt-3 text-2xl font-black text-amber-600 tracking-tight">{kpis.lowStockCount}</p>
-          <p className="mt-1 text-[11px] text-slate-400">Number of items running low</p>
-        </div>
-
-        {/* 3. Expired Items */}
-        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm hover:shadow-md transition">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-50 text-rose-600 text-sm">
-              ⏱️
-            </div>
-            <span className="text-xs font-bold text-slate-700">Expired / At-Risk</span>
-          </div>
-          <p className="mt-3 text-2xl font-black text-rose-600 tracking-tight">{kpis.expiredCount}</p>
-          <p className="mt-1 text-[11px] text-slate-400">Items past or near expiration</p>
-        </div>
-
-        {/* 4. Out of Stock Items */}
-        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm hover:shadow-md transition">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-600 text-sm">
-              🚫
-            </div>
-            <span className="text-xs font-bold text-slate-700">Out of Stock</span>
-          </div>
-          <p className="mt-3 text-2xl font-black text-slate-900 tracking-tight">{kpis.outOfStockCount}</p>
-          <p className="mt-1 text-[11px] text-slate-400">Count of items out of stock</p>
-        </div>
+        <StatCard
+          icon="📋"
+          title="Total Items"
+          value={kpis.totalItems}
+          subtext="Total items in stock catalog"
+          color="teal"
+        />
+        <StatCard
+          icon="⚠️"
+          title="Low Stock Items"
+          value={kpis.lowStockCount}
+          subtext="Number of items running low"
+          color="amber"
+        />
+        <StatCard
+          icon="⏱️"
+          title="Expired / At-Risk"
+          value={kpis.expiredCount}
+          subtext="Items past or near expiration"
+          color="rose"
+        />
+        <StatCard
+          icon="🚫"
+          title="Out of Stock"
+          value={kpis.outOfStockCount}
+          subtext="Count of items out of stock"
+          color="slate"
+        />
       </div>
 
       {/* Main Tabs Navigation */}

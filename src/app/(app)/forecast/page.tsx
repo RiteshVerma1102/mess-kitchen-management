@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/components/Toast';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { StatCard } from '@/components/ui/StatCard';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
@@ -254,45 +256,37 @@ export default function ForecastPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header Bar */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 border border-teal-100 text-teal-800 font-bold text-lg">
-              🔮
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <CardTitle>Baseline Meal Demand Forecasting</CardTitle>
-                <Badge variant="primary">Model v1 (Rolling DOW + Gemini)</Badge>
-              </div>
-              <CardDescription>
-                Predictive attendance engine with 8-week same-weekday history, calendar impact, and ingredient BOM requirements
-              </CardDescription>
-            </div>
-          </div>
-
+      {/* Page Header */}
+      <PageHeader
+        icon="🔮"
+        title="Baseline Meal Demand Forecasting"
+        badge={<Badge variant="primary">Model v1 (Rolling DOW + Gemini)</Badge>}
+        description="Predictive attendance engine with 8-week same-weekday history, calendar impact, and ingredient BOM requirements"
+        actions={
           <div className="flex flex-wrap items-center gap-2.5">
             <input
               type="date"
               aria-label="Target service date"
               value={targetDate}
               onChange={(e) => setTargetDate(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-2xs"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:border-teal-700"
             />
             <select
               aria-label="Select dining mess hall"
               value={messHallId}
               onChange={(e) => setMessHallId(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-2xs"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:border-teal-700"
             >
               <option value="hall_a">Hostel A & B (Boys Mess)</option>
               <option value="hall_b">Hostel C & D (Girls Mess)</option>
               <option value="hall_c">International Hostel Dining</option>
             </select>
           </div>
-        </CardHeader>
+        }
+      />
 
+      {/* Main Content Card with Navigation Tabs */}
+      <Card>
         {/* Tab Switcher */}
         <div className="flex border-b border-slate-100 px-6 gap-2 text-xs font-bold bg-slate-50/50">
           <button
@@ -360,29 +354,27 @@ export default function ForecastPage() {
             <>
               {/* Daily Cumulative Overview Banner */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Card className="p-5">
-                  <span className="text-[10px] uppercase font-bold text-slate-400">Target Service Day</span>
-                  <div className="mt-1 flex items-baseline gap-2">
-                    <span className="text-2xl font-black text-teal-900">{dailyData.dayName}</span>
-                    <span className="text-xs text-slate-400 font-mono">{dailyData.targetDate}</span>
-                  </div>
-                </Card>
-
-                <Card className="p-5">
-                  <span className="text-[10px] uppercase font-bold text-slate-400">Total Expected Headcount</span>
-                  <div className="mt-1 flex items-baseline gap-2">
-                    <span className="text-2xl font-black text-slate-900">{dailyData.totalPredictedDayCount}</span>
-                    <span className="text-xs text-slate-400">across 4 meals</span>
-                  </div>
-                </Card>
-
-                <Card className="p-5">
-                  <span className="text-[10px] uppercase font-bold text-slate-400">Recommended Prep Portions</span>
-                  <div className="mt-1 flex items-baseline gap-2">
-                    <span className="text-2xl font-black text-emerald-600">{dailyData.totalRecommendedPortions}</span>
-                    <span className="text-xs text-slate-400">(Includes +8% buffer)</span>
-                  </div>
-                </Card>
+                <StatCard
+                  icon="📅"
+                  title="Target Service Day"
+                  value={dailyData.dayName}
+                  subtext={dailyData.targetDate}
+                  color="teal"
+                />
+                <StatCard
+                  icon="👥"
+                  title="Total Expected Headcount"
+                  value={dailyData.totalPredictedDayCount}
+                  subtext="across 4 meals"
+                  color="slate"
+                />
+                <StatCard
+                  icon="🍲"
+                  title="Recommended Prep Portions"
+                  value={dailyData.totalRecommendedPortions}
+                  subtext="(Includes +8% buffer)"
+                  color="emerald"
+                />
               </div>
 
               {/* 4 Meal Cards Grid */}

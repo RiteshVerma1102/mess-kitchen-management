@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/components/Toast';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
@@ -252,20 +253,11 @@ export default function RecipeManagementPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 border border-teal-100 text-teal-800 font-bold text-lg">
-              🥗
-            </div>
-            <div>
-              <CardTitle>Recipes & Bill of Materials (BOM)</CardTitle>
-              <CardDescription>
-                Ingredient specifications, prep wastage ratios, yield benchmarks, and dynamic batch portion scaling
-              </CardDescription>
-            </div>
-          </div>
-
+      <PageHeader
+        icon="🥗"
+        title="Recipes & Bill of Materials (BOM)"
+        description="Ingredient specifications, prep wastage ratios, yield benchmarks, and dynamic batch portion scaling"
+        actions={
           <Button
             variant="primary"
             size="sm"
@@ -274,8 +266,8 @@ export default function RecipeManagementPage() {
           >
             Add New Recipe
           </Button>
-        </CardHeader>
-      </Card>
+        }
+      />
 
       {/* Recipes Catalog Table */}
       {loading ? (
