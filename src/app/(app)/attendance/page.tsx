@@ -9,6 +9,14 @@ import {
   type QueuedAttendance,
   type SyncReport,
 } from '@/lib/offline-attendance';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Input, Select } from '@/components/ui/Input';
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeaderCell } from '@/components/ui/Table';
+import { Modal } from '@/components/ui/Modal';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface Student {
   _id: string;
@@ -83,7 +91,7 @@ export default function AttendancePage() {
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {
-        // SW registration failed in dev/unsupported
+        // SW registration in dev
       });
     }
 
@@ -102,7 +110,7 @@ export default function AttendancePage() {
 
     const handleOffline = () => {
       setIsOnline(false);
-      warning('Offline Mode', 'Internet disconnected. Attendance will queue locally.');
+      warning('Offline Mode', 'Network disconnected. Attendance will queue locally in IndexedDB.');
     };
 
     window.addEventListener('online', handleOnline);
@@ -112,11 +120,6 @@ export default function AttendancePage() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const refreshPendingCount = useCallback(async () => {
-    const q = await getPendingAttendanceQueue();
-    setPendingScans(q);
   }, []);
 
   // Fetch Attendance Records & Summary
@@ -155,7 +158,7 @@ export default function AttendancePage() {
         setStudents(body.data?.students || []);
       }
     } catch {
-      // Offline or network error
+      // Offline fallback
     } finally {
       setLoadingStudents(false);
     }
@@ -179,271 +182,265 @@ export default function AttendancePage() {
     try {
       const report = await syncPendingAttendance();
       setSyncReport(report);
-      await refreshPendingCount();
+      const remaining = await getPendingAttendanceQueue();
+      setPendingScans(remaining);
 
-      if (report.success) {
-        if (report.syncedCount > 0) {
-          success('Sync Completed', `Synced ${report.syncedCount} scans to server.`);
-        } else if (report.totalAttempted === 0) {
-          info('Sync Checked', 'All attendance records are up-to-date.');
-        }
+      if (report.syncedCount > 0) {
+        success('Synced', `Successfully uploaded ${report.syncedCount} offline scans.`);
         loadAttendanceData();
-      } else {
-        error('Sync Error', report.errors[0] || 'Server failed to process sync.');
+      }
+      if (report.failedCount > 0) {
+        error('Sync Warnings', `${report.failedCount} records could not be synced.`);
       }
     } catch {
-      error('Sync Failed', 'Could not communicate with sync endpoint.');
+      error('Sync Error', 'Failed to synchronize with central server');
     } finally {
       setIsSyncing(false);
     }
   };
 
-  // Mark attendance for a single student (Online with Offline fallback)
-  const handleMarkPresent = async (studentRef: string, studentName?: string, method: 'qr' | 'rfid' | 'manual' = 'manual') => {
-    const clientUuid = crypto.randomUUID();
-    const clientTimestamp = new Date().toISOString();
-
-    const scanRecord: QueuedAttendance = {
-      clientUuid,
-      studentRef: studentRef.toUpperCase(),
-      studentName: studentName || studentRef,
-      messHallId,
-      serviceDate,
+  // Mark single attendance (Online or Offline queue)
+  const handleMarkPresent = async (
+    studentRef: string,
+    studentName?: string,
+    method: 'manual' | 'qr' | 'rfid' = 'manual',
+  ) => {
+    const payload = {
+      studentRef,
       mealType,
+      serviceDate,
+      messHallId,
       method,
-      deviceId: 'kitchen_tablet_01',
-      clientTimestamp,
-      status: 'pending',
-      queuedAt: clientTimestamp,
+      studentName,
     };
 
-    if (!isOnline) {
-      // Save directly to local queue
-      await queueAttendanceRecord(scanRecord);
-      await refreshPendingCount();
-      warning(
-        'Offline Scan Saved',
-        `${studentRef} queued locally. Will synchronize once online.`,
-      );
-      setQuickInput('');
-      quickInputRef.current?.focus();
-      return;
+    if (navigator.onLine) {
+      try {
+        const res = await fetch('/api/v1/attendance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.status === 409) {
+          warning('Already Marked', `${studentName || studentRef} already checked in for ${mealType}`);
+          return;
+        }
+
+        if (res.ok) {
+          success('Marked Present', `${studentName || studentRef} verified for ${mealType}`);
+          loadAttendanceData();
+          return;
+        }
+      } catch {
+        // Fall through to offline queue
+      }
     }
 
+    // Queue in IndexedDB
     try {
-      const res = await fetch('/api/v1/attendance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clientUuid,
-          studentRef: studentRef.toUpperCase(),
-          messHallId,
-          serviceDate,
-          mealType,
-          method,
-          deviceId: 'kitchen_tablet_01',
-          clientTimestamp,
-        }),
-      });
-
-      if (res.ok) {
-        const body = await res.json();
-        success('Attendance Verified', `Marked ${body.data.student.fullName} (${body.data.student.enrollmentNumber})`);
-        loadAttendanceData();
-      } else if (res.status === 409) {
-        warning('Already Marked', `${studentRef} already scanned for this meal session.`);
-      } else {
-        // If server fails or unavailable, enqueue locally!
-        await queueAttendanceRecord(scanRecord);
-        await refreshPendingCount();
-        warning('Saved to Offline Queue', `Server unavailable. Stored ${studentRef} in local queue.`);
-      }
+      const queued: QueuedAttendance = {
+        clientUuid: `att_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+        studentRef,
+        studentName,
+        messHallId,
+        serviceDate,
+        mealType,
+        method,
+        deviceId: 'terminal_web_1',
+        clientTimestamp: new Date().toISOString(),
+        status: 'pending',
+        queuedAt: new Date().toISOString(),
+      };
+      await queueAttendanceRecord(queued);
+      setPendingScans((prev) => [queued, ...prev]);
+      info('Queued Offline', `${studentName || studentRef} stored in local terminal queue`);
     } catch {
-      await queueAttendanceRecord(scanRecord);
-      await refreshPendingCount();
-      warning('Queued Offline', `Network dropped. Stored ${studentRef} locally.`);
-    } finally {
-      setQuickInput('');
-      quickInputRef.current?.focus();
+      error('Storage Error', 'Cannot write to offline IndexedDB storage');
     }
   };
 
-  // Quick Barcode / RFID submit handler
+  // Fast Barcode / RFID submit
   const handleQuickSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!quickInput.trim()) return;
-    const isRfid = quickInput.length > 7 && !quickInput.includes('/');
-    handleMarkPresent(quickInput.trim(), quickInput.trim(), isRfid ? 'rfid' : 'qr');
+
+    const term = quickInput.trim();
+    setQuickInput('');
+
+    const matched = students.find(
+      (s) =>
+        s.enrollmentNumber.toLowerCase() === term.toLowerCase() ||
+        (s as unknown as { rfidCardId?: string }).rfidCardId?.toLowerCase() === term.toLowerCase(),
+    );
+
+    handleMarkPresent(
+      matched ? matched.enrollmentNumber : term,
+      matched ? matched.fullName : undefined,
+      term.startsWith('RFID') ? 'rfid' : 'qr',
+    );
+
+    quickInputRef.current?.focus();
   };
 
-  // Bulk marking
+  // Bulk mark present
   const handleBulkMark = async () => {
     if (selectedStudentIds.length === 0) return;
     setBulkMarking(true);
 
     const selectedStudents = students.filter((s) => selectedStudentIds.includes(s._id));
-
-    for (const st of selectedStudents) {
-      await handleMarkPresent(st.enrollmentNumber, st.fullName, 'manual');
+    for (const s of selectedStudents) {
+      await handleMarkPresent(s.enrollmentNumber, s.fullName, 'manual');
     }
 
     setSelectedStudentIds([]);
     setBulkMarking(false);
+    success('Bulk Process Complete', `Marked ${selectedStudents.length} students as present`);
   };
 
   const isMarked = (rollNo: string) => {
-    return recentAttendance.some(
-      (r) => r.studentRef.toUpperCase() === rollNo.toUpperCase(),
-    );
+    return recentAttendance.some((r) => r.studentRef === rollNo);
   };
 
   return (
     <div className="space-y-6">
       {/* Top Banner: Operations & Sync Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 rounded-2xl border border-line bg-paper p-5 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-ink">Meal Attendance Scanner</h1>
-            <span
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold border ${
-                isOnline
-                  ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 text-emerald-800 dark:text-emerald-300'
-                  : 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 text-amber-800 dark:text-amber-300 animate-pulse'
-              }`}
-            >
-              <span className={`h-2 w-2 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-              {isOnline ? 'Live Network Connected' : 'Offline Mode (IndexedDB Active)'}
-            </span>
+      <Card>
+        <CardHeader>
+          <div>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-xl">Meal Attendance Terminal</CardTitle>
+              <Badge variant={isOnline ? 'success' : 'warning'} withDot>
+                {isOnline ? 'Live Network Connected' : 'Offline Mode (IndexedDB Active)'}
+              </Badge>
+            </div>
+            <CardDescription>
+              Kitchen scanner terminal. Supports USB Barcode scanners, RFID taps, and resilient offline synchronization
+            </CardDescription>
           </div>
-          <p className="text-xs text-ink/70 mt-1">
-            Glove-friendly kitchen terminal. Supports USB Barcode scanners, RFID taps, and resilient offline queue.
-          </p>
-        </div>
 
-        {/* Sync Controls & Pending Counter */}
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setIsQueueModalOpen(true)}
-            className="flex items-center gap-2 rounded-xl border border-line bg-stone-50 dark:bg-stone-900 px-3.5 py-2 text-xs font-semibold text-ink hover:bg-stone-100 dark:hover:bg-stone-800"
-          >
-            <span>📦</span>
-            <span>Pending Queue:</span>
-            <span
-              className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                pendingScans.length > 0 ? 'bg-amber-500 text-white' : 'bg-stone-200 dark:bg-stone-700 text-ink/70'
-              }`}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsQueueModalOpen(true)}
+              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition"
             >
-              {pendingScans.length}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleTriggerSync}
-            disabled={isSyncing || !isOnline || pendingScans.length === 0}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-4 py-2 text-xs font-bold text-white shadow hover:opacity-90 disabled:opacity-40 transition"
-          >
-            <span>🔄</span>
-            <span>{isSyncing ? 'Syncing...' : 'Sync Pending'}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Operational Controls: Date, Meal Type, Mess Hall */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-xl border border-line bg-paper p-4 shadow-sm text-xs">
-        <div>
-          <label className="block font-semibold text-ink/80">Service Date</label>
-          <input
-            type="date"
-            value={serviceDate}
-            onChange={(e) => setServiceDate(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs font-semibold"
-          />
-        </div>
-
-        <div>
-          <label className="block font-semibold text-ink/80">Meal Session</label>
-          <div className="mt-1 grid grid-cols-4 gap-1">
-            {(['breakfast', 'lunch', 'snacks', 'dinner'] as MealType[]).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setMealType(m)}
-                className={`rounded-lg py-2 text-xs font-bold capitalize transition ${
-                  mealType === m
-                    ? 'bg-brand text-white shadow-sm'
-                    : 'border border-line bg-stone-50 dark:bg-stone-900 text-ink/70 hover:text-ink'
+              <span>📦</span>
+              <span>Pending Queue:</span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                  pendingScans.length > 0 ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-700'
                 }`}
               >
-                {m}
-              </button>
-            ))}
-          </div>
-        </div>
+                {pendingScans.length}
+              </span>
+            </button>
 
-        <div>
-          <label className="block font-semibold text-ink/80">Dining Hall</label>
-          <select
-            value={messHallId}
-            onChange={(e) => setMessHallId(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs font-semibold"
-          >
-            <option value="hall_a">Hostel A & B (Boys Mess)</option>
-            <option value="hall_b">Hostel C & D (Girls Mess)</option>
-            <option value="hall_c">Post-Graduate Dining Hall</option>
-          </select>
-        </div>
-      </div>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleTriggerSync}
+              loading={isSyncing}
+              disabled={!isOnline || pendingScans.length === 0}
+              icon={<span>🔄</span>}
+            >
+              Sync Pending
+            </Button>
+          </div>
+        </CardHeader>
+
+        {/* Operational Controls: Date, Meal Type, Mess Hall */}
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Service Date</label>
+              <Input
+                type="date"
+                value={serviceDate}
+                onChange={(e) => setServiceDate(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Meal Session</label>
+              <div className="grid grid-cols-4 gap-1">
+                {(['breakfast', 'lunch', 'snacks', 'dinner'] as MealType[]).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setMealType(m)}
+                    className={`rounded-xl py-2 text-xs font-bold capitalize transition ${
+                      mealType === m
+                        ? 'bg-teal-800 text-white shadow-xs'
+                        : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Dining Hall</label>
+              <Select
+                value={messHallId}
+                onChange={(e) => setMessHallId(e.target.value)}
+              >
+                <option value="hall_a">Hostel A & B (Boys Mess)</option>
+                <option value="hall_b">Hostel C & D (Girls Mess)</option>
+                <option value="hall_c">International Hostel Dining</option>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Live Turnout Summary Banner */}
       {summary && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="rounded-xl border border-line bg-paper p-4">
-            <span className="text-[10px] uppercase font-bold text-ink/50">Turnout Rate</span>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <Card className="p-4">
+            <span className="text-[10px] uppercase font-bold text-slate-400">Turnout Rate</span>
             <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-2xl font-black text-brand">{summary.turnoutPercentage}%</span>
-              <span className="text-xs text-ink/60">present</span>
+              <span className="text-2xl font-black text-teal-900">{summary.turnoutPercentage}%</span>
+              <span className="text-xs text-slate-400">present</span>
             </div>
-          </div>
+          </Card>
 
-          <div className="rounded-xl border border-line bg-paper p-4">
-            <span className="text-[10px] uppercase font-bold text-ink/50">Marked Attendance</span>
+          <Card className="p-4">
+            <span className="text-[10px] uppercase font-bold text-slate-400">Marked Attendance</span>
             <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-2xl font-black text-ink">{summary.totalPresent}</span>
-              <span className="text-xs text-ink/60">/ {summary.expectedHeadcount} expected</span>
+              <span className="text-2xl font-black text-slate-900">{summary.totalPresent}</span>
+              <span className="text-xs text-slate-400">/ {summary.expectedHeadcount} expected</span>
             </div>
-          </div>
+          </Card>
 
-          <div className="rounded-xl border border-line bg-paper p-4">
-            <span className="text-[10px] uppercase font-bold text-ink/50">Hardware Breakdown</span>
-            <div className="mt-1 text-xs text-ink font-medium">
+          <Card className="p-4">
+            <span className="text-[10px] uppercase font-bold text-slate-400">Scanner Methods</span>
+            <div className="mt-1 text-xs text-slate-700 font-bold">
               RFID: {summary.methodBreakdown.rfid} | QR: {summary.methodBreakdown.qr} | Manual: {summary.methodBreakdown.manual}
             </div>
-          </div>
+          </Card>
 
-          <div className="rounded-xl border border-line bg-paper p-4">
-            <span className="text-[10px] uppercase font-bold text-ink/50">Offline Synced</span>
+          <Card className="p-4">
+            <span className="text-[10px] uppercase font-bold text-slate-400">Offline Synced</span>
             <div className="mt-1 flex items-baseline gap-2">
               <span className="text-2xl font-black text-amber-600">{summary.offlineSyncedCount}</span>
-              <span className="text-xs text-ink/60">from tablets</span>
+              <span className="text-xs text-slate-400">from tablets</span>
             </div>
-          </div>
+          </Card>
         </div>
       )}
 
       {/* Fast Hardware Barcode / RFID Tap Input Box */}
-      <form
-        onSubmit={handleQuickSubmit}
-        className="rounded-2xl border-2 border-brand/40 bg-brand/5 p-4 shadow-sm"
-      >
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand text-xl text-white">
+      <Card className="border-2 border-teal-800/40 bg-teal-50/30 p-4">
+        <form onSubmit={handleQuickSubmit} className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-800 text-xl text-white shadow-xs">
             ⚡
           </div>
           <div className="flex-1 w-full">
-            <label htmlFor="quickInput" className="block text-xs font-bold text-brand uppercase tracking-wider">
-              Quick Scan (RFID Tap / Barcode Reader / Keyboard Input)
+            <label htmlFor="quickInput" className="block text-xs font-bold text-teal-950 uppercase tracking-wider mb-1">
+              Rapid Scanner (RFID Tap / Barcode Reader / Keyboard Input)
             </label>
             <input
               id="quickInput"
@@ -453,95 +450,94 @@ export default function AttendancePage() {
               value={quickInput}
               onChange={(e) => setQuickInput(e.target.value)}
               placeholder="Scan student ID card or type Roll No (e.g. 102203001) and press Enter..."
-              className="mt-1 block w-full rounded-xl border border-brand/30 bg-white dark:bg-stone-900 px-4 py-2.5 text-sm font-mono font-bold text-ink shadow-inner focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
+              className="w-full rounded-xl border border-teal-300 bg-white px-4 py-2 text-sm font-mono font-bold text-slate-900 shadow-inner focus:border-teal-800 focus:outline-none focus:ring-1 focus:ring-teal-800"
             />
           </div>
-          <button
-            type="submit"
-            className="w-full sm:w-auto rounded-xl bg-brand px-6 py-3 text-xs font-bold text-white shadow hover:opacity-90 transition"
-          >
+          <Button type="submit" variant="primary" size="md">
             Scan & Mark
-          </button>
-        </div>
-      </form>
+          </Button>
+        </form>
+      </Card>
 
       {/* Main Grid: Student Roster vs Live Scans History */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Student Roster & Manual Search */}
-        <div className="lg:col-span-2 rounded-xl border border-line bg-paper p-5 shadow-sm space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
             <div>
-              <h2 className="text-base font-bold text-ink">Hostel Residents Roster</h2>
-              <p className="text-xs text-ink/60">Mark present or absent for selected meal</p>
+              <CardTitle>Hostel Residents Roster</CardTitle>
+              <CardDescription>Mark present or absent for selected meal session</CardDescription>
             </div>
 
             <div className="flex items-center gap-2">
-              <input
+              <Input
                 type="text"
                 placeholder="Filter by name or room..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="rounded-lg border border-line bg-paper px-3 py-1.5 text-xs w-48"
+                className="w-48"
               />
 
               {selectedStudentIds.length > 0 && (
-                <button
-                  type="button"
+                <Button
+                  variant="primary"
+                  size="sm"
                   onClick={handleBulkMark}
-                  disabled={bulkMarking}
-                  className="rounded-lg bg-brand px-3 py-1.5 text-xs font-bold text-white shadow hover:opacity-90 disabled:opacity-50"
+                  loading={bulkMarking}
                 >
-                  {bulkMarking ? 'Marking...' : `Mark Present (${selectedStudentIds.length})`}
-                </button>
+                  Mark Present ({selectedStudentIds.length})
+                </Button>
               )}
             </div>
-          </div>
+          </CardHeader>
 
-          {loadingStudents ? (
-            <div className="py-12 text-center text-xs text-ink/60 animate-pulse">
-              Loading resident roster...
-            </div>
-          ) : students.length === 0 ? (
-            <div className="py-12 text-center text-xs text-ink/60">
-              No students found for this hall selection.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="border-b border-line bg-stone-50 dark:bg-stone-900/40 text-ink/70 font-semibold uppercase tracking-wider">
-                  <tr>
-                    <th className="px-3 py-2 w-8">
+          <CardContent>
+            {loadingStudents ? (
+              <div className="py-12 text-center text-xs text-slate-400 animate-pulse">
+                Loading resident roster...
+              </div>
+            ) : students.length === 0 ? (
+              <EmptyState
+                icon="👥"
+                title="No Residents Found"
+                description="No students found for this dining hall selection."
+              />
+            ) : (
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableHeaderCell className="w-8">
                       <input
                         type="checkbox"
+                        aria-label="Select all students in this hall"
                         onChange={(e) => {
                           if (e.target.checked) setSelectedStudentIds(students.map((s) => s._id));
                           else setSelectedStudentIds([]);
                         }}
                         checked={selectedStudentIds.length === students.length && students.length > 0}
                       />
-                    </th>
-                    <th className="px-3 py-2">Roll No</th>
-                    <th className="px-3 py-2">Student Name</th>
-                    <th className="px-3 py-2">Hostel & Room</th>
-                    <th className="px-3 py-2">Diet</th>
-                    <th className="px-3 py-2 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line text-ink">
+                    </TableHeaderCell>
+                    <TableHeaderCell>Roll No</TableHeaderCell>
+                    <TableHeaderCell>Student Name</TableHeaderCell>
+                    <TableHeaderCell>Hostel & Room</TableHeaderCell>
+                    <TableHeaderCell>Diet</TableHeaderCell>
+                    <TableHeaderCell className="text-right">Action</TableHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
                   {students.map((student) => {
                     const marked = isMarked(student.enrollmentNumber);
                     const isSelected = selectedStudentIds.includes(student._id);
 
                     return (
-                      <tr
+                      <TableRow
                         key={student._id}
-                        className={`hover:bg-stone-50/50 dark:hover:bg-stone-900/40 transition ${
-                          marked ? 'bg-emerald-50/30 dark:bg-emerald-950/20' : ''
-                        }`}
+                        className={marked ? 'bg-emerald-50/40' : ''}
                       >
-                        <td className="px-3 py-2.5">
+                        <TableCell>
                           <input
                             type="checkbox"
+                            aria-label={`Select ${student.fullName}`}
                             checked={isSelected}
                             disabled={marked}
                             onChange={(e) => {
@@ -552,78 +548,73 @@ export default function AttendancePage() {
                               }
                             }}
                           />
-                        </td>
-                        <td className="px-3 py-2.5 font-mono font-bold text-brand">
+                        </TableCell>
+                        <TableCell className="font-mono font-bold text-teal-900">
                           {student.enrollmentNumber}
-                        </td>
-                        <td className="px-3 py-2.5 font-semibold">
+                        </TableCell>
+                        <TableCell className="font-bold text-slate-900">
                           {student.fullName}
-                        </td>
-                        <td className="px-3 py-2.5 text-ink/70">
+                        </TableCell>
+                        <TableCell className="text-slate-600">
                           {student.hostelName}, Rm {student.roomNumber}
-                        </td>
-                        <td className="px-3 py-2.5 capitalize text-[11px]">
+                        </TableCell>
+                        <TableCell className="capitalize text-[11px] text-slate-600">
                           {student.dietaryPreference}
-                        </td>
-                        <td className="px-3 py-2.5 text-right">
+                        </TableCell>
+                        <TableCell className="text-right">
                           {marked ? (
-                            <span className="inline-flex items-center gap-1 rounded bg-emerald-100 dark:bg-emerald-950 px-2.5 py-1 text-[11px] font-bold text-emerald-800 dark:text-emerald-300">
-                              ✓ Present
-                            </span>
+                            <Badge variant="success">✓ Present</Badge>
                           ) : (
-                            <button
-                              type="button"
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => handleMarkPresent(student.enrollmentNumber, student.fullName, 'manual')}
-                              className="rounded-lg bg-brand/10 hover:bg-brand px-3 py-1 text-[11px] font-bold text-brand hover:text-white transition"
                             >
                               + Mark Present
-                            </button>
+                            </Button>
                           )}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Live Attendance History Feed */}
-        <div className="rounded-xl border border-line bg-paper p-5 shadow-sm flex flex-col justify-between">
+        <Card className="flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-line pb-3">
+            <CardHeader>
               <div>
-                <h2 className="text-base font-bold text-ink">Recent Scans</h2>
-                <p className="text-xs text-ink/60">Live verified entries for this meal</p>
+                <CardTitle>Recent Verified Scans</CardTitle>
+                <CardDescription>Live entries recorded for {mealType}</CardDescription>
               </div>
-              <span className="rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-bold">
-                {recentAttendance.length} records
-              </span>
-            </div>
+              <Badge variant="primary">{recentAttendance.length} records</Badge>
+            </CardHeader>
 
-            <div className="mt-3 space-y-2 max-h-[500px] overflow-y-auto">
+            <CardContent className="space-y-2 max-h-[500px] overflow-y-auto">
               {recentAttendance.length === 0 ? (
-                <div className="text-center py-10 text-xs text-ink/50">
-                  <span className="text-2xl block mb-1">📋</span>
-                  No scans recorded yet for {mealType}
-                </div>
+                <EmptyState
+                  icon="📋"
+                  title="No Scans Yet"
+                  description={`No verified checks recorded yet for ${mealType}.`}
+                />
               ) : (
                 recentAttendance.map((rec) => (
                   <div
                     key={rec._id}
-                    className="flex items-center justify-between rounded-lg border border-line p-2.5 bg-stone-50/50 dark:bg-stone-900/40 text-xs"
+                    className="flex items-center justify-between rounded-xl border border-slate-100 p-2.5 bg-slate-50 text-xs"
                   >
                     <div>
-                      <div className="font-bold text-ink">{rec.studentId?.fullName ?? rec.studentRef}</div>
-                      <div className="text-[10px] text-ink/50 font-mono">
+                      <div className="font-bold text-slate-900">{rec.studentId?.fullName ?? rec.studentRef}</div>
+                      <div className="text-[10px] text-slate-400 font-mono">
                         {rec.studentRef} • {new Date(rec.scannedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className="rounded bg-stone-200 dark:bg-stone-800 px-1.5 py-0.5 text-[10px] font-mono uppercase text-ink/70">
-                        {rec.method}
-                      </span>
+                      <Badge variant="neutral">{rec.method}</Badge>
                       {rec.offlineSynced && (
                         <span className="block text-[9px] text-amber-600 font-bold mt-0.5">
                           Synced
@@ -633,96 +624,71 @@ export default function AttendancePage() {
                   </div>
                 ))
               )}
-            </div>
+            </CardContent>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-line text-[11px] text-ink/60 text-center">
+          <div className="p-4 border-t border-slate-100 text-[11px] text-slate-400 text-center">
             Idempotent UUID guaranteed. Duplicates automatically deduplicated.
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Offline Queue Modal */}
-      {isQueueModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-xl rounded-2xl border border-line bg-paper p-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-line pb-3">
-              <div>
-                <h3 className="text-base font-bold text-ink">Pending Offline Attendance Queue</h3>
-                <p className="text-xs text-ink/60">{pendingScans.length} records waiting to synchronize</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsQueueModalOpen(false)}
-                className="text-sm text-ink/60 hover:text-ink"
+      <Modal
+        isOpen={isQueueModalOpen}
+        onClose={() => setIsQueueModalOpen(false)}
+        title="Pending Offline Attendance Queue"
+        description={`${pendingScans.length} records waiting to synchronize`}
+      >
+        <div className="max-h-[350px] overflow-y-auto space-y-2">
+          {pendingScans.length === 0 ? (
+            <p className="text-center py-8 text-xs text-slate-400">
+              Local terminal queue is clean. All scans are synchronized.
+            </p>
+          ) : (
+            pendingScans.map((item) => (
+              <div
+                key={item.clientUuid}
+                className="flex items-center justify-between rounded-xl border border-slate-100 p-3 bg-slate-50 text-xs"
               >
-                ✕
-              </button>
-            </div>
-
-            <div className="mt-4 max-h-[350px] overflow-y-auto space-y-2">
-              {pendingScans.length === 0 ? (
-                <div className="text-center py-8 text-xs text-ink/60">
-                  Local queue is empty. All scans are synchronized with server.
-                </div>
-              ) : (
-                pendingScans.map((item) => (
-                  <div
-                    key={item.clientUuid}
-                    className="flex items-center justify-between rounded-lg border border-line p-2.5 bg-stone-50 dark:bg-stone-900/40 text-xs"
-                  >
-                    <div>
-                      <span className="font-bold text-ink">{item.studentName || item.studentRef}</span>
-                      <div className="text-[10px] text-ink/50 font-mono">
-                        {item.studentRef} • {item.mealType} • {item.serviceDate}
-                      </div>
-                      {item.error && (
-                        <div className="text-[10px] text-red-600 font-semibold mt-0.5">
-                          Failed: {item.error}
-                        </div>
-                      )}
-                    </div>
-                    <span
-                      className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase ${
-                        item.status === 'failed'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-amber-100 text-amber-800'
-                      }`}
-                    >
-                      {item.status}
-                    </span>
+                <div>
+                  <span className="font-bold text-slate-900">{item.studentName || item.studentRef}</span>
+                  <div className="text-[10px] text-slate-400 font-mono">
+                    {item.studentRef} • {item.mealType} • {item.serviceDate}
                   </div>
-                ))
-              )}
-            </div>
-
-            <div className="mt-6 flex justify-between items-center pt-3 border-t border-line">
-              <span className="text-[11px] text-ink/60">
-                Network: {isOnline ? 'Available' : 'Unavailable'}
-              </span>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsQueueModalOpen(false)}
-                  className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-ink"
-                >
-                  Close
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await handleTriggerSync();
-                  }}
-                  disabled={isSyncing || !isOnline || pendingScans.length === 0}
-                  className="rounded-lg bg-brand px-4 py-1.5 text-xs font-bold text-white shadow hover:opacity-90 disabled:opacity-40"
-                >
-                  {isSyncing ? 'Syncing...' : 'Sync Now'}
-                </button>
+                </div>
+                <Badge variant={item.status === 'failed' ? 'danger' : 'warning'}>
+                  {item.status}
+                </Badge>
               </div>
-            </div>
+            ))
+          )}
+        </div>
+
+        <div className="mt-6 flex justify-between items-center pt-3 border-t border-slate-100">
+          <span className="text-[11px] text-slate-400">
+            Network: {isOnline ? 'Online' : 'Offline'}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsQueueModalOpen(false)}
+            >
+              Close
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              loading={isSyncing}
+              disabled={!isOnline || pendingScans.length === 0}
+              onClick={handleTriggerSync}
+            >
+              Sync Now
+            </Button>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

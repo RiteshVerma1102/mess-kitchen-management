@@ -13,36 +13,36 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="rounded-2xl border border-line bg-paper p-8 shadow-xl">
+    <div className="rounded-3xl border border-slate-100 bg-white p-8 sm:p-10 shadow-xl">
       <div className="text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-2xl text-amber-600 shadow-sm">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-50 text-2xl text-teal-800 border border-teal-100 shadow-2xs">
           🔑
         </div>
-        <h2 className="mt-4 text-2xl font-bold tracking-tight text-ink">Reset Password</h2>
-        <p className="mt-1 text-xs text-ink/70">
-          Enter your university email to receive recovery instructions.
+        <h2 className="mt-4 text-2xl font-black tracking-tight text-slate-900">Reset Password</h2>
+        <p className="mt-1 text-xs text-slate-500">
+          Enter your university email to receive account recovery instructions.
         </p>
       </div>
 
       {submitted ? (
-        <div className="mt-6 rounded-lg border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 p-4 text-center">
-          <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">
+        <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-5 text-center">
+          <p className="text-sm font-bold text-emerald-900">
             Reset Link Dispatched
           </p>
-          <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-300">
-            If an active account exists for <span className="font-semibold">{email}</span>, password reset credentials have been routed to the institution administrator.
+          <p className="mt-1.5 text-xs text-emerald-800 leading-relaxed">
+            If an active account exists for <span className="font-bold">{email}</span>, password reset credentials have been routed to the institutional administrator.
           </p>
           <Link
             href="/login"
-            className="mt-4 inline-block text-xs font-semibold text-brand underline"
+            className="mt-4 inline-block text-xs font-bold text-teal-800 hover:underline"
           >
-            Return to Login
+            ← Return to Sign In
           </Link>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label htmlFor="recoveryEmail" className="block text-xs font-semibold text-ink/80">
+            <label htmlFor="recoveryEmail" className="block text-xs font-bold text-slate-700 mb-1.5">
               Registered University Email
             </label>
             <input
@@ -51,20 +51,20 @@ export default function ForgotPasswordPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none"
+              className="block w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-800 shadow-2xs focus:border-teal-700 focus:outline-none focus:ring-1 focus:ring-teal-700 transition"
               placeholder="e.g. manager@thapar.edu"
             />
           </div>
 
           <button
             type="submit"
-            className="flex w-full items-center justify-center rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90"
+            className="flex w-full items-center justify-center rounded-xl bg-teal-800 px-4 py-3 text-xs font-bold text-white shadow-md shadow-teal-900/10 hover:bg-teal-900 transition"
           >
             Submit Recovery Request
           </button>
 
-          <div className="text-center">
-            <Link href="/login" className="text-xs text-ink/70 hover:underline">
+          <div className="text-center pt-2">
+            <Link href="/login" className="text-xs text-slate-500 hover:text-slate-800 font-medium">
               Remember your password? Sign in
             </Link>
           </div>

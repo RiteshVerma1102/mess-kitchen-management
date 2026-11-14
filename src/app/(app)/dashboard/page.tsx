@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/components/Toast';
+import { AiAssistantModal } from '@/components/ui/AiAssistantModal';
 
 interface DemandPoint {
   day: string;
@@ -118,6 +119,7 @@ export default function DashboardPage() {
   const [loadingAi, setLoadingAi] = useState(false);
   const [selectedTimeRange, setSelectedTimeRange] = useState('Last 30 Days');
   const [hoveredPoint, setHoveredPoint] = useState<number | null>(2);
+  const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
 
   useEffect(() => {
     async function fetchMetrics() {
@@ -366,6 +368,14 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsAiAssistantOpen(true)}
+            className="rounded-xl border border-teal-300 bg-teal-100/70 hover:bg-teal-200 px-3.5 py-2 text-xs font-bold text-teal-900 shadow-2xs transition flex items-center gap-1.5"
+          >
+            <span>✨</span>
+            <span>Ask AI Assistant</span>
+          </button>
           <Link
             href="/forecast"
             className="rounded-xl bg-teal-800 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-teal-900 transition flex items-center gap-1.5"
@@ -940,6 +950,22 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Floating AI Assistant Trigger Button & Dialog */}
+      <button
+        type="button"
+        onClick={() => setIsAiAssistantOpen(true)}
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 rounded-full bg-teal-800 text-white px-4 py-3 shadow-xl hover:bg-teal-900 transition hover:scale-105 active:scale-95 border border-teal-600/40"
+        aria-label="Open AI Kitchen Assistant"
+      >
+        <span className="text-base">✨</span>
+        <span className="text-xs font-extrabold hidden sm:inline">Ask AI Kitchen Assistant</span>
+      </button>
+
+      <AiAssistantModal
+        isOpen={isAiAssistantOpen}
+        onClose={() => setIsAiAssistantOpen(false)}
+      />
     </div>
   );
 }

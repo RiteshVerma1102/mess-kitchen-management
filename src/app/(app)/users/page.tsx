@@ -2,6 +2,14 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/components/Toast';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Input, Select } from '@/components/ui/Input';
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeaderCell } from '@/components/ui/Table';
+import { Modal } from '@/components/ui/Modal';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 interface User {
   _id: string;
@@ -100,293 +108,249 @@ export default function UserManagementPage() {
       setPassword('');
       fetchUsers();
     } catch {
-      error('Network Error', 'Could not communicate with user API');
+      error('Network Error', 'Failed to communicate with auth services');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDeactivate = async (userId: string) => {
+  const handleToggleActive = async (userId: string, currentActive: boolean) => {
     try {
-      const res = await fetch(`/api/v1/users/${userId}`, { method: 'DELETE' });
+      const res = await fetch(`/api/v1/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: !currentActive }),
+      });
+
       if (res.ok) {
-        success('User Deactivated', 'Account has been safely set to inactive');
+        success('Status Updated', currentActive ? 'User account deactivated' : 'User account reactivated');
         setDeactivatingUserId(null);
         fetchUsers();
       } else {
-        const body = await res.json();
-        error('Action Failed', body?.error?.message ?? 'Could not deactivate user');
+        error('Error', 'Cannot change user status');
       }
     } catch {
-      error('Network Error', 'Failed to execute deactivation');
+      error('Network Error', 'Failed to reach user management server');
     }
   };
 
-  const roleNameMap: Record<string, string> = {
-    admin: 'Super Admin',
-    mess_admin: 'Mess Admin',
-    mess_manager: 'Mess Manager',
-    kitchen_staff: 'Kitchen Staff / Operator',
-    finance_officer: 'Finance Officer (Viewer)',
-    student: 'Student Resident',
+  const roleBadgeMap: Record<User['role'], { variant: 'primary' | 'success' | 'warning' | 'info' | 'neutral' | 'danger'; label: string }> = {
+    admin: { variant: 'danger', label: 'Super Admin' },
+    mess_admin: { variant: 'primary', label: 'Mess Admin' },
+    mess_manager: { variant: 'warning', label: 'Mess Manager' },
+    kitchen_staff: { variant: 'info', label: 'Kitchen Staff' },
+    finance_officer: { variant: 'success', label: 'Finance Officer' },
+    student: { variant: 'neutral', label: 'Student Resident' },
   };
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-ink">User & Staff Management</h1>
-          <p className="text-xs text-ink/70 mt-1">
-            Role-Based Access Control (RBAC), dining hall assignments & institutional credentials.
-          </p>
-        </div>
+      {/* Header Bar */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 border border-teal-100 text-teal-800 font-bold text-lg">
+              👥
+            </div>
+            <div>
+              <CardTitle>Staff & User Access Management</CardTitle>
+              <CardDescription>
+                Assign staff roles, mess hall permissions, and institutional security access
+              </CardDescription>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setIsCreateOpen(true)}
+              icon={<span>+</span>}
+            >
+              Enrol New Staff
+            </Button>
+          </div>
+        </CardHeader>
 
-        <button
-          type="button"
-          onClick={() => setIsCreateOpen(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-2 text-xs font-semibold text-white shadow hover:opacity-95"
-        >
-          <span>+</span>
-          <span>Add New User</span>
-        </button>
-      </div>
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex-1 min-w-[240px]">
+              <Input
+                type="text"
+                placeholder="Search by name or email..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                icon={
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                }
+              />
+            </div>
 
-      {/* Filter / Search Bar */}
-      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-paper p-4 shadow-sm">
-        <input
-          type="text"
-          placeholder="Search by full name or email..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 min-w-[240px] rounded-lg border border-line bg-paper px-3 py-1.5 text-xs focus:border-brand focus:outline-none"
-        />
-
-        <select
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
-          className="rounded-lg border border-line bg-paper px-3 py-1.5 text-xs text-ink"
-        >
-          <option value="">All RBAC Roles</option>
-          <option value="admin">Super Admin</option>
-          <option value="mess_admin">Mess Admin</option>
-          <option value="mess_manager">Mess Manager</option>
-          <option value="kitchen_staff">Kitchen Staff</option>
-          <option value="finance_officer">Finance Officer</option>
-          <option value="student">Student</option>
-        </select>
-
-        <span className="text-xs font-semibold text-ink/70">
-          {total} Total Users
-        </span>
-      </div>
+            <div className="w-52">
+              <Select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+              >
+                <option value="">All Security Roles</option>
+                <option value="admin">Super Admin</option>
+                <option value="mess_admin">Mess Admin</option>
+                <option value="mess_manager">Mess Manager</option>
+                <option value="kitchen_staff">Kitchen Staff</option>
+                <option value="finance_officer">Finance Officer</option>
+                <option value="student">Student</option>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Users Table */}
       {loading ? (
-        <div className="rounded-xl border border-line bg-paper p-12 text-center text-xs text-ink/60 animate-pulse">
-          Loading users directory...
-        </div>
+        <Card className="p-6 space-y-4">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </Card>
       ) : users.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-line bg-paper p-12 text-center">
-          <span className="text-3xl">👥</span>
-          <p className="mt-2 text-sm font-semibold text-ink">No users found</p>
-          <p className="text-xs text-ink/60 mt-1">Create an institutional user account</p>
-          <button
-            type="button"
-            onClick={() => setIsCreateOpen(true)}
-            className="mt-4 rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white"
-          >
-            + Add New User
-          </button>
-        </div>
+        <EmptyState
+          icon="👥"
+          title="No Users Found"
+          description="Try broadening your role filter or search keyword."
+          actionText="Enrol First Staff"
+          onAction={() => setIsCreateOpen(true)}
+        />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-line bg-paper shadow-sm">
-          <table className="w-full text-left text-xs">
-            <thead className="border-b border-line bg-stone-50 dark:bg-stone-900/60 text-ink/70 font-semibold uppercase tracking-wider">
-              <tr>
-                <th className="px-4 py-3">Full Name</th>
-                <th className="px-4 py-3">Email Address</th>
-                <th className="px-4 py-3">Assigned Role</th>
-                <th className="px-4 py-3">Hall Scope</th>
-                <th className="px-4 py-3">Account Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line text-ink">
-              {users.map((u) => (
-                <tr key={u._id} className="hover:bg-stone-50/50 dark:hover:bg-stone-900/40 transition">
-                  <td className="px-4 py-3.5 font-semibold">
-                    {u.fullName}
-                  </td>
-                  <td className="px-4 py-3 text-ink/80 font-mono text-[11px]">
-                    {u.email}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="rounded bg-brand/10 dark:bg-brand/20 px-2 py-0.5 text-[11px] font-semibold text-brand">
-                      {roleNameMap[u.role] ?? u.role}
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableHeaderCell>Full Name & Email</TableHeaderCell>
+              <TableHeaderCell>Role & Permissions</TableHeaderCell>
+              <TableHeaderCell>Assigned Mess Halls</TableHeaderCell>
+              <TableHeaderCell>Status</TableHeaderCell>
+              <TableHeaderCell>Enrolled Date</TableHeaderCell>
+              <TableHeaderCell className="text-right">Actions</TableHeaderCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {users.map((u) => {
+              const badgeMeta = roleBadgeMap[u.role] || { variant: 'neutral', label: u.role };
+              return (
+                <TableRow key={u._id}>
+                  <TableCell>
+                    <p className="font-bold text-slate-900">{u.fullName}</p>
+                    <p className="text-[11px] text-slate-400">{u.email}</p>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={badgeMeta.variant} withDot>
+                      {badgeMeta.label}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-slate-600">
+                      {u.hallIds && u.hallIds.length > 0
+                        ? u.hallIds.map((h) => h.replace('_', ' ').toUpperCase()).join(', ')
+                        : 'All Campus Halls'}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 text-[11px] font-mono uppercase text-ink/70">
-                    {u.hallIds && u.hallIds.length > 0 ? u.hallIds.join(', ') : 'All Halls'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                        u.active
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                          : 'bg-stone-200 text-stone-700 dark:bg-stone-800 dark:text-stone-300'
-                      }`}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={u.active ? 'success' : 'danger'}>
+                      {u.active ? 'Active' : 'Suspended'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-slate-500 text-[11px]">
+                    {new Date(u.createdAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant={u.active ? 'outline' : 'secondary'}
+                      size="sm"
+                      onClick={() => handleToggleActive(u._id, u.active)}
                     >
-                      {u.active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {u.active && (
-                      <button
-                        type="button"
-                        onClick={() => setDeactivatingUserId(u._id)}
-                        className="rounded px-2.5 py-1 text-[11px] font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition"
-                      >
-                        Deactivate
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                      {u.active ? 'Suspend' : 'Activate'}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       )}
 
-      {/* Deactivate Confirm Modal */}
-      {deactivatingUserId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-sm rounded-xl border border-line bg-paper p-6 shadow-xl">
-            <h3 className="text-base font-bold text-ink">Confirm Deactivation</h3>
-            <p className="mt-2 text-xs text-ink/70">
-              The user will no longer be permitted to log in or perform kitchen operations. Historical logs and audit records will remain preserved.
-            </p>
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setDeactivatingUserId(null)}
-                className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-ink"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDeactivate(deactivatingUserId)}
-                className="rounded-lg bg-red-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow hover:opacity-90"
-              >
-                Deactivate
-              </button>
-            </div>
+      {/* Enrol Staff Modal */}
+      <Modal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        title="Enrol New Staff Member"
+        description="Provide account details and assign RBAC role permissions"
+      >
+        <form onSubmit={handleCreateUser} className="space-y-4">
+          <Input
+            label="Full Name"
+            placeholder="e.g. Ramesh Kumar"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            required
+          />
+
+          <Input
+            label="Email Address"
+            type="email"
+            placeholder="e.g. ramesh.chef@thapar.edu"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+
+          <Input
+            label="Password"
+            type="password"
+            placeholder="Minimum 8 characters"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+
+          <Select
+            label="Staff Role"
+            value={role}
+            onChange={(e) => setRole(e.target.value as User['role'])}
+          >
+            <option value="kitchen_staff">Kitchen Staff / Chef</option>
+            <option value="mess_manager">Mess Manager</option>
+            <option value="mess_admin">Mess Admin</option>
+            <option value="finance_officer">Finance Officer</option>
+            <option value="admin">Super Admin</option>
+          </Select>
+
+          <Select
+            label="Assigned Mess Hall"
+            value={hallIds[0] || 'hall_a'}
+            onChange={(e) => setHallIds([e.target.value])}
+          >
+            <option value="hall_a">Hostel A & B (Boys Mess)</option>
+            <option value="hall_b">Hostel C & D (Girls Mess)</option>
+            <option value="hall_c">International Hostel Dining</option>
+          </Select>
+
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsCreateOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={saving}
+            >
+              Enrol Account
+            </Button>
           </div>
-        </div>
-      )}
-
-      {/* Create User Modal */}
-      {isCreateOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-line bg-paper p-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-line pb-3">
-              <h2 className="text-base font-bold text-ink">Add Institutional User</h2>
-              <button
-                type="button"
-                onClick={() => setIsCreateOpen(false)}
-                className="text-sm text-ink/60 hover:text-ink"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateUser} className="mt-4 space-y-3 text-xs">
-              <div>
-                <label className="block font-semibold text-ink/80">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-1.5 text-xs"
-                  placeholder="e.g. Gurpreet Singh"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-ink/80">University Email</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-1.5 text-xs"
-                  placeholder="staff@thapar.edu"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-ink/80">Role</label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as User['role'])}
-                  className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-1.5 text-xs"
-                >
-                  <option value="kitchen_staff">Kitchen Staff / Attendance Operator</option>
-                  <option value="mess_manager">Mess Manager</option>
-                  <option value="mess_admin">Mess Admin</option>
-                  <option value="finance_officer">Finance Officer (Read-only)</option>
-                  <option value="student">Student</option>
-                  <option value="admin">Super Admin</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-ink/80">Assigned Dining Hall</label>
-                <select
-                  value={hallIds[0] || 'hall_a'}
-                  onChange={(e) => setHallIds([e.target.value])}
-                  className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-1.5 text-xs"
-                >
-                  <option value="hall_a">Hostel A & B (Boys Mess)</option>
-                  <option value="hall_b">Hostel C & D (Girls Mess)</option>
-                  <option value="hall_c">Post-Graduate Dining Hall</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-ink/80">Temporary Password</label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-1.5 text-xs"
-                  placeholder="Min 8 chars, 1 uppercase, 1 number"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-line">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateOpen(false)}
-                  className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-ink"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-white shadow hover:opacity-90 disabled:opacity-50"
-                >
-                  {saving ? 'Creating...' : 'Enroll User'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+        </form>
+      </Modal>
     </div>
   );
 }

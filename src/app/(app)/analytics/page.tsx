@@ -176,7 +176,7 @@ export default function AnalyticsDashboardPage() {
       {/* Header and Controls */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-ink">Food Waste, Cost & Demand Analytics</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Food Waste, Cost & Demand Analytics</h1>
           <p className="text-sm text-slate-500">
             Real-time financial audits, plate & prep wastage metrics, forecast accuracy (MAPE), and CSV reports
           </p>
@@ -184,7 +184,7 @@ export default function AnalyticsDashboardPage() {
 
         {/* Global Controls */}
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 rounded-xl border border-line bg-paper px-3 py-1.5 shadow-sm text-xs">
+          <div className="flex items-center gap-2 rounded-xl border border-slate-100 bg-white px-3 py-1.5 shadow-sm text-xs">
             <span className="font-semibold text-slate-500">Range:</span>
             <input
               type="date"
@@ -204,7 +204,7 @@ export default function AnalyticsDashboardPage() {
           <select
             value={messHallId}
             onChange={(e) => setMessHallId(e.target.value)}
-            className="rounded-xl border border-line bg-paper px-3 py-2 text-xs font-medium shadow-sm focus:border-brand focus:outline-none"
+            className="rounded-xl border border-slate-100 bg-white px-3 py-2 text-xs font-medium shadow-sm focus:border-brand focus:outline-none"
           >
             <option value="hall_a">Main Dining Hall (Hall A)</option>
             <option value="hall_b">Annex Kitchen (Hall B)</option>
@@ -212,7 +212,7 @@ export default function AnalyticsDashboardPage() {
 
           <button
             onClick={() => handleExportCSV('daily_operations')}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-paper px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-100 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
           >
             <span>📥</span>
             <span>Export CSV</span>
@@ -222,25 +222,25 @@ export default function AnalyticsDashboardPage() {
 
       {/* KPI Cards Ribbon (Inspired by screenshots 1, 5, 7, 11) */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-8">
-        <div className="rounded-xl border border-line bg-paper p-3 shadow-sm">
+        <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
           <span className="text-[10px] font-semibold uppercase text-slate-500">Total Prepared</span>
           <p className="mt-1 text-lg font-bold text-sky-700">{data ? data.kpis.totalFoodPrepared : 0}</p>
           <span className="text-[10px] text-slate-400">Portions cooked</span>
         </div>
 
-        <div className="rounded-xl border border-line bg-paper p-3 shadow-sm">
+        <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
           <span className="text-[10px] font-semibold uppercase text-slate-500">Meals Served</span>
           <p className="mt-1 text-lg font-bold text-emerald-700">{data ? data.kpis.totalMealsServed : 0}</p>
           <span className="text-[10px] text-slate-400">Student intake</span>
         </div>
 
-        <div className="rounded-xl border border-line bg-paper p-3 shadow-sm">
+        <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
           <span className="text-[10px] font-semibold uppercase text-slate-500">Total Food Waste</span>
           <p className="mt-1 text-lg font-bold text-rose-600">{data ? `${data.kpis.totalFoodWasteKg} kg` : '0 kg'}</p>
           <span className="text-[10px] text-slate-400">Logged weight</span>
         </div>
 
-        <div className="rounded-xl border border-line bg-paper p-3 shadow-sm">
+        <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
           <span className="text-[10px] font-semibold uppercase text-slate-500">Waste Rate</span>
           <p className={`mt-1 text-lg font-bold ${data && data.kpis.wastePercentage > 10 ? 'text-rose-600' : 'text-emerald-600'}`}>
             {data ? `${data.kpis.wastePercentage}%` : '0%'}
@@ -248,7 +248,7 @@ export default function AnalyticsDashboardPage() {
           <span className="text-[10px] text-slate-400">Target: &lt;8%</span>
         </div>
 
-        <div className="rounded-xl border border-line bg-paper p-3 shadow-sm">
+        <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
           <span className="text-[10px] font-semibold uppercase text-slate-500">Financial Loss</span>
           <p className="mt-1 text-lg font-bold text-rose-600">
             ₹{data ? (data.kpis.estimatedWasteLossPaise / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 }) : '0'}
@@ -256,23 +256,23 @@ export default function AnalyticsDashboardPage() {
           <span className="text-[10px] text-slate-400">Wasted capital</span>
         </div>
 
-        <div className="rounded-xl border border-line bg-paper p-3 shadow-sm">
+        <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
           <span className="text-[10px] font-semibold uppercase text-slate-500">Total Spend</span>
-          <p className="mt-1 text-lg font-bold text-ink">
+          <p className="mt-1 text-lg font-bold text-slate-900">
             ₹{data ? (data.kpis.totalExpenditurePaise / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 }) : '0'}
           </p>
           <span className="text-[10px] text-slate-400">Kitchen budget</span>
         </div>
 
-        <div className="rounded-xl border border-line bg-paper p-3 shadow-sm">
+        <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
           <span className="text-[10px] font-semibold uppercase text-slate-500">Cost / Meal</span>
-          <p className="mt-1 text-lg font-bold text-brand">
+          <p className="mt-1 text-lg font-bold text-teal-800">
             ₹{data ? (data.kpis.costPerMealPaise / 100).toFixed(2) : '0.00'}
           </p>
           <span className="text-[10px] text-slate-400">Per student plate</span>
         </div>
 
-        <div className="rounded-xl border border-line bg-paper p-3 shadow-sm">
+        <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
           <span className="text-[10px] font-semibold uppercase text-slate-500">Forecast Error</span>
           <p className={`mt-1 text-lg font-bold ${data && data.kpis.overallMape > 15 ? 'text-amber-600' : 'text-emerald-600'}`}>
             {data ? `${data.kpis.overallMape}%` : '0%'}
@@ -282,13 +282,13 @@ export default function AnalyticsDashboardPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-line">
+      <div className="flex border-b border-slate-100">
         <button
           onClick={() => setActiveTab('overview')}
           className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition-colors ${
             activeTab === 'overview'
-              ? 'border-brand text-brand'
-              : 'border-transparent text-slate-500 hover:text-ink'
+              ? 'border-brand text-teal-800'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
           }`}
         >
           <span>📊</span>
@@ -299,8 +299,8 @@ export default function AnalyticsDashboardPage() {
           onClick={() => setActiveTab('waste')}
           className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition-colors ${
             activeTab === 'waste'
-              ? 'border-brand text-brand'
-              : 'border-transparent text-slate-500 hover:text-ink'
+              ? 'border-brand text-teal-800'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
           }`}
         >
           <span>🗑️</span>
@@ -311,8 +311,8 @@ export default function AnalyticsDashboardPage() {
           onClick={() => setActiveTab('costs')}
           className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition-colors ${
             activeTab === 'costs'
-              ? 'border-brand text-brand'
-              : 'border-transparent text-slate-500 hover:text-ink'
+              ? 'border-brand text-teal-800'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
           }`}
         >
           <span>💰</span>
@@ -323,8 +323,8 @@ export default function AnalyticsDashboardPage() {
           onClick={() => setActiveTab('accuracy')}
           className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition-colors ${
             activeTab === 'accuracy'
-              ? 'border-brand text-brand'
-              : 'border-transparent text-slate-500 hover:text-ink'
+              ? 'border-brand text-teal-800'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
           }`}
         >
           <span>🎯</span>
@@ -335,8 +335,8 @@ export default function AnalyticsDashboardPage() {
           onClick={() => setActiveTab('reports')}
           className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition-colors ${
             activeTab === 'reports'
-              ? 'border-brand text-brand'
-              : 'border-transparent text-slate-500 hover:text-ink'
+              ? 'border-brand text-teal-800'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
           }`}
         >
           <span>📑</span>
@@ -359,9 +359,9 @@ export default function AnalyticsDashboardPage() {
                 costPaise: 0,
               };
               return (
-                <div key={meal} className="rounded-xl border border-line bg-paper p-4 shadow-sm">
-                  <div className="flex items-center justify-between border-b border-line pb-2">
-                    <h3 className="font-bold capitalize text-ink">{meal}</h3>
+                <div key={meal} className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <h3 className="font-bold capitalize text-slate-900">{meal}</h3>
                     <span className="text-xs font-semibold text-slate-500">
                       ₹{(item.costPaise / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                     </span>
@@ -369,7 +369,7 @@ export default function AnalyticsDashboardPage() {
                   <div className="mt-3 space-y-2 text-xs">
                     <div className="flex justify-between text-slate-600">
                       <span>Prepared:</span>
-                      <strong className="text-ink">{item.actualPrepared} portions</strong>
+                      <strong className="text-slate-900">{item.actualPrepared} portions</strong>
                     </div>
                     <div className="flex justify-between text-slate-600">
                       <span>Served:</span>
@@ -390,11 +390,11 @@ export default function AnalyticsDashboardPage() {
           </div>
 
           {/* Daily Trends Table */}
-          <div className="rounded-xl border border-line bg-paper p-5 shadow-sm">
-            <h2 className="text-base font-bold text-ink">Daily Operations Timeline</h2>
+          <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+            <h2 className="text-base font-bold text-slate-900">Daily Operations Timeline</h2>
             <p className="text-xs text-slate-500">Historical daily audit of planning, cooking, servings, and waste</p>
 
-            <div className="mt-4 overflow-x-auto rounded-lg border border-line">
+            <div className="mt-4 overflow-x-auto rounded-lg border border-slate-100">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 text-slate-600">
                   <tr>
@@ -425,7 +425,7 @@ export default function AnalyticsDashboardPage() {
                   ) : (
                     data.dailyTrends.map((d) => (
                       <tr key={d.date} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 font-semibold text-ink">{d.date}</td>
+                        <td className="px-4 py-3 font-semibold text-slate-900">{d.date}</td>
                         <td className="px-4 py-3 text-slate-600">{d.predictedCount || '—'}</td>
                         <td className="px-4 py-3 text-slate-600">{d.plannedPortions}</td>
                         <td className="px-4 py-3 font-bold text-sky-700">{d.actualPrepared}</td>
@@ -433,7 +433,7 @@ export default function AnalyticsDashboardPage() {
                         <td className="px-4 py-3 font-medium text-amber-600">{d.leftoverPortions}</td>
                         <td className="px-4 py-3 font-semibold text-rose-600">{d.wasteKg} kg</td>
                         <td className="px-4 py-3 text-slate-700">₹{(d.wasteLossPaise / 100).toFixed(2)}</td>
-                        <td className="px-4 py-3 font-semibold text-ink">
+                        <td className="px-4 py-3 font-semibold text-slate-900">
                           ₹{(d.expenditurePaise / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                         </td>
                       </tr>
@@ -451,7 +451,7 @@ export default function AnalyticsDashboardPage() {
         <div className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h2 className="text-base font-bold text-ink">Comprehensive Waste Breakdown & Causes</h2>
+              <h2 className="text-base font-bold text-slate-900">Comprehensive Waste Breakdown & Causes</h2>
               <p className="text-xs text-slate-500">
                 Segregated tracking across kitchen prep scraps, unserved batch leftovers, plate waste and spoilage
               </p>
@@ -468,7 +468,7 @@ export default function AnalyticsDashboardPage() {
 
           {/* Waste Categories Grid */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div className="rounded-xl border border-line bg-paper p-4 shadow-sm">
+            <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
               <span className="text-xs font-semibold uppercase text-slate-500">Unserved Leftovers</span>
               <p className="mt-2 text-2xl font-bold text-rose-600">
                 {data ? `${(data.wasteCategoryDistribution['unserved_leftover'] || 0).toFixed(1)} kg` : '0 kg'}
@@ -476,7 +476,7 @@ export default function AnalyticsDashboardPage() {
               <span className="text-xs text-slate-400">Excess preparation</span>
             </div>
 
-            <div className="rounded-xl border border-line bg-paper p-4 shadow-sm">
+            <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
               <span className="text-xs font-semibold uppercase text-slate-500">Kitchen Prep Scrap</span>
               <p className="mt-2 text-2xl font-bold text-amber-600">
                 {data ? `${(data.wasteCategoryDistribution['kitchen_prep'] || 0).toFixed(1)} kg` : '0 kg'}
@@ -484,7 +484,7 @@ export default function AnalyticsDashboardPage() {
               <span className="text-xs text-slate-400">Peelings, trimmings & burns</span>
             </div>
 
-            <div className="rounded-xl border border-line bg-paper p-4 shadow-sm">
+            <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
               <span className="text-xs font-semibold uppercase text-slate-500">Student Plate Waste</span>
               <p className="mt-2 text-2xl font-bold text-sky-700">
                 {data ? `${(data.wasteCategoryDistribution['student_plate_waste'] || 0).toFixed(1)} kg` : '0 kg'}
@@ -492,7 +492,7 @@ export default function AnalyticsDashboardPage() {
               <span className="text-xs text-slate-400">Returned uneaten plates</span>
             </div>
 
-            <div className="rounded-xl border border-line bg-paper p-4 shadow-sm">
+            <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
               <span className="text-xs font-semibold uppercase text-slate-500">Storage Spoilage</span>
               <p className="mt-2 text-2xl font-bold text-purple-700">
                 {data ? `${(data.wasteCategoryDistribution['spoilage'] || 0).toFixed(1)} kg` : '0 kg'}
@@ -502,12 +502,12 @@ export default function AnalyticsDashboardPage() {
           </div>
 
           {/* Top Causes List */}
-          <div className="rounded-xl border border-line bg-paper p-5 shadow-sm">
-            <h3 className="text-sm font-bold text-ink">Primary Root Causes of Waste</h3>
+          <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-900">Primary Root Causes of Waste</h3>
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {data && data.topWastedReasons.length > 0 ? (
                 data.topWastedReasons.map((r) => (
-                  <div key={r.reason} className="rounded-lg border border-line bg-slate-50 p-3">
+                  <div key={r.reason} className="rounded-lg border border-slate-100 bg-slate-50 p-3">
                     <p className="text-xs font-semibold capitalize text-slate-700">{r.reason.replace(/_/g, ' ')}</p>
                     <p className="mt-1 text-lg font-bold text-rose-600">{r.quantityKg} kg</p>
                     <span className="text-[10px] text-slate-400">{r.count} incidents recorded</span>
@@ -520,9 +520,9 @@ export default function AnalyticsDashboardPage() {
           </div>
 
           {/* Waste Logs Table */}
-          <div className="rounded-xl border border-line bg-paper p-5 shadow-sm">
-            <h3 className="text-sm font-bold text-ink">Recent Waste Logs</h3>
-            <div className="mt-3 overflow-x-auto rounded-lg border border-line">
+          <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-900">Recent Waste Logs</h3>
+            <div className="mt-3 overflow-x-auto rounded-lg border border-slate-100">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 text-slate-600">
                   <tr>
@@ -551,11 +551,11 @@ export default function AnalyticsDashboardPage() {
                   ) : (
                     wasteLogs.map((log) => (
                       <tr key={log._id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 font-semibold text-ink">{log.serviceDate}</td>
+                        <td className="px-4 py-3 font-semibold text-slate-900">{log.serviceDate}</td>
                         <td className="px-4 py-3 capitalize text-slate-600">{log.mealType}</td>
                         <td className="px-4 py-3 capitalize text-slate-700">{log.wasteType.replace(/_/g, ' ')}</td>
                         <td className="px-4 py-3 font-bold text-rose-600">{log.quantityKg} kg</td>
-                        <td className="px-4 py-3 font-semibold text-ink">
+                        <td className="px-4 py-3 font-semibold text-slate-900">
                           ₹{(log.financialLossPaise / 100).toFixed(2)}
                         </td>
                         <td className="px-4 py-3 capitalize text-slate-500">{log.reasonCode.replace(/_/g, ' ')}</td>
@@ -574,26 +574,26 @@ export default function AnalyticsDashboardPage() {
       {activeTab === 'costs' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <div className="rounded-xl border border-line bg-paper p-5 shadow-sm">
-              <h3 className="text-sm font-bold text-ink">Cost Efficiency Metrics</h3>
+            <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+              <h3 className="text-sm font-bold text-slate-900">Cost Efficiency Metrics</h3>
               <div className="mt-4 space-y-4 text-xs">
-                <div className="flex justify-between border-b border-line pb-2">
+                <div className="flex justify-between border-b border-slate-100 pb-2">
                   <span className="text-slate-500">Total Food Expenditure:</span>
-                  <strong className="text-ink text-sm">
+                  <strong className="text-slate-900 text-sm">
                     ₹{data ? (data.kpis.totalExpenditurePaise / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '0'}
                   </strong>
                 </div>
-                <div className="flex justify-between border-b border-line pb-2">
+                <div className="flex justify-between border-b border-slate-100 pb-2">
                   <span className="text-slate-500">Total Meals Served:</span>
                   <strong className="text-emerald-700 text-sm">{data ? data.kpis.totalMealsServed : 0}</strong>
                 </div>
-                <div className="flex justify-between border-b border-line pb-2">
+                <div className="flex justify-between border-b border-slate-100 pb-2">
                   <span className="text-slate-500">Average Cost Per Meal:</span>
-                  <strong className="text-brand text-base">
+                  <strong className="text-teal-800 text-base">
                     ₹{data ? (data.kpis.costPerMealPaise / 100).toFixed(2) : '0.00'}
                   </strong>
                 </div>
-                <div className="flex justify-between border-b border-line pb-2">
+                <div className="flex justify-between border-b border-slate-100 pb-2">
                   <span className="text-slate-500">Financial Loss to Food Waste:</span>
                   <strong className="text-rose-600 text-sm">
                     ₹{data ? (data.kpis.estimatedWasteLossPaise / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '0'}
@@ -602,8 +602,8 @@ export default function AnalyticsDashboardPage() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-line bg-paper p-5 shadow-sm lg:col-span-2">
-              <h3 className="text-sm font-bold text-ink">Meal-Wise Expenditure Breakdown</h3>
+            <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm lg:col-span-2">
+              <h3 className="text-sm font-bold text-slate-900">Meal-Wise Expenditure Breakdown</h3>
               <p className="text-xs text-slate-500">Cost allocation across daily meal services</p>
 
               <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -611,9 +611,9 @@ export default function AnalyticsDashboardPage() {
                   const item = data?.mealBreakdown[m];
                   const cost = item ? item.costPaise / 100 : 0;
                   return (
-                    <div key={m} className="rounded-lg border border-line bg-slate-50 p-3">
+                    <div key={m} className="rounded-lg border border-slate-100 bg-slate-50 p-3">
                       <p className="text-xs font-semibold capitalize text-slate-700">{m}</p>
-                      <p className="mt-1 text-lg font-bold text-ink">
+                      <p className="mt-1 text-lg font-bold text-slate-900">
                         ₹{cost.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                       </p>
                       <span className="text-[10px] text-slate-400">
@@ -632,28 +632,28 @@ export default function AnalyticsDashboardPage() {
       {activeTab === 'accuracy' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-            <div className="rounded-xl border border-line bg-paper p-5 shadow-sm">
+            <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
               <span className="text-xs font-semibold uppercase text-slate-500">Overall MAPE</span>
-              <p className="mt-2 text-3xl font-bold text-brand">{data ? `${data.kpis.overallMape}%` : '0%'}</p>
+              <p className="mt-2 text-3xl font-bold text-teal-800">{data ? `${data.kpis.overallMape}%` : '0%'}</p>
               <p className="mt-1 text-xs text-slate-500">Mean Absolute Percentage Error</p>
               <span className="text-[10px] text-emerald-600">Excludes zero-demand days safely</span>
             </div>
 
-            <div className="rounded-xl border border-line bg-paper p-5 shadow-sm">
+            <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
               <span className="text-xs font-semibold uppercase text-slate-500">Overall MAE</span>
               <p className="mt-2 text-3xl font-bold text-sky-700">{data ? `${data.kpis.overallMae} meals` : '0'}</p>
               <p className="mt-1 text-xs text-slate-500">Mean Absolute Error in Student Headcount</p>
             </div>
 
-            <div className="rounded-xl border border-line bg-paper p-5 shadow-sm">
+            <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
               <span className="text-xs font-semibold uppercase text-slate-500">Valid Sample Size</span>
-              <p className="mt-2 text-3xl font-bold text-ink">{data ? data.kpis.validForecastPoints : 0}</p>
+              <p className="mt-2 text-3xl font-bold text-slate-900">{data ? data.kpis.validForecastPoints : 0}</p>
               <p className="mt-1 text-xs text-slate-500">Recorded attendance checkpoints</p>
             </div>
           </div>
 
-          <div className="rounded-xl border border-line bg-paper p-5 shadow-sm">
-            <h3 className="text-sm font-bold text-ink">Forecast Methodology & Reliability</h3>
+          <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-900">Forecast Methodology & Reliability</h3>
             <p className="mt-2 text-xs leading-relaxed text-slate-600">
               The demand forecast implements an 8-week same-weekday rolling average baseline ($z = 1.645$ for a 90%
               confidence bound), combined with academic calendar multipliers (holidays, exams) and an 8% kitchen safety
@@ -666,30 +666,30 @@ export default function AnalyticsDashboardPage() {
 
       {/* TAB 5: REPORTS & CSV */}
       {activeTab === 'reports' && (
-        <div className="rounded-xl border border-line bg-paper p-6 shadow-sm">
-          <h2 className="text-base font-bold text-ink">Export Institutional Audits & Reports</h2>
+        <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+          <h2 className="text-base font-bold text-slate-900">Export Institutional Audits & Reports</h2>
           <p className="text-xs text-slate-500">
             Generate compliant RFC 4180 CSV spreadsheets for management review, financial auditors, and mess committees
           </p>
 
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="rounded-xl border border-line p-5">
+            <div className="rounded-xl border border-slate-100 p-5">
               <span className="text-2xl">📋</span>
-              <h3 className="mt-2 text-sm font-bold text-ink">Daily Operations Summary</h3>
+              <h3 className="mt-2 text-sm font-bold text-slate-900">Daily Operations Summary</h3>
               <p className="mt-1 text-xs text-slate-500">
                 Covers planned portions, actual cooking volumes, served student headcount, and leftover statistics.
               </p>
               <button
                 onClick={() => handleExportCSV('daily_operations')}
-                className="mt-4 w-full rounded-lg bg-brand py-2 text-xs font-semibold text-white hover:opacity-90"
+                className="mt-4 w-full rounded-lg bg-teal-800 py-2 text-xs font-semibold text-white hover:opacity-90"
               >
                 Download CSV
               </button>
             </div>
 
-            <div className="rounded-xl border border-line p-5">
+            <div className="rounded-xl border border-slate-100 p-5">
               <span className="text-2xl">🗑️</span>
-              <h3 className="mt-2 text-sm font-bold text-ink">Food Waste & Spoilage Log</h3>
+              <h3 className="mt-2 text-sm font-bold text-slate-900">Food Waste & Spoilage Log</h3>
               <p className="mt-1 text-xs text-slate-500">
                 Detailed record of kitchen prep scrap, plate waste, financial loss per incident, and disposal methods.
               </p>
@@ -701,9 +701,9 @@ export default function AnalyticsDashboardPage() {
               </button>
             </div>
 
-            <div className="rounded-xl border border-line p-5">
+            <div className="rounded-xl border border-slate-100 p-5">
               <span className="text-2xl">📈</span>
-              <h3 className="mt-2 text-sm font-bold text-ink">Forecast Reliability Audit</h3>
+              <h3 className="mt-2 text-sm font-bold text-slate-900">Forecast Reliability Audit</h3>
               <p className="mt-1 text-xs text-slate-500">
                 Complete comparison of predicted versus actual meal uptake, daily error margins, and MAPE accuracy metrics.
               </p>
@@ -721,8 +721,8 @@ export default function AnalyticsDashboardPage() {
       {/* LOG FOOD WASTE MODAL */}
       {showLogWasteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-line bg-paper p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-ink">Log Daily Food Waste</h3>
+          <div className="w-full max-w-lg rounded-2xl border border-slate-100 bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-slate-900">Log Daily Food Waste</h3>
             <p className="mt-1 text-xs text-slate-500">Record unserved leftovers, preparation scrap or spoilage</p>
 
             <form onSubmit={handleLogWasteSubmit} className="mt-4 space-y-4">
@@ -733,7 +733,7 @@ export default function AnalyticsDashboardPage() {
                     type="date"
                     value={logWasteDate}
                     onChange={(e) => setLogWasteDate(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs font-medium"
+                    className="mt-1 w-full rounded-lg border border-slate-100 bg-white px-3 py-2 text-xs font-medium"
                     required
                   />
                 </div>
@@ -743,7 +743,7 @@ export default function AnalyticsDashboardPage() {
                   <select
                     value={logWasteMeal}
                     onChange={(e) => setLogWasteMeal(e.target.value as typeof logWasteMeal)}
-                    className="mt-1 w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs font-medium"
+                    className="mt-1 w-full rounded-lg border border-slate-100 bg-white px-3 py-2 text-xs font-medium"
                   >
                     <option value="breakfast">Breakfast</option>
                     <option value="lunch">Lunch</option>
@@ -759,7 +759,7 @@ export default function AnalyticsDashboardPage() {
                   <select
                     value={logWasteType}
                     onChange={(e) => setLogWasteType(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs font-medium"
+                    className="mt-1 w-full rounded-lg border border-slate-100 bg-white px-3 py-2 text-xs font-medium"
                   >
                     <option value="unserved_leftover">Unserved Batch Leftover</option>
                     <option value="kitchen_prep">Kitchen Preparation Scrap</option>
@@ -773,7 +773,7 @@ export default function AnalyticsDashboardPage() {
                   <select
                     value={logWasteReason}
                     onChange={(e) => setLogWasteReason(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs font-medium"
+                    className="mt-1 w-full rounded-lg border border-slate-100 bg-white px-3 py-2 text-xs font-medium"
                   >
                     <option value="over_preparation">Over Preparation</option>
                     <option value="low_attendance_exam">Low Attendance (Exams)</option>
@@ -796,7 +796,7 @@ export default function AnalyticsDashboardPage() {
                     min="0.1"
                     value={logWasteKg}
                     onChange={(e) => setLogWasteKg(Number(e.target.value))}
-                    className="mt-1 w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs font-medium"
+                    className="mt-1 w-full rounded-lg border border-slate-100 bg-white px-3 py-2 text-xs font-medium"
                     required
                   />
                 </div>
@@ -809,7 +809,7 @@ export default function AnalyticsDashboardPage() {
                     min="0"
                     value={logWasteLossPaise / 100}
                     onChange={(e) => setLogWasteLossPaise(Math.round(Number(e.target.value) * 100))}
-                    className="mt-1 w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs font-medium"
+                    className="mt-1 w-full rounded-lg border border-slate-100 bg-white px-3 py-2 text-xs font-medium"
                     required
                   />
                 </div>
@@ -820,7 +820,7 @@ export default function AnalyticsDashboardPage() {
                 <select
                   value={logWasteDisposal}
                   onChange={(e) => setLogWasteDisposal(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs font-medium"
+                  className="mt-1 w-full rounded-lg border border-slate-100 bg-white px-3 py-2 text-xs font-medium"
                 >
                   <option value="biogas">Campus Biogas Digester</option>
                   <option value="compost">Compost Yard</option>
@@ -836,7 +836,7 @@ export default function AnalyticsDashboardPage() {
                   value={logWasteNotes}
                   onChange={(e) => setLogWasteNotes(e.target.value)}
                   placeholder="e.g. Hostellers left early for weekend"
-                  className="mt-1 w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs font-medium"
+                  className="mt-1 w-full rounded-lg border border-slate-100 bg-white px-3 py-2 text-xs font-medium"
                 />
               </div>
 
@@ -844,7 +844,7 @@ export default function AnalyticsDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setShowLogWasteModal(false)}
-                  className="rounded-lg border border-line px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  className="rounded-lg border border-slate-100 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
                 >
                   Cancel
                 </button>

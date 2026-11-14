@@ -2,6 +2,13 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/components/Toast';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Input, Select } from '@/components/ui/Input';
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeaderCell } from '@/components/ui/Table';
+import { Modal } from '@/components/ui/Modal';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 interface Student {
   _id: string;
@@ -65,207 +72,224 @@ export default function StudentsDirectoryPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-ink">Hostel Students Directory</h1>
-          <p className="text-xs text-ink/70 mt-1">
-            Enrolled hostel residents, dining hall subscriptions, RFID card associations & dietary preferences.
-          </p>
-        </div>
+      {/* Top Header Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 border border-teal-100 text-teal-800 font-bold text-lg">
+              🎓
+            </div>
+            <div>
+              <CardTitle>Hostel Students Directory</CardTitle>
+              <CardDescription>
+                Enrolled hostel residents, dining hall subscriptions, RFID card associations & dietary preferences
+              </CardDescription>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="primary" withDot>
+              {total} Enrolled Students
+            </Badge>
+          </div>
+        </CardHeader>
 
-        <div className="flex items-center gap-2">
-          <span className="rounded-lg border border-line bg-paper px-3 py-1.5 text-xs font-semibold text-ink">
-            {total} Enrolled Students
-          </span>
-        </div>
-      </div>
+        {/* Filter Controls Bar */}
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex-1 min-w-[260px]">
+              <Input
+                type="text"
+                placeholder="Search by student name, roll number, hostel, or RFID..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                icon={
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                }
+              />
+            </div>
 
-      {/* Filter / Search Bar */}
-      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-paper p-4 shadow-sm">
-        <input
-          type="text"
-          placeholder="Search by student name, roll number, hostel, or RFID..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 min-w-[240px] rounded-lg border border-line bg-paper px-3 py-1.5 text-xs focus:border-brand focus:outline-none"
-        />
+            <div className="w-48">
+              <Select
+                value={messHallFilter}
+                onChange={(e) => setMessHallFilter(e.target.value)}
+              >
+                <option value="">All Dining Halls</option>
+                <option value="hall_a">Hostel A & B (Boys Mess)</option>
+                <option value="hall_b">Hostel C & D (Girls Mess)</option>
+                <option value="hall_c">International Hostel Dining</option>
+              </Select>
+            </div>
 
-        <select
-          value={messHallFilter}
-          onChange={(e) => setMessHallFilter(e.target.value)}
-          className="rounded-lg border border-line bg-paper px-3 py-1.5 text-xs text-ink"
-        >
-          <option value="">All Dining Halls</option>
-          <option value="hall_a">Hostel A & B (Boys Mess)</option>
-          <option value="hall_b">Hostel C & D (Girls Mess)</option>
-          <option value="hall_c">Post-Graduate Dining Hall</option>
-        </select>
+            <div className="w-44">
+              <Select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="">All Subscription Statuses</option>
+                <option value="active">Active Plan</option>
+                <option value="paused">Temporarily Paused</option>
+                <option value="defaulter">Dues Defaulter</option>
+                <option value="graduated">Graduated / Alum</option>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-line bg-paper px-3 py-1.5 text-xs text-ink"
-        >
-          <option value="">All Meal Plan Statuses</option>
-          <option value="active">Active</option>
-          <option value="paused">Paused / Leave</option>
-          <option value="graduated">Graduated</option>
-          <option value="defaulter">Defaulter</option>
-        </select>
-      </div>
-
-      {/* Students Table */}
+      {/* Students Data Table */}
       {loading ? (
-        <div className="rounded-xl border border-line bg-paper p-12 text-center text-xs text-ink/60 animate-pulse">
-          Loading student roster...
-        </div>
+        <Card className="p-6 space-y-4">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </Card>
       ) : students.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-line bg-paper p-12 text-center">
-          <span className="text-3xl">🎓</span>
-          <p className="mt-2 text-sm font-semibold text-ink">No students match filter criteria</p>
-          <p className="text-xs text-ink/60 mt-1">Try clearing your search query or dining hall selection</p>
-        </div>
+        <EmptyState
+          icon="🎓"
+          title="No Students Found"
+          description="Try adjusting your search criteria or filter options."
+          actionText="Clear Filters"
+          onAction={() => {
+            setSearch('');
+            setMessHallFilter('');
+            setStatusFilter('');
+          }}
+        />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-line bg-paper shadow-sm">
-          <table className="w-full text-left text-xs">
-            <thead className="border-b border-line bg-stone-50 dark:bg-stone-900/60 text-ink/70 font-semibold uppercase tracking-wider">
-              <tr>
-                <th className="px-4 py-3">Roll Number</th>
-                <th className="px-4 py-3">Student Name</th>
-                <th className="px-4 py-3">Hostel & Room</th>
-                <th className="px-4 py-3">Dining Hall</th>
-                <th className="px-4 py-3">Dietary</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">RFID Card</th>
-                <th className="px-4 py-3 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line text-ink">
-              {students.map((student) => (
-                <tr
-                  key={student._id}
-                  className="hover:bg-stone-50/50 dark:hover:bg-stone-900/40 transition"
-                >
-                  <td className="px-4 py-3.5 font-mono font-bold text-brand">
-                    {student.enrollmentNumber}
-                  </td>
-                  <td className="px-4 py-3 font-semibold">
-                    <div>{student.fullName}</div>
-                    <div className="text-[11px] font-normal text-ink/50">{student.email}</div>
-                  </td>
-                  <td className="px-4 py-3">
-                    {student.hostelName}, Rm {student.roomNumber}
-                  </td>
-                  <td className="px-4 py-3 font-mono text-[11px] uppercase">
-                    {student.messHallId}
-                  </td>
-                  <td className="px-4 py-3 capitalize">
-                    <span
-                      className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-semibold ${
-                        student.dietaryPreference === 'vegetarian'
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                          : student.dietaryPreference === 'jain'
-                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                          : 'bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-stone-300'
-                      }`}
-                    >
-                      {student.dietaryPreference}
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableHeaderCell>Roll No</TableHeaderCell>
+              <TableHeaderCell>Student Name</TableHeaderCell>
+              <TableHeaderCell>Hostel & Room</TableHeaderCell>
+              <TableHeaderCell>Mess Hall</TableHeaderCell>
+              <TableHeaderCell>Diet Preference</TableHeaderCell>
+              <TableHeaderCell>RFID Token</TableHeaderCell>
+              <TableHeaderCell>Plan Status</TableHeaderCell>
+              <TableHeaderCell className="text-right">Actions</TableHeaderCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {students.map((student) => (
+              <TableRow key={student._id}>
+                <TableCell className="font-mono font-bold text-slate-800">
+                  {student.enrollmentNumber}
+                </TableCell>
+                <TableCell>
+                  <p className="font-bold text-slate-900">{student.fullName}</p>
+                  <p className="text-[11px] text-slate-400">{student.email}</p>
+                </TableCell>
+                <TableCell>
+                  <p className="font-semibold text-slate-800">{student.hostelName}</p>
+                  <p className="text-[11px] text-slate-400">Room {student.roomNumber}</p>
+                </TableCell>
+                <TableCell>
+                  <span className="capitalize text-slate-700">
+                    {student.messHallId.replace('_', ' ')}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <span className="capitalize text-slate-700">
+                    {student.dietaryPreference.replace('_', ' ')}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  {student.rfidCardId ? (
+                    <span className="font-mono text-[11px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200">
+                      {student.rfidCardId}
                     </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                        student.mealPlanStatus === 'active'
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                          : student.mealPlanStatus === 'paused'
-                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                          : 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300'
-                      }`}
-                    >
-                      {student.mealPlanStatus}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 font-mono text-[11px] text-ink/70">
-                    {student.rfidCardId || '—'}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedStudent(student)}
-                      className="rounded bg-brand/10 hover:bg-brand/20 px-2.5 py-1 text-[11px] font-semibold text-brand transition"
-                    >
-                      View
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  ) : (
+                    <span className="text-slate-400 italic">Unassigned</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant={
+                      student.mealPlanStatus === 'active'
+                        ? 'success'
+                        : student.mealPlanStatus === 'paused'
+                        ? 'warning'
+                        : 'danger'
+                    }
+                    withDot
+                  >
+                    {student.mealPlanStatus}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStudent(student)}
+                    className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
+                  >
+                    View Card
+                  </button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
 
-      {/* Student Details Dialog */}
-      {selectedStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-line bg-paper p-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-line pb-3">
+      {/* Student Profile Card Modal */}
+      <Modal
+        isOpen={!!selectedStudent}
+        onClose={() => setSelectedStudent(null)}
+        title={selectedStudent?.fullName || 'Resident Profile'}
+        description={`Roll Number: ${selectedStudent?.enrollmentNumber}`}
+      >
+        {selectedStudent && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-4 rounded-xl border border-slate-100">
               <div>
-                <h3 className="text-base font-bold text-ink">{selectedStudent.fullName}</h3>
-                <p className="text-xs text-brand font-mono">{selectedStudent.enrollmentNumber}</p>
+                <p className="text-slate-400">Email Address</p>
+                <p className="font-bold text-slate-800 mt-0.5">{selectedStudent.email}</p>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedStudent(null)}
-                className="text-sm text-ink/60 hover:text-ink"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="mt-4 space-y-2.5 text-xs text-ink/80">
-              <div className="flex justify-between border-b border-line/50 py-1.5">
-                <span className="font-semibold text-ink/60">Email:</span>
-                <span>{selectedStudent.email}</span>
+              <div>
+                <p className="text-slate-400">Contact Phone</p>
+                <p className="font-bold text-slate-800 mt-0.5">{selectedStudent.phone || 'N/A'}</p>
               </div>
-              <div className="flex justify-between border-b border-line/50 py-1.5">
-                <span className="font-semibold text-ink/60">Phone:</span>
-                <span>{selectedStudent.phone || 'Not recorded'}</span>
+              <div>
+                <p className="text-slate-400">Hostel & Room</p>
+                <p className="font-bold text-slate-800 mt-0.5">
+                  {selectedStudent.hostelName} - Rm {selectedStudent.roomNumber}
+                </p>
               </div>
-              <div className="flex justify-between border-b border-line/50 py-1.5">
-                <span className="font-semibold text-ink/60">Hostel & Room:</span>
-                <span>{selectedStudent.hostelName}, Room {selectedStudent.roomNumber}</span>
+              <div>
+                <p className="text-slate-400">Dining Hall</p>
+                <p className="font-bold text-slate-800 mt-0.5 capitalize">
+                  {selectedStudent.messHallId.replace('_', ' ')}
+                </p>
               </div>
-              <div className="flex justify-between border-b border-line/50 py-1.5">
-                <span className="font-semibold text-ink/60">Assigned Mess Hall:</span>
-                <span className="uppercase font-mono">{selectedStudent.messHallId}</span>
+              <div>
+                <p className="text-slate-400">Dietary Class</p>
+                <p className="font-bold text-slate-800 mt-0.5 capitalize">
+                  {selectedStudent.dietaryPreference.replace('_', ' ')}
+                </p>
               </div>
-              <div className="flex justify-between border-b border-line/50 py-1.5">
-                <span className="font-semibold text-ink/60">Dietary Preference:</span>
-                <span className="capitalize font-semibold">{selectedStudent.dietaryPreference}</span>
-              </div>
-              <div className="flex justify-between border-b border-line/50 py-1.5">
-                <span className="font-semibold text-ink/60">Meal Plan Status:</span>
-                <span className="uppercase font-bold text-brand">{selectedStudent.mealPlanStatus}</span>
-              </div>
-              <div className="flex justify-between py-1.5">
-                <span className="font-semibold text-ink/60">RFID Card Identifier:</span>
-                <span className="font-mono">{selectedStudent.rfidCardId || 'None registered'}</span>
+              <div>
+                <p className="text-slate-400">RFID Tag ID</p>
+                <p className="font-bold text-slate-800 mt-0.5 font-mono">
+                  {selectedStudent.rfidCardId || 'Not linked'}
+                </p>
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end">
+            <div className="flex justify-end pt-2">
               <button
                 type="button"
                 onClick={() => setSelectedStudent(null)}
-                className="rounded-lg border border-line px-4 py-1.5 text-xs font-semibold text-ink hover:bg-stone-100 dark:hover:bg-stone-800"
+                className="rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 transition"
               >
                 Close
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 }

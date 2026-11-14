@@ -2,6 +2,14 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/components/Toast';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Input, Select } from '@/components/ui/Input';
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeaderCell } from '@/components/ui/Table';
+import { Modal } from '@/components/ui/Modal';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 interface Ingredient {
   _id: string;
@@ -105,11 +113,11 @@ export default function RecipeManagementPage() {
       }
       if (dishRes.ok) {
         const body = await dishRes.json();
-        setDishes(body.data || []);
+        setDishes(body.data?.dishes || []);
       }
       if (ingRes.ok) {
         const body = await ingRes.json();
-        setIngredients(body.data?.ingredients || []);
+        setIngredients(body.data?.items || []);
       }
     } catch {
       error('Network Error', 'Failed to retrieve recipe catalog');
@@ -122,25 +130,42 @@ export default function RecipeManagementPage() {
     loadData();
   }, [loadData]);
 
-  const openCalculateModal = (recipe: Recipe) => {
+  const handleCalculateBOM = async (recipe: Recipe) => {
     setCalculatingRecipe(recipe);
-    setPortionsInput(recipe.yieldPortions * 3); // realistic default scaling
+    setPortionsInput(recipe.yieldPortions || 200);
     setCalcResult(null);
-    handleRunCalculation(recipe._id, recipe.yieldPortions * 3);
-  };
+    setCalculating(true);
 
-  const handleRunCalculation = async (recipeId: string, portions: number) => {
     try {
-      setCalculating(true);
-      const res = await fetch(`/api/v1/recipes/${recipeId}/requirements?portions=${portions}`);
+      const res = await fetch(
+        `/api/v1/recipes/${recipe._id}/requirements?portions=${recipe.yieldPortions || 200}`,
+      );
       if (res.ok) {
         const body = await res.json();
         setCalcResult(body.data);
       } else {
-        error('Calculation Failed', 'Could not scale bill of materials');
+        error('Error', 'Failed to calculate recipe BOM requirements');
       }
     } catch {
-      error('Network Error', 'Failed to reach calculation endpoint');
+      error('Network Error', 'Cannot calculate BOM');
+    } finally {
+      setCalculating(false);
+    }
+  };
+
+  const handleRecalculate = async (portions: number) => {
+    if (!calculatingRecipe || portions < 1) return;
+    setCalculating(true);
+    try {
+      const res = await fetch(
+        `/api/v1/recipes/${calculatingRecipe._id}/requirements?portions=${portions}`,
+      );
+      if (res.ok) {
+        const body = await res.json();
+        setCalcResult(body.data);
+      }
+    } catch {
+      error('Error', 'Recalculation failed');
     } finally {
       setCalculating(false);
     }
@@ -227,391 +252,352 @@ export default function RecipeManagementPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-ink">Recipes & Bill of Materials (BOM)</h1>
-          <p className="text-xs text-ink/70 mt-1">
-            Ingredient specifications, waste ratios, preparation yields, and batch scaling.
-          </p>
-        </div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 border border-teal-100 text-teal-800 font-bold text-lg">
+              🥗
+            </div>
+            <div>
+              <CardTitle>Recipes & Bill of Materials (BOM)</CardTitle>
+              <CardDescription>
+                Ingredient specifications, prep wastage ratios, yield benchmarks, and dynamic batch portion scaling
+              </CardDescription>
+            </div>
+          </div>
 
-        <button
-          type="button"
-          onClick={openCreateModal}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-2 text-xs font-semibold text-white shadow hover:opacity-95"
-        >
-          <span>+</span>
-          <span>Add New Recipe</span>
-        </button>
-      </div>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={openCreateModal}
+            icon={<span>+</span>}
+          >
+            Add New Recipe
+          </Button>
+        </CardHeader>
+      </Card>
 
       {/* Recipes Catalog Table */}
       {loading ? (
-        <div className="rounded-xl border border-line bg-paper p-12 text-center text-xs text-ink/60 animate-pulse">
-          Loading recipes catalog...
-        </div>
+        <Card className="p-8 space-y-4">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </Card>
       ) : recipes.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-line bg-paper p-12 text-center">
-          <span className="text-3xl">🥗</span>
-          <p className="mt-2 text-sm font-semibold text-ink">No recipes configured yet</p>
-          <p className="text-xs text-ink/60 mt-1">Add recipes with standard raw ingredient ratios</p>
-          <button
-            type="button"
-            onClick={openCreateModal}
-            className="mt-4 rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white"
-          >
-            + Create First Recipe
-          </button>
-        </div>
+        <EmptyState
+          icon="🥗"
+          title="No Recipes Configured"
+          description="Create your first institutional recipe and ingredient BOM breakdown."
+          actionText="Create Recipe"
+          onAction={openCreateModal}
+        />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-line bg-paper shadow-sm">
-          <table className="w-full text-left text-xs">
-            <thead className="border-b border-line bg-stone-50 dark:bg-stone-900/60 text-ink/70 font-semibold uppercase tracking-wider">
-              <tr>
-                <th className="px-4 py-3">Dish / Item</th>
-                <th className="px-4 py-3">Category</th>
-                <th className="px-4 py-3">Yield Portions</th>
-                <th className="px-4 py-3">BOM Ingredients</th>
-                <th className="px-4 py-3">Cooking Time</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line text-ink">
-              {recipes.map((recipe) => {
-                const dishObj = typeof recipe.dishId === 'object' ? recipe.dishId : null;
-                const dishName = dishObj?.name ?? 'Assigned Dish';
-                const dishCategory = dishObj?.category ?? 'Main';
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableHeaderCell>Dish Name</TableHeaderCell>
+              <TableHeaderCell>Category</TableHeaderCell>
+              <TableHeaderCell>Standard Yield</TableHeaderCell>
+              <TableHeaderCell>Ingredients Count</TableHeaderCell>
+              <TableHeaderCell>Est. Prep Time</TableHeaderCell>
+              <TableHeaderCell>Version</TableHeaderCell>
+              <TableHeaderCell className="text-right">BOM Actions</TableHeaderCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {recipes.map((recipe) => {
+              const dishName =
+                typeof recipe.dishId === 'object' && recipe.dishId !== null
+                  ? recipe.dishId.name
+                  : 'Dish Item';
+              const dishCategory =
+                typeof recipe.dishId === 'object' && recipe.dishId !== null
+                  ? recipe.dishId.category
+                  : 'General';
 
-                return (
-                  <tr key={recipe._id} className="hover:bg-stone-50/50 dark:hover:bg-stone-900/40 transition">
-                    <td className="px-4 py-3.5 font-semibold text-ink">
-                      <div>{dishName}</div>
-                      <div className="text-[10px] text-ink/50 font-mono">v{recipe.version}</div>
-                    </td>
-                    <td className="px-4 py-3 capitalize text-ink/70">
+              return (
+                <TableRow key={recipe._id}>
+                  <TableCell className="font-bold text-slate-900">
+                    {dishName}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="neutral" className="capitalize">
                       {dishCategory}
-                    </td>
-                    <td className="px-4 py-3 font-semibold">
-                      {recipe.yieldPortions} portions
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="rounded bg-stone-100 dark:bg-stone-800 px-2 py-0.5 text-[11px] font-medium text-ink">
-                        {recipe.ingredients?.length ?? 0} ingredients
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-ink/70">
-                      {recipe.cookingTimeMinutes ? `${recipe.cookingTimeMinutes} mins` : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => openCalculateModal(recipe)}
-                        className="inline-flex items-center gap-1 rounded bg-brand/10 hover:bg-brand/20 text-brand px-3 py-1 font-semibold transition"
-                      >
-                        <span>⚖️</span>
-                        <span>Calculate BOM</span>
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="font-bold text-slate-800">
+                    {recipe.yieldPortions} portions
+                  </TableCell>
+                  <TableCell className="text-slate-600">
+                    {recipe.ingredients.length} items mapped
+                  </TableCell>
+                  <TableCell className="text-slate-600">
+                    {recipe.cookingTimeMinutes ? `${recipe.cookingTimeMinutes} mins` : '45 mins'}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="primary">v{recipe.version || 1}.0</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCalculateBOM(recipe)}
+                      icon={<span>⚖️</span>}
+                    >
+                      Scale BOM
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       )}
 
-      {/* Interactive BOM Requirements Calculation Modal */}
-      {calculatingRecipe && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-          <div className="w-full max-w-3xl rounded-2xl border border-line bg-paper p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-line pb-3">
-              <div>
-                <h2 className="text-lg font-bold text-ink">
-                  Scale Bill of Materials (BOM)
-                </h2>
-                <p className="text-xs text-ink/60">
-                  {typeof calculatingRecipe.dishId === 'object' ? calculatingRecipe.dishId.name : 'Selected Dish'} — Baseline Yield: {calculatingRecipe.yieldPortions} portions
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setCalculatingRecipe(null)}
-                className="text-sm text-ink/60 hover:text-ink"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Input portion control */}
-            <div className="mt-4 flex flex-wrap items-center gap-4 rounded-xl border border-line bg-stone-50 dark:bg-stone-900/40 p-4">
-              <div>
-                <label className="block text-xs font-semibold text-ink/80">
-                  Target Required Portions:
-                </label>
-                <div className="mt-1 flex items-center gap-2">
-                  <input
-                    type="number"
-                    min={1}
-                    value={portionsInput}
-                    onChange={(e) => setPortionsInput(Number(e.target.value))}
-                    className="w-36 rounded-lg border border-line bg-paper px-3 py-1.5 text-xs font-semibold text-ink focus:border-brand focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRunCalculation(calculatingRecipe._id, portionsInput)}
-                    disabled={calculating}
-                    className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-white shadow hover:opacity-90 disabled:opacity-50"
-                  >
-                    {calculating ? 'Calculating...' : 'Recalculate'}
-                  </button>
-                </div>
+      {/* BOM Scaling Modal */}
+      <Modal
+        isOpen={!!calculatingRecipe}
+        onClose={() => setCalculatingRecipe(null)}
+        title={
+          calculatingRecipe && typeof calculatingRecipe.dishId === 'object'
+            ? `BOM Requirements: ${calculatingRecipe.dishId.name}`
+            : 'Recipe Bill of Materials'
+        }
+        description={`Base Yield: ${calculatingRecipe?.yieldPortions || 100} portions`}
+        maxWidth="xl"
+      >
+        {calculatingRecipe && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl bg-slate-50 p-4 border border-slate-100">
+              <div className="flex items-center gap-3">
+                <label className="text-xs font-bold text-slate-700">Target Preparation Portions:</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={portionsInput}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setPortionsInput(val);
+                    handleRecalculate(val);
+                  }}
+                  className="w-28 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-black text-teal-900 shadow-2xs"
+                />
               </div>
 
               {calcResult && (
-                <div className="flex flex-1 justify-around border-l border-line pl-4 text-center">
-                  <div>
-                    <span className="text-[10px] uppercase text-ink/50 font-bold">Scaling Factor</span>
-                    <p className="text-base font-extrabold text-brand">{calcResult.scaleFactor}x</p>
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase text-ink/50 font-bold">Total Estimated Cost</span>
-                    <p className="text-base font-extrabold text-ink">{formatPaise(calcResult.totalEstimatedCostPaise)}</p>
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase text-ink/50 font-bold">Cost / Portion</span>
-                    <p className="text-base font-extrabold text-brand">{formatPaise(calcResult.estimatedCostPerPortionPaise)}</p>
-                  </div>
+                <div className="text-right">
+                  <span className="text-[11px] text-slate-400">Total Batch Cost:</span>
+                  <p className="text-sm font-black text-slate-900">
+                    {formatPaise(calcResult.totalEstimatedCostPaise)}
+                  </p>
                 </div>
               )}
             </div>
 
-            {/* Calculated Breakdown Table */}
-            {calcResult && (
-              <div className="mt-4 overflow-x-auto rounded-xl border border-line">
-                <table className="w-full text-left text-xs">
-                  <thead className="border-b border-line bg-stone-50 dark:bg-stone-900/60 text-ink/70 font-semibold uppercase tracking-wider">
-                    <tr>
-                      <th className="px-3 py-2">Ingredient</th>
-                      <th className="px-3 py-2">Net Qty</th>
-                      <th className="px-3 py-2">Waste %</th>
-                      <th className="px-3 py-2">Gross Required</th>
-                      <th className="px-3 py-2">Current Stock</th>
-                      <th className="px-3 py-2">Shortfall</th>
-                      <th className="px-3 py-2 text-right">Est. Cost</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-line text-ink">
-                    {calcResult.ingredients.map((item) => (
-                      <tr key={item.ingredientId} className="hover:bg-stone-50/50 dark:hover:bg-stone-900/40">
-                        <td className="px-3 py-2.5 font-medium">
-                          {item.name}
-                          <span className="text-[10px] text-ink/50 block capitalize">{item.category}</span>
-                        </td>
-                        <td className="px-3 py-2">
-                          {item.netQuantity} {item.unit}
-                        </td>
-                        <td className="px-3 py-2 text-ink/60">
-                          {item.wastePercentage}%
-                        </td>
-                        <td className="px-3 py-2 font-bold text-ink">
-                          {item.grossQuantity} {item.unit}
-                        </td>
-                        <td className="px-3 py-2 text-ink/70">
-                          {item.currentStock} {item.unit}
-                        </td>
-                        <td className="px-3 py-2">
-                          {item.shortfall > 0 ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200">
-                              ⚠️ Short {item.shortfall} {item.unit}
-                            </span>
-                          ) : (
-                            <span className="text-emerald-600 font-medium text-[11px]">In Stock ✓</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2 text-right font-semibold">
-                          {formatPaise(item.estimatedCostPaise)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            {calculating ? (
+              <div className="py-8 text-center text-xs text-slate-400 animate-pulse">
+                Recalculating batch quantities & stock availability...
               </div>
-            )}
+            ) : calcResult ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeaderCell>Ingredient</TableHeaderCell>
+                      <TableHeaderCell>Gross Required</TableHeaderCell>
+                      <TableHeaderCell>Waste %</TableHeaderCell>
+                      <TableHeaderCell>Available Stock</TableHeaderCell>
+                      <TableHeaderCell>Stock Status</TableHeaderCell>
+                      <TableHeaderCell>Cost</TableHeaderCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {calcResult.ingredients.map((ing) => (
+                      <TableRow key={ing.ingredientId}>
+                        <TableCell className="font-bold text-slate-900">{ing.name}</TableCell>
+                        <TableCell className="font-bold text-slate-800">
+                          {ing.grossQuantity} {ing.unit}
+                        </TableCell>
+                        <TableCell className="text-slate-500">{ing.wastePercentage}%</TableCell>
+                        <TableCell className="text-slate-600">
+                          {ing.currentStock} {ing.unit}
+                        </TableCell>
+                        <TableCell>
+                          {ing.shortfall > 0 ? (
+                            <Badge variant="danger" withDot>
+                              Shortfall: {ing.shortfall} {ing.unit}
+                            </Badge>
+                          ) : (
+                            <Badge variant="success">In Stock</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-bold text-slate-900">
+                          {formatPaise(ing.estimatedCostPaise)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : null}
 
-            <div className="mt-5 flex justify-end">
-              <button
-                type="button"
+            <div className="flex justify-end pt-3 border-t border-slate-100">
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setCalculatingRecipe(null)}
-                className="rounded-lg border border-line px-4 py-2 text-xs font-semibold text-ink hover:bg-stone-100 dark:hover:bg-stone-800"
               >
-                Close Calculator
-              </button>
+                Close BOM
+              </Button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {/* Create Recipe Modal */}
-      {isCreateOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-2xl border border-line bg-paper p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-line pb-3">
-              <h2 className="text-lg font-bold text-ink">Add New Recipe</h2>
-              <button
+      <Modal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        title="Add New Institutional Recipe"
+        description="Configure recipe yields, ingredient quantities, and wastage percentages"
+        maxWidth="xl"
+      >
+        <form onSubmit={handleCreateRecipe} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Select
+              label="Select Dish"
+              value={selectedDishId}
+              onChange={(e) => setSelectedDishId(e.target.value)}
+              required
+            >
+              {dishes.map((d) => (
+                <option key={d._id} value={d._id}>
+                  {d.name} ({d.category})
+                </option>
+              ))}
+            </Select>
+
+            <Input
+              label="Standard Yield (Portions)"
+              type="number"
+              min={1}
+              value={yieldPortions}
+              onChange={(e) => setYieldPortions(Number(e.target.value))}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Cooking Time (Minutes)"
+              type="number"
+              min={1}
+              value={cookingTime}
+              onChange={(e) => setCookingTime(Number(e.target.value))}
+            />
+            <Input
+              label="Instructions / Method"
+              placeholder="e.g. Sauté spices, simmer on low heat for 30m"
+              value={instructions}
+              onChange={(e) => setInstructions(e.target.value)}
+            />
+          </div>
+
+          {/* Form Ingredients Mapping */}
+          <div className="rounded-xl border border-slate-200/80 p-4 space-y-3 bg-slate-50/50">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-800">Bill of Materials Ingredients:</span>
+              <Button
                 type="button"
-                onClick={() => setIsCreateOpen(false)}
-                className="text-sm text-ink/60 hover:text-ink"
+                variant="outline"
+                size="sm"
+                onClick={handleAddIngredient}
+                icon={<span>+</span>}
               >
-                ✕
-              </button>
+                Add Ingredient
+              </Button>
             </div>
 
-            <form onSubmit={handleCreateRecipe} className="mt-4 space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-semibold text-ink/80">Select Dish</label>
+            <div className="space-y-2">
+              {formIngredients.map((item, idx) => (
+                <div key={idx} className="flex items-center gap-2">
                   <select
-                    value={selectedDishId}
-                    onChange={(e) => setSelectedDishId(e.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs"
+                    value={item.ingredientId}
+                    onChange={(e) => {
+                      const updated = [...formIngredients];
+                      updated[idx].ingredientId = e.target.value;
+                      const matched = ingredients.find((ing) => ing._id === e.target.value);
+                      if (matched) updated[idx].unit = matched.unit as 'kg';
+                      setFormIngredients(updated);
+                    }}
+                    className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold"
                   >
-                    {dishes.map((d) => (
-                      <option key={d._id} value={d._id}>
-                        {d.name} ({d.category})
+                    {ingredients.map((ing) => (
+                      <option key={ing._id} value={ing._id}>
+                        {ing.name} ({ing.unit})
                       </option>
                     ))}
                   </select>
-                </div>
 
-                <div>
-                  <label className="block font-semibold text-ink/80">Base Yield Portions</label>
                   <input
                     type="number"
-                    min={1}
-                    value={yieldPortions}
-                    onChange={(e) => setYieldPortions(Number(e.target.value))}
-                    className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs"
+                    min={0.1}
+                    step={0.1}
+                    value={item.quantity}
+                    onChange={(e) => {
+                      const updated = [...formIngredients];
+                      updated[idx].quantity = Number(e.target.value);
+                      setFormIngredients(updated);
+                    }}
+                    className="w-20 rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-center"
+                    placeholder="Qty"
                   />
-                </div>
-              </div>
 
-              {/* Ingredients List */}
-              <div className="space-y-3 pt-2 border-t border-line">
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-ink">Bill of Materials (BOM) Ingredients</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={50}
+                    value={item.wastePercentage}
+                    onChange={(e) => {
+                      const updated = [...formIngredients];
+                      updated[idx].wastePercentage = Number(e.target.value);
+                      setFormIngredients(updated);
+                    }}
+                    className="w-20 rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-xs text-center"
+                    placeholder="Waste %"
+                  />
+
                   <button
                     type="button"
-                    onClick={handleAddIngredient}
-                    className="rounded bg-brand/10 px-2 py-0.5 text-[11px] font-semibold text-brand hover:bg-brand/20"
+                    onClick={() => setFormIngredients(formIngredients.filter((_, i) => i !== idx))}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-rose-500 hover:bg-rose-50 transition"
                   >
-                    + Add Ingredient
+                    ✕
                   </button>
                 </div>
-
-                {formIngredients.map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-2 rounded-lg border border-line p-2 bg-stone-50 dark:bg-stone-900/30">
-                    <select
-                      value={item.ingredientId}
-                      onChange={(e) => {
-                        const updated = [...formIngredients];
-                        const ing = ingredients.find((i) => i._id === e.target.value);
-                        updated[idx].ingredientId = e.target.value;
-                        if (ing) updated[idx].unit = ing.unit as 'kg';
-                        setFormIngredients(updated);
-                      }}
-                      className="flex-1 rounded border border-line bg-paper px-2 py-1 text-xs"
-                    >
-                      {ingredients.map((ing) => (
-                        <option key={ing._id} value={ing._id}>
-                          {ing.name} ({ing.unit})
-                        </option>
-                      ))}
-                    </select>
-
-                    <input
-                      type="number"
-                      placeholder="Qty"
-                      step="any"
-                      min="0.01"
-                      value={item.quantity}
-                      onChange={(e) => {
-                        const updated = [...formIngredients];
-                        updated[idx].quantity = Number(e.target.value);
-                        setFormIngredients(updated);
-                      }}
-                      className="w-20 rounded border border-line bg-paper px-2 py-1 text-xs"
-                    />
-
-                    <span className="text-ink/60 text-xs w-8">{item.unit}</span>
-
-                    <input
-                      type="number"
-                      placeholder="Waste %"
-                      min="0"
-                      max="100"
-                      value={item.wastePercentage}
-                      onChange={(e) => {
-                        const updated = [...formIngredients];
-                        updated[idx].wastePercentage = Number(e.target.value);
-                        setFormIngredients(updated);
-                      }}
-                      className="w-20 rounded border border-line bg-paper px-2 py-1 text-xs"
-                      title="Peeling/trimming waste %"
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() => setFormIngredients(formIngredients.filter((_, i) => i !== idx))}
-                      className="text-red-500 font-bold px-1"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              <div>
-                <label className="block font-semibold text-ink/80">Cooking Time (Minutes)</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={cookingTime}
-                  onChange={(e) => setCookingTime(Number(e.target.value))}
-                  className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-ink/80">Preparation Instructions (Optional)</label>
-                <textarea
-                  rows={3}
-                  value={instructions}
-                  onChange={(e) => setInstructions(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-line bg-paper px-3 py-2 text-xs"
-                  placeholder="Standard kitchen SOP: Soak dal 4 hours, slow cook on steam kettles..."
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-line">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateOpen(false)}
-                  className="rounded-lg border border-line px-4 py-2 text-xs font-semibold text-ink hover:bg-stone-100 dark:hover:bg-stone-800"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="rounded-lg bg-brand px-4 py-2 text-xs font-semibold text-white shadow hover:opacity-90 disabled:opacity-50"
-                >
-                  {saving ? 'Saving...' : 'Save Recipe'}
-                </button>
-              </div>
-            </form>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsCreateOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={saving}
+            >
+              Save Recipe
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
