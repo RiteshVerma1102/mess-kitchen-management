@@ -85,43 +85,6 @@ export default function AttendancePage() {
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [bulkMarking, setBulkMarking] = useState(false);
 
-  // Check connectivity & register Service Worker
-  useEffect(() => {
-    setIsOnline(navigator.onLine);
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {
-        // SW registration in dev
-      });
-    }
-
-    const refreshQueue = async () => {
-      const q = await getPendingAttendanceQueue();
-      setPendingScans(q);
-    };
-
-    refreshQueue();
-
-    const handleOnline = async () => {
-      setIsOnline(true);
-      info('Reconnected', 'Internet connectivity restored. Triggering sync...');
-      handleTriggerSync();
-    };
-
-    const handleOffline = () => {
-      setIsOnline(false);
-      warning('Offline Mode', 'Network disconnected. Attendance will queue locally in IndexedDB.');
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
   // Fetch Attendance Records & Summary
   const loadAttendanceData = useCallback(async () => {
     try {
@@ -176,7 +139,7 @@ export default function AttendancePage() {
   }, [loadStudents]);
 
   // Perform sync
-  const handleTriggerSync = async () => {
+  const handleTriggerSync = useCallback(async () => {
     if (isSyncing) return;
     setIsSyncing(true);
     try {
@@ -197,7 +160,44 @@ export default function AttendancePage() {
     } finally {
       setIsSyncing(false);
     }
-  };
+  }, [isSyncing, success, error, loadAttendanceData]);
+
+  // Check connectivity & register Service Worker
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {
+        // SW registration in dev
+      });
+    }
+
+    const refreshQueue = async () => {
+      const q = await getPendingAttendanceQueue();
+      setPendingScans(q);
+    };
+
+    refreshQueue();
+
+    const handleOnline = async () => {
+      setIsOnline(true);
+      info('Reconnected', 'Internet connectivity restored. Triggering sync...');
+      handleTriggerSync();
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      warning('Offline Mode', 'Network disconnected. Attendance will queue locally in IndexedDB.');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [handleTriggerSync, info, warning]);
 
   // Mark single attendance (Online or Offline queue)
   const handleMarkPresent = async (
