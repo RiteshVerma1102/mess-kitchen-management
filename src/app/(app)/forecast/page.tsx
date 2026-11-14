@@ -288,14 +288,14 @@ export default function ForecastPage() {
       {/* Main Content Card with Navigation Tabs */}
       <Card>
         {/* Tab Switcher */}
-        <div className="flex border-b border-slate-100 px-6 gap-2 text-xs font-bold bg-slate-50/50">
+        <div className="flex border-b border-[#E5EAF0] px-6 gap-2 text-xs font-bold bg-[#F5F7FA]">
           <button
             type="button"
             onClick={() => setActiveTab('daily')}
             className={`py-3 px-3 border-b-2 transition ${
               activeTab === 'daily'
-                ? 'border-teal-800 text-teal-900 bg-white shadow-2xs rounded-t-lg'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-[#087E8B] text-[#087E8B] bg-white shadow-2xs rounded-t-lg'
+                : 'border-transparent text-[#718096] hover:text-[#253746]'
             }`}
           >
             📅 Daily Meal Forecasts
@@ -305,8 +305,8 @@ export default function ForecastPage() {
             onClick={() => setActiveTab('ingredients')}
             className={`py-3 px-3 border-b-2 transition ${
               activeTab === 'ingredients'
-                ? 'border-teal-800 text-teal-900 bg-white shadow-2xs rounded-t-lg'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-[#087E8B] text-[#087E8B] bg-white shadow-2xs rounded-t-lg'
+                : 'border-transparent text-[#718096] hover:text-[#253746]'
             }`}
           >
             🥗 Commodity BOM Requirements
@@ -316,8 +316,8 @@ export default function ForecastPage() {
             onClick={() => setActiveTab('accuracy')}
             className={`py-3 px-3 border-b-2 transition ${
               activeTab === 'accuracy'
-                ? 'border-teal-800 text-teal-900 bg-white shadow-2xs rounded-t-lg'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-[#087E8B] text-[#087E8B] bg-white shadow-2xs rounded-t-lg'
+                : 'border-transparent text-[#718096] hover:text-[#253746]'
             }`}
           >
             🎯 Accuracy & Error (MAPE)
@@ -327,8 +327,8 @@ export default function ForecastPage() {
             onClick={() => setActiveTab('assistant')}
             className={`py-3 px-3 border-b-2 transition flex items-center gap-1.5 ${
               activeTab === 'assistant'
-                ? 'border-teal-800 text-teal-900 bg-white shadow-2xs rounded-t-lg'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-[#087E8B] text-[#087E8B] bg-white shadow-2xs rounded-t-lg'
+                : 'border-transparent text-[#718096] hover:text-[#253746]'
             }`}
           >
             <span>✨</span>

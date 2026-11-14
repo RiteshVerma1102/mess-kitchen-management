@@ -3,21 +3,55 @@
 @tailwind utilities;
 
 :root {
-  --ink: 30 41 59;
-  --paper: 244 247 254;
-  --line: 226 232 240;
-  --brand: 37 99 235;
-  --warn: 217 119 6;
+  --bg-main: #F5F7FA;
+  --bg-card: #FFFFFF;
+  --bg-sidebar: #FFFFFF;
+  --color-primary: #087E8B;
+  --color-primary-hover: #066873;
+  --color-secondary: #DDF3F3;
+  --color-text-main: #253746;
+  --color-text-secondary: #718096;
+  --color-border: #E5EAF0;
+  --color-success: #16A36A;
+  --color-warning: #E9A23B;
+  --color-danger: #DC5353;
+
+  /* RGB equivalents for alpha channel mixing */
+  --brand-rgb: 8 126 139;
+  --text-rgb: 37 55 70;
+  --border-rgb: 229 234 240;
 }
 
 html, body {
-  background: #F4F7FE;
-  color: #1e293b;
+  background-color: #F5F7FA;
+  color: #253746;
   min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbars matching the clean SaaS look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F5F7FA;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #E5EAF0;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #CBD5E0;
 }
 
 :focus-visible {
-  outline: 2px solid #2563EB;
+  outline: 2px solid #087E8B;
   outline-offset: 2px;
 }
 

@@ -31,15 +31,15 @@ export function Button({
 
   const variantStyles: Record<ButtonVariant, string> = {
     primary:
-      'bg-teal-800 text-white shadow-xs hover:bg-teal-900 border border-teal-900/10 active:scale-[0.98]',
+      'bg-[#087E8B] text-white shadow-xs hover:bg-[#066873] border border-[#087E8B]/20 active:scale-[0.98]',
     secondary:
-      'bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-200/80 active:scale-[0.98]',
+      'bg-[#DDF3F3] text-[#087E8B] hover:bg-[#cbeeed] border border-[#087E8B]/20 active:scale-[0.98]',
     outline:
-      'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98]',
+      'bg-white text-[#253746] border border-[#E5EAF0] hover:bg-[#F5F7FA] hover:text-[#253746] active:scale-[0.98]',
     ghost:
-      'bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 active:scale-[0.98]',
+      'bg-transparent text-[#718096] hover:bg-[#F5F7FA] hover:text-[#253746] active:scale-[0.98]',
     danger:
-      'bg-rose-600 text-white shadow-xs hover:bg-rose-700 border border-rose-700/10 active:scale-[0.98]',
+      'bg-[#DC5353] text-white shadow-xs hover:bg-[#c44343] border border-[#DC5353]/20 active:scale-[0.98]',
   };
 
   return (

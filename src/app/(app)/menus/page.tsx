@@ -279,14 +279,14 @@ export default function MenuManagementPage() {
         actions={
           <div className="flex flex-wrap items-center gap-2.5">
             {/* View Mode Toggle Pills */}
-            <div className="flex rounded-xl bg-slate-100 p-1 text-xs font-bold border border-slate-200/60">
+            <div className="flex rounded-xl bg-[#F5F7FA] p-1 text-xs font-bold border border-[#E5EAF0]">
               <button
                 type="button"
                 onClick={() => setActiveTab('weekly')}
                 className={`rounded-lg px-3 py-1.5 transition ${
                   activeTab === 'weekly'
-                    ? 'bg-white text-teal-800 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white text-[#087E8B] shadow-xs'
+                    : 'text-[#718096] hover:text-[#253746]'
                 }`}
               >
                 📅 Weekly Schedule
@@ -296,8 +296,8 @@ export default function MenuManagementPage() {
                 onClick={() => setActiveTab('list')}
                 className={`rounded-lg px-3 py-1.5 transition ${
                   activeTab === 'list'
-                    ? 'bg-white text-teal-800 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white text-[#087E8B] shadow-xs'
+                    : 'text-[#718096] hover:text-[#253746]'
                 }`}
               >
                 📋 All Menus Table
@@ -320,39 +320,39 @@ export default function MenuManagementPage() {
       {activeTab === 'weekly' && (
         <div className="space-y-4">
           {/* Week Selector Bar */}
-          <div className="flex items-center justify-between bg-white px-5 py-3 rounded-xl border border-slate-100 shadow-2xs">
+          <div className="flex items-center justify-between bg-white px-5 py-3 rounded-xl border border-[#E5EAF0] shadow-xs">
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={loadData}
-                className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                className="rounded-lg border border-[#E5EAF0] bg-[#F5F7FA] px-3 py-1 text-xs font-semibold text-[#253746] hover:bg-[#E5EAF0]"
               >
                 ↻ Refresh
               </button>
               <button
                 type="button"
-                className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                className="rounded-lg border border-[#E5EAF0] bg-[#F5F7FA] px-3 py-1 text-xs font-semibold text-[#253746] hover:bg-[#E5EAF0]"
               >
                 ← Previous
               </button>
             </div>
 
             <div className="text-center">
-              <span className="text-xs font-bold text-slate-800">May 11 – May 17, 2026</span>
-              <span className="block text-[10px] text-slate-400">Week 20 • Standard Rotation Cycle</span>
+              <span className="text-xs font-bold text-[#253746]">May 11 – May 17, 2026</span>
+              <span className="block text-[10px] text-[#718096]">Week 20 • Standard Rotation Cycle</span>
             </div>
 
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                className="rounded-lg bg-teal-600 px-3 py-1 text-xs font-bold text-white shadow-sm hover:bg-teal-700"
+                className="rounded-lg bg-[#087E8B] px-3 py-1 text-xs font-bold text-white shadow-xs hover:bg-[#066873]"
               >
                 Next →
               </button>
             </div>
           </div>
 
-          {/* 7 Columns: Monday to Sunday (MenuMate UI) */}
+          {/* 7 Columns: Monday to Sunday (MenuMate Reference 2 Ditto) */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-3.5 items-start">
             {menuMateDays.map((day) => {
               const liveSummary = weeklyCalendar.find((w) => w.dayOfWeek === day.dayOfWeek);
@@ -363,32 +363,32 @@ export default function MenuManagementPage() {
               return (
                 <div
                   key={day.dayOfWeek}
-                  className="rounded-2xl border border-slate-200/90 bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col"
+                  className="rounded-2xl border border-[#E5EAF0] bg-white shadow-xs hover:shadow-sm transition-shadow overflow-hidden flex flex-col"
                 >
-                  {/* Teal Header Tab */}
-                  <div className="bg-gradient-to-r from-teal-700 to-cyan-800 px-3.5 py-2.5 text-center text-white">
+                  {/* Solid Teal Header Tab (MenuMate Reference 2) */}
+                  <div className="bg-[#087E8B] px-3.5 py-2.5 text-center text-white">
                     <h3 className="text-xs font-bold uppercase tracking-wider">{day.name}</h3>
-                    <p className="text-[10px] text-teal-100 mt-0.5 font-medium">{day.dateStr}</p>
+                    <p className="text-[10px] text-[#DDF3F3] mt-0.5 font-medium">{day.dateStr}</p>
                   </div>
 
                   {/* Body Content */}
                   <div className="p-3.5 space-y-3.5 flex-1 flex flex-col justify-between">
                     {/* Main Dishes Block */}
                     <div className="space-y-2">
-                      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-teal-700 border-b border-teal-50 pb-1">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#087E8B] border-b border-[#E5EAF0] pb-1">
                         <span>🍲</span>
                         <span>Main Dishes</span>
                       </div>
 
                       {/* Main Dish 1 */}
-                      <div className="rounded-xl bg-slate-50/80 p-2.5 border border-slate-100">
-                        <p className="text-xs font-bold text-slate-800 leading-snug">{lunchDish}</p>
-                        <p className="text-[10px] text-slate-500 mt-1 line-clamp-2">
+                      <div className="rounded-xl bg-[#F5F7FA] p-2.5 border border-[#E5EAF0]">
+                        <p className="text-xs font-bold text-[#253746] leading-snug">{lunchDish}</p>
+                        <p className="text-[10px] text-[#718096] mt-1 line-clamp-2">
                           Freshly prepared in kitchen hall with premium ghee & fresh spices.
                         </p>
                         <div className="mt-1.5 flex flex-wrap gap-1">
                           {day.allergies.map((a) => (
-                            <span key={a} className="rounded bg-teal-50 px-1.5 py-0.5 text-[9px] font-semibold text-teal-700">
+                            <span key={a} className="rounded bg-[#DDF3F3] px-1.5 py-0.5 text-[9px] font-semibold text-[#087E8B] border border-[#087E8B]/20">
                               {a}
                             </span>
                           ))}
@@ -396,9 +396,9 @@ export default function MenuManagementPage() {
                       </div>
 
                       {/* Main Dish 2 */}
-                      <div className="rounded-xl bg-slate-50/80 p-2.5 border border-slate-100">
-                        <p className="text-xs font-bold text-slate-800 leading-snug">{dinnerDish}</p>
-                        <p className="text-[10px] text-slate-500 mt-1 line-clamp-2">
+                      <div className="rounded-xl bg-[#F5F7FA] p-2.5 border border-[#E5EAF0]">
+                        <p className="text-xs font-bold text-[#253746] leading-snug">{dinnerDish}</p>
+                        <p className="text-[10px] text-[#718096] mt-1 line-clamp-2">
                           Balanced dinner recipe with seasonal farm vegetables & lentils.
                         </p>
                       </div>
@@ -406,21 +406,21 @@ export default function MenuManagementPage() {
 
                     {/* Side Dishes Block */}
                     <div className="space-y-2">
-                      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-teal-700 border-b border-teal-50 pb-1">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#087E8B] border-b border-[#E5EAF0] pb-1">
                         <span>🥗</span>
                         <span>Side Dishes</span>
                       </div>
 
-                      <div className="rounded-xl bg-slate-50/80 p-2.5 border border-slate-100">
-                        <p className="text-xs font-bold text-slate-800 leading-snug">{sideDish}</p>
-                        <p className="text-[10px] text-slate-500 mt-1">Steamed basmati rice, tawa chapatis, cucumber salad</p>
+                      <div className="rounded-xl bg-[#F5F7FA] p-2.5 border border-[#E5EAF0]">
+                        <p className="text-xs font-bold text-[#253746] leading-snug">{sideDish}</p>
+                        <p className="text-[10px] text-[#718096] mt-1">Steamed basmati rice, tawa chapatis, cucumber salad</p>
                       </div>
                     </div>
 
                     {/* Footer: Portions & Costing (KasDapur Style) */}
-                    <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
-                      <span className="font-semibold text-slate-400">Porsi: <strong className="text-slate-700">530</strong></span>
-                      <span className="font-bold text-teal-700">₹52.00 / meal</span>
+                    <div className="mt-2 pt-2 border-t border-[#E5EAF0] flex items-center justify-between text-[10px]">
+                      <span className="font-semibold text-[#718096]">Porsi: <strong className="text-[#253746]">530</strong></span>
+                      <span className="font-bold text-[#087E8B]">₹52.00 / meal</span>
                     </div>
                   </div>
                 </div>

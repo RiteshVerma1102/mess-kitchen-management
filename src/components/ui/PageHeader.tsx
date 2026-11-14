@@ -19,23 +19,23 @@ export function PageHeader({
 }: PageHeaderProps) {
   return (
     <div
-      className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-5 sm:p-6 rounded-2xl border border-slate-100/90 shadow-xs ${className}`}
+      className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-5 sm:p-6 rounded-2xl border border-[#E5EAF0] shadow-xs ${className}`}
     >
       <div className="flex items-center gap-3">
         {icon && (
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 border border-teal-100/80 text-teal-800 font-extrabold text-lg shadow-2xs">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#DDF3F3] border border-[#087E8B]/20 text-[#087E8B] font-extrabold text-lg shadow-2xs">
             {icon}
           </div>
         )}
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">
+            <h1 className="text-xl sm:text-2xl font-black text-[#253746] tracking-tight leading-none">
               {title}
             </h1>
             {badge}
           </div>
           {description && (
-            <p className="text-xs sm:text-sm text-slate-400 mt-1 font-medium leading-relaxed">
+            <p className="text-xs sm:text-sm text-[#718096] mt-1 font-medium leading-relaxed">
               {description}
             </p>
           )}
@@ -50,4 +50,3 @@ export function PageHeader({
     </div>
   );
 }
-

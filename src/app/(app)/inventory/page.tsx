@@ -394,13 +394,13 @@ export default function InventoryIndentsPage() {
       </div>
 
       {/* Main Tabs Navigation */}
-      <div className="flex items-center gap-2 border-b border-slate-200">
+      <div className="flex items-center gap-2 border-b border-[#E5EAF0]">
         <button
           onClick={() => setActiveTab('inventory')}
           className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
             activeTab === 'inventory'
-              ? 'border-teal-600 text-teal-800'
-              : 'border-transparent text-slate-400 hover:text-slate-700'
+              ? 'border-[#087E8B] text-[#087E8B]'
+              : 'border-transparent text-[#718096] hover:text-[#253746]'
           }`}
         >
           <span>📋</span>
@@ -411,8 +411,8 @@ export default function InventoryIndentsPage() {
           onClick={() => setActiveTab('indents')}
           className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
             activeTab === 'indents'
-              ? 'border-teal-600 text-teal-800'
-              : 'border-transparent text-slate-400 hover:text-slate-700'
+              ? 'border-[#087E8B] text-[#087E8B]'
+              : 'border-transparent text-[#718096] hover:text-[#253746]'
           }`}
         >
           <span>📑</span>
@@ -423,8 +423,8 @@ export default function InventoryIndentsPage() {
           onClick={() => setActiveTab('movements')}
           className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
             activeTab === 'movements'
-              ? 'border-teal-600 text-teal-800'
-              : 'border-transparent text-slate-400 hover:text-slate-700'
+              ? 'border-[#087E8B] text-[#087E8B]'
+              : 'border-transparent text-[#718096] hover:text-[#253746]'
           }`}
         >
           <span>📜</span>
@@ -436,15 +436,15 @@ export default function InventoryIndentsPage() {
       {activeTab === 'inventory' && (
         <div className="space-y-4">
           {/* Search & Filter Controls */}
-          <div className="flex flex-col sm:flex-row gap-3 bg-white p-4 rounded-xl border border-slate-100 shadow-2xs">
-            <div className="flex flex-1 items-center gap-2 rounded-xl bg-slate-50 border border-slate-200/80 px-3 py-2 text-xs">
-              <span className="text-slate-400">🔍</span>
+          <div className="flex flex-col sm:flex-row gap-3 bg-white p-4 rounded-xl border border-[#E5EAF0] shadow-xs">
+            <div className="flex flex-1 items-center gap-2 rounded-xl bg-[#F5F7FA] border border-[#E5EAF0] px-3 py-2 text-xs">
+              <span className="text-[#718096]">🔍</span>
               <input
                 type="text"
                 placeholder="Search inventory items by name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-transparent focus:outline-none text-slate-800"
+                className="w-full bg-transparent focus:outline-none text-[#253746] placeholder-[#718096]"
               />
             </div>
 
@@ -453,7 +453,7 @@ export default function InventoryIndentsPage() {
                 aria-label="Filter by ingredient category"
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"
+                className="rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3 py-2 text-xs font-semibold text-[#253746] focus:border-[#087E8B] focus:outline-none"
               >
                 <option value="">All Categories</option>
                 <option value="grain">Grains & Rice</option>
@@ -470,7 +470,7 @@ export default function InventoryIndentsPage() {
                 aria-label="Filter by stock status"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"
+                className="rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3 py-2 text-xs font-semibold text-[#253746] focus:border-[#087E8B] focus:outline-none"
               >
                 <option value="">All Statuses</option>
                 <option value="good">Good / Normal</option>
@@ -481,12 +481,12 @@ export default function InventoryIndentsPage() {
           </div>
 
           {/* Table (Sam Akinlolu Dribbble Style) */}
-          <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-white shadow-sm">
+          <div className="overflow-x-auto rounded-2xl border border-[#E5EAF0] bg-white shadow-xs">
             <table className="w-full text-left text-xs">
-              <thead className="border-b border-slate-100 bg-slate-50/70 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+              <thead className="border-b border-[#E5EAF0] bg-[#F5F7FA] text-[#718096] font-bold uppercase tracking-wider text-[10px]">
                 <tr>
                   <th className="px-4 py-3.5 w-10">
-                    <input type="checkbox" className="rounded border-slate-300" aria-label="Select all inventory items" />
+                    <input type="checkbox" className="rounded border-[#E5EAF0]" aria-label="Select all inventory items" />
                   </th>
                   <th className="px-4 py-3.5">Item Name</th>
                   <th className="px-4 py-3.5">Category</th>
@@ -497,7 +497,7 @@ export default function InventoryIndentsPage() {
                   <th className="px-4 py-3.5 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
+              <tbody className="divide-y divide-[#E5EAF0] text-[#253746]">
                 {filteredItems.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/80 transition">
                     <td className="px-4 py-3.5">
@@ -520,15 +520,15 @@ export default function InventoryIndentsPage() {
                         {item.storageType || 'Pantry'}
                       </span>
                     </td>
-                    <td className="px-4 py-3.5 text-slate-400 text-[11px]">Today, 14:30</td>
+                    <td className="px-4 py-3.5 text-[#718096] text-[11px]">Today, 14:30</td>
                     <td className="px-4 py-3.5">
                       <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold border ${
                           item.status === 'good'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            ? 'bg-[#E8F7F0] text-[#16A36A] border-[#16A36A]/20'
                             : item.status === 'low_stock'
-                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                            : 'bg-rose-50 text-rose-700 border border-rose-200'
+                            ? 'bg-[#FEF6E9] text-[#E9A23B] border-[#E9A23B]/30'
+                            : 'bg-[#FCEEEE] text-[#DC5353] border-[#DC5353]/20'
                         }`}
                       >
                         {item.status === 'good' ? 'Good' : item.status === 'low_stock' ? 'Low Stock' : 'Out of Stock'}
@@ -539,7 +539,7 @@ export default function InventoryIndentsPage() {
                         <button
                           type="button"
                           onClick={() => handleOpenAdjustModal(item)}
-                          className="rounded-lg px-2.5 py-1 font-bold text-teal-700 hover:bg-teal-50"
+                          className="rounded-lg px-2.5 py-1 font-bold text-[#087E8B] hover:bg-[#DDF3F3]"
                         >
                           Adjust
                         </button>
@@ -556,9 +556,9 @@ export default function InventoryIndentsPage() {
       {/* TAB 2: PURCHASE INDENTS */}
       {activeTab === 'indents' && (
         <div className="space-y-4">
-          <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-white shadow-sm">
+          <div className="overflow-x-auto rounded-2xl border border-[#E5EAF0] bg-white shadow-xs">
             <table className="w-full text-left text-xs">
-              <thead className="border-b border-slate-100 bg-slate-50/70 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+              <thead className="border-b border-[#E5EAF0] bg-[#F5F7FA] text-[#718096] font-bold uppercase tracking-wider text-[10px]">
                 <tr>
                   <th className="px-5 py-3.5">Indent #</th>
                   <th className="px-4 py-3.5">Target Date</th>
@@ -569,26 +569,26 @@ export default function InventoryIndentsPage() {
                   <th className="px-5 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
+              <tbody className="divide-y divide-[#E5EAF0] text-[#253746]">
                 {indents.map((ind) => (
-                  <tr key={ind._id} className="hover:bg-slate-50/80 transition">
-                    <td className="px-5 py-3.5 font-bold text-slate-900">{ind.indentNumber}</td>
+                  <tr key={ind._id} className="hover:bg-[#F5F7FA]/80 transition">
+                    <td className="px-5 py-3.5 font-bold text-[#253746]">{ind.indentNumber}</td>
                     <td className="px-4 py-3.5">{ind.targetDate?.slice(0, 10)}</td>
                     <td className="px-4 py-3.5 font-medium">{ind.supplierId?.name || 'Local Farm Direct'}</td>
                     <td className="px-4 py-3.5">{ind.items?.length || 0} items</td>
-                    <td className="px-4 py-3.5 font-bold text-slate-800">
+                    <td className="px-4 py-3.5 font-bold text-[#253746]">
                       ₹{((ind.totalAmountPaise || 0) / 100).toLocaleString('en-IN')}
                     </td>
                     <td className="px-4 py-3.5">
                       <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold border ${
                           ind.status === 'fulfilled'
-                            ? 'bg-emerald-50 text-emerald-700'
+                            ? 'bg-[#E8F7F0] text-[#16A36A] border-[#16A36A]/20'
                             : ind.status === 'approved'
-                            ? 'bg-blue-50 text-blue-700'
+                            ? 'bg-[#DDF3F3] text-[#087E8B] border-[#087E8B]/20'
                             : ind.status === 'submitted'
-                            ? 'bg-amber-50 text-amber-700'
-                            : 'bg-slate-100 text-slate-600'
+                            ? 'bg-[#FEF6E9] text-[#E9A23B] border-[#E9A23B]/30'
+                            : 'bg-[#F5F7FA] text-[#718096] border-[#E5EAF0]'
                         }`}
                       >
                         {ind.status}
@@ -599,7 +599,7 @@ export default function InventoryIndentsPage() {
                         <button
                           type="button"
                           onClick={() => handleUpdateIndentStatus(ind._id, 'approved')}
-                          className="rounded-lg px-2.5 py-1 font-bold text-blue-700 hover:bg-blue-50"
+                          className="rounded-lg px-2.5 py-1 font-bold text-[#087E8B] hover:bg-[#DDF3F3]"
                         >
                           Approve
                         </button>
@@ -608,7 +608,7 @@ export default function InventoryIndentsPage() {
                         <button
                           type="button"
                           onClick={() => handleUpdateIndentStatus(ind._id, 'fulfilled')}
-                          className="rounded-lg px-2.5 py-1 font-bold text-emerald-700 hover:bg-emerald-50"
+                          className="rounded-lg px-2.5 py-1 font-bold text-[#16A36A] hover:bg-[#E8F7F0]"
                         >
                           Fulfill & Receive
                         </button>
@@ -625,9 +625,9 @@ export default function InventoryIndentsPage() {
       {/* TAB 3: STOCK MOVEMENTS LEDGER */}
       {activeTab === 'movements' && (
         <div className="space-y-4">
-          <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-white shadow-sm">
+          <div className="overflow-x-auto rounded-2xl border border-[#E5EAF0] bg-white shadow-xs">
             <table className="w-full text-left text-xs">
-              <thead className="border-b border-slate-100 bg-slate-50/70 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+              <thead className="border-b border-[#E5EAF0] bg-[#F5F7FA] text-[#718096] font-bold uppercase tracking-wider text-[10px]">
                 <tr>
                   <th className="px-5 py-3.5">Timestamp</th>
                   <th className="px-4 py-3.5">Ingredient</th>
@@ -637,17 +637,17 @@ export default function InventoryIndentsPage() {
                   <th className="px-5 py-3.5">Notes</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
+              <tbody className="divide-y divide-[#E5EAF0] text-[#253746]">
                 {movements.map((m) => (
-                  <tr key={m._id} className="hover:bg-slate-50/80 transition">
-                    <td className="px-5 py-3.5 text-slate-400">{new Date(m.recordedAt).toLocaleString()}</td>
-                    <td className="px-4 py-3.5 font-bold text-slate-900">{m.ingredientName}</td>
+                  <tr key={m._id} className="hover:bg-[#F5F7FA]/80 transition">
+                    <td className="px-5 py-3.5 text-[#718096]">{new Date(m.recordedAt).toLocaleString()}</td>
+                    <td className="px-4 py-3.5 font-bold text-[#253746]">{m.ingredientName}</td>
                     <td className="px-4 py-3.5 capitalize">{m.movementType.replace('_', ' ')}</td>
-                    <td className={`px-4 py-3.5 font-bold ${m.quantity >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    <td className={`px-4 py-3.5 font-bold ${m.quantity >= 0 ? 'text-[#16A36A]' : 'text-[#DC5353]'}`}>
                       {m.quantity >= 0 ? `+${m.quantity}` : m.quantity} {m.unit}
                     </td>
-                    <td className="px-4 py-3.5 font-bold text-slate-800">{m.balanceAfter} {m.unit}</td>
-                    <td className="px-5 py-3.5 text-slate-500">{m.notes || '—'}</td>
+                    <td className="px-4 py-3.5 font-bold text-[#253746]">{m.balanceAfter} {m.unit}</td>
+                    <td className="px-5 py-3.5 text-[#718096]">{m.notes || '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -658,20 +658,20 @@ export default function InventoryIndentsPage() {
 
       {/* Modal for Stock Adjustment */}
       {showAdjustModal && adjustTargetItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-100">
-            <h3 className="text-base font-bold text-slate-900">Adjust Stock: {adjustTargetItem.name}</h3>
-            <p className="mt-1 text-xs text-slate-500">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#253746]/40 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-[#E5EAF0]">
+            <h3 className="text-base font-bold text-[#253746]">Adjust Stock: {adjustTargetItem.name}</h3>
+            <p className="mt-1 text-xs text-[#718096]">
               Current Available Stock: {adjustTargetItem.currentStock} {adjustTargetItem.unit}
             </p>
 
             <form onSubmit={handleStockAdjustmentSubmit} className="mt-4 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700">Movement Type</label>
+                <label className="block text-xs font-bold text-[#253746]">Movement Type</label>
                 <select
                   value={adjustType}
                   onChange={(e) => setAdjustType(e.target.value as any)}
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"
+                  className="mt-1 w-full rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3 py-2 text-xs font-semibold text-[#253746] focus:border-[#087E8B] focus:outline-none"
                 >
                   <option value="inward_indent">Inward (Vendor Delivery / Stock In)</option>
                   <option value="outward_kitchen">Outward (Issued to Kitchen)</option>
@@ -681,40 +681,40 @@ export default function InventoryIndentsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700">Quantity Change ({adjustTargetItem.unit})</label>
+                <label className="block text-xs font-bold text-[#253746]">Quantity Change ({adjustTargetItem.unit})</label>
                 <input
                   type="number"
                   step="0.01"
                   required
                   value={adjustQty}
                   onChange={(e) => setAdjustQty(parseFloat(e.target.value))}
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="mt-1 w-full rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3.5 py-2 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#087E8B] focus:border-[#087E8B]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700">Notes / Reason</label>
+                <label className="block text-xs font-bold text-[#253746]">Notes / Reason</label>
                 <textarea
                   rows={2}
                   value={adjustNotes}
                   onChange={(e) => setAdjustNotes(e.target.value)}
                   placeholder="e.g. Received weekly morning shipment"
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="mt-1 w-full rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3.5 py-2 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#087E8B] focus:border-[#087E8B]"
                 />
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-[#E5EAF0]">
                 <button
                   type="button"
                   onClick={() => setShowAdjustModal(false)}
-                  className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
+                  className="rounded-xl border border-[#E5EAF0] px-4 py-2 text-xs font-bold text-[#718096] hover:bg-[#F5F7FA] hover:text-[#253746]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingAdjust}
-                  className="rounded-xl bg-teal-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-teal-600/20 hover:bg-teal-700"
+                  className="rounded-xl bg-[#087E8B] px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#066873]"
                 >
                   {submittingAdjust ? 'Updating...' : 'Save Stock Adjustment'}
                 </button>
@@ -726,25 +726,25 @@ export default function InventoryIndentsPage() {
 
       {/* Manual Indent Modal */}
       {showManualIndentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-base font-bold text-slate-900">Create Purchase Indent</h3>
-            <p className="mt-1 text-xs text-slate-500">Draft raw commodity purchase order for dining hall</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#253746]/40 backdrop-blur-xs p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-[#E5EAF0] max-h-[90vh] overflow-y-auto">
+            <h3 className="text-base font-bold text-[#253746]">Create Purchase Indent</h3>
+            <p className="mt-1 text-xs text-[#718096]">Draft raw commodity purchase order for dining hall</p>
 
             <form onSubmit={handleCreateManualIndent} className="mt-4 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700">Target Delivery Date</label>
+                <label className="block text-xs font-bold text-[#253746]">Target Delivery Date</label>
                 <input
                   type="date"
                   required
                   value={manualTargetDate}
                   onChange={(e) => setManualTargetDate(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs"
+                  className="mt-1 w-full rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3.5 py-2 text-xs text-[#253746]"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-700">Requested Ingredients</label>
+                <label className="block text-xs font-bold text-[#253746]">Requested Ingredients</label>
                 {manualItems.map((item, idx) => (
                   <div key={idx} className="flex gap-2">
                     <select
@@ -754,7 +754,7 @@ export default function InventoryIndentsPage() {
                         next[idx].ingredientId = e.target.value;
                         setManualItems(next);
                       }}
-                      className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
+                      className="flex-1 rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3 py-2 text-xs text-[#253746]"
                     >
                       <option value="">Select Ingredient</option>
                       {inventoryItems.map((ing) => (
@@ -773,7 +773,7 @@ export default function InventoryIndentsPage() {
                         next[idx].requestedQuantity = parseFloat(e.target.value) || 0;
                         setManualItems(next);
                       }}
-                      className="w-24 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
+                      className="w-24 rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3 py-2 text-xs text-[#253746]"
                     />
                   </div>
                 ))}
@@ -781,24 +781,24 @@ export default function InventoryIndentsPage() {
                 <button
                   type="button"
                   onClick={() => setManualItems([...manualItems, { ingredientId: '', requestedQuantity: 10 }])}
-                  className="text-xs font-bold text-teal-600 hover:underline"
+                  className="text-xs font-bold text-[#087E8B] hover:underline"
                 >
                   + Add Another Ingredient
                 </button>
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-[#E5EAF0]">
                 <button
                   type="button"
                   onClick={() => setShowManualIndentModal(false)}
-                  className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
+                  className="rounded-xl border border-[#E5EAF0] px-4 py-2 text-xs font-bold text-[#718096] hover:bg-[#F5F7FA]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingManualIndent}
-                  className="rounded-xl bg-teal-600 px-5 py-2 text-xs font-bold text-white shadow hover:bg-teal-700"
+                  className="rounded-xl bg-[#087E8B] px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#066873]"
                 >
                   {submittingManualIndent ? 'Submitting...' : 'Submit Purchase Indent'}
                 </button>

@@ -371,8 +371,8 @@ export default function AttendancePage() {
                     onClick={() => setMealType(m)}
                     className={`rounded-xl py-2 text-xs font-bold capitalize transition ${
                       mealType === m
-                        ? 'bg-teal-800 text-white shadow-xs'
-                        : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                        ? 'bg-[#087E8B] text-white shadow-xs'
+                        : 'border border-[#E5EAF0] bg-[#F5F7FA] text-[#718096] hover:bg-[#E5EAF0] hover:text-[#253746]'
                     }`}
                   >
                     {m}
@@ -382,7 +382,7 @@ export default function AttendancePage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Dining Hall</label>
+              <label className="block text-xs font-bold text-[#253746] mb-1.5">Dining Hall</label>
               <Select
                 value={messHallId}
                 onChange={(e) => setMessHallId(e.target.value)}
@@ -431,13 +431,13 @@ export default function AttendancePage() {
       )}
 
       {/* Fast Hardware Barcode / RFID Tap Input Box */}
-      <Card className="border-2 border-teal-800/40 bg-teal-50/30 p-4">
+      <Card className="border-2 border-[#087E8B]/30 bg-[#DDF3F3]/30 p-4">
         <form onSubmit={handleQuickSubmit} className="flex flex-col sm:flex-row items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-800 text-xl text-white shadow-xs">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#087E8B] text-xl text-white shadow-xs">
             ⚡
           </div>
           <div className="flex-1 w-full">
-            <label htmlFor="quickInput" className="block text-xs font-bold text-teal-950 uppercase tracking-wider mb-1">
+            <label htmlFor="quickInput" className="block text-xs font-bold text-[#253746] uppercase tracking-wider mb-1">
               Rapid Scanner (RFID Tap / Barcode Reader / Keyboard Input)
             </label>
             <input

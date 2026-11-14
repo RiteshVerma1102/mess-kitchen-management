@@ -220,75 +220,75 @@ export default function AnalyticsDashboardPage() {
         }
       />
 
-      {/* KPI Cards Ribbon (Inspired by screenshots 1, 5, 7, 11) */}
+      {/* KPI Cards Ribbon (MarketMan & FoodFlow Reference Style) */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-8">
-        <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
-          <span className="text-[10px] font-semibold uppercase text-slate-500">Total Prepared</span>
-          <p className="mt-1 text-lg font-bold text-sky-700">{data ? data.kpis.totalFoodPrepared : 0}</p>
-          <span className="text-[10px] text-slate-400">Portions cooked</span>
+        <div className="rounded-xl border border-[#E5EAF0] bg-white p-3 shadow-xs">
+          <span className="text-[10px] font-semibold uppercase text-[#718096]">Total Prepared</span>
+          <p className="mt-1 text-lg font-bold text-[#087E8B]">{data ? data.kpis.totalFoodPrepared : 0}</p>
+          <span className="text-[10px] text-[#718096]">Portions cooked</span>
         </div>
 
-        <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
-          <span className="text-[10px] font-semibold uppercase text-slate-500">Meals Served</span>
-          <p className="mt-1 text-lg font-bold text-emerald-700">{data ? data.kpis.totalMealsServed : 0}</p>
-          <span className="text-[10px] text-slate-400">Student intake</span>
+        <div className="rounded-xl border border-[#E5EAF0] bg-white p-3 shadow-xs">
+          <span className="text-[10px] font-semibold uppercase text-[#718096]">Meals Served</span>
+          <p className="mt-1 text-lg font-bold text-[#16A36A]">{data ? data.kpis.totalMealsServed : 0}</p>
+          <span className="text-[10px] text-[#718096]">Student intake</span>
         </div>
 
-        <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
-          <span className="text-[10px] font-semibold uppercase text-slate-500">Total Food Waste</span>
-          <p className="mt-1 text-lg font-bold text-rose-600">{data ? `${data.kpis.totalFoodWasteKg} kg` : '0 kg'}</p>
-          <span className="text-[10px] text-slate-400">Logged weight</span>
+        <div className="rounded-xl border border-[#E5EAF0] bg-white p-3 shadow-xs">
+          <span className="text-[10px] font-semibold uppercase text-[#718096]">Total Food Waste</span>
+          <p className="mt-1 text-lg font-bold text-[#DC5353]">{data ? `${data.kpis.totalFoodWasteKg} kg` : '0 kg'}</p>
+          <span className="text-[10px] text-[#718096]">Logged weight</span>
         </div>
 
-        <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
-          <span className="text-[10px] font-semibold uppercase text-slate-500">Waste Rate</span>
-          <p className={`mt-1 text-lg font-bold ${data && data.kpis.wastePercentage > 10 ? 'text-rose-600' : 'text-emerald-600'}`}>
+        <div className="rounded-xl border border-[#E5EAF0] bg-white p-3 shadow-xs">
+          <span className="text-[10px] font-semibold uppercase text-[#718096]">Waste Rate</span>
+          <p className={`mt-1 text-lg font-bold ${data && data.kpis.wastePercentage > 10 ? 'text-[#DC5353]' : 'text-[#16A36A]'}`}>
             {data ? `${data.kpis.wastePercentage}%` : '0%'}
           </p>
-          <span className="text-[10px] text-slate-400">Target: &lt;8%</span>
+          <span className="text-[10px] text-[#718096]">Target: &lt;8%</span>
         </div>
 
-        <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
-          <span className="text-[10px] font-semibold uppercase text-slate-500">Financial Loss</span>
-          <p className="mt-1 text-lg font-bold text-rose-600">
+        <div className="rounded-xl border border-[#E5EAF0] bg-white p-3 shadow-xs">
+          <span className="text-[10px] font-semibold uppercase text-[#718096]">Financial Loss</span>
+          <p className="mt-1 text-lg font-bold text-[#DC5353]">
             ₹{data ? (data.kpis.estimatedWasteLossPaise / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 }) : '0'}
           </p>
-          <span className="text-[10px] text-slate-400">Wasted capital</span>
+          <span className="text-[10px] text-[#718096]">Wasted capital</span>
         </div>
 
-        <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
-          <span className="text-[10px] font-semibold uppercase text-slate-500">Total Spend</span>
-          <p className="mt-1 text-lg font-bold text-slate-900">
+        <div className="rounded-xl border border-[#E5EAF0] bg-white p-3 shadow-xs">
+          <span className="text-[10px] font-semibold uppercase text-[#718096]">Total Spend</span>
+          <p className="mt-1 text-lg font-bold text-[#253746]">
             ₹{data ? (data.kpis.totalExpenditurePaise / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 }) : '0'}
           </p>
-          <span className="text-[10px] text-slate-400">Kitchen budget</span>
+          <span className="text-[10px] text-[#718096]">Kitchen budget</span>
         </div>
 
-        <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
-          <span className="text-[10px] font-semibold uppercase text-slate-500">Cost / Meal</span>
-          <p className="mt-1 text-lg font-bold text-teal-800">
+        <div className="rounded-xl border border-[#E5EAF0] bg-white p-3 shadow-xs">
+          <span className="text-[10px] font-semibold uppercase text-[#718096]">Cost / Meal</span>
+          <p className="mt-1 text-lg font-bold text-[#087E8B]">
             ₹{data ? (data.kpis.costPerMealPaise / 100).toFixed(2) : '0.00'}
           </p>
-          <span className="text-[10px] text-slate-400">Per student plate</span>
+          <span className="text-[10px] text-[#718096]">Per student plate</span>
         </div>
 
-        <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
-          <span className="text-[10px] font-semibold uppercase text-slate-500">Forecast Error</span>
-          <p className={`mt-1 text-lg font-bold ${data && data.kpis.overallMape > 15 ? 'text-amber-600' : 'text-emerald-600'}`}>
+        <div className="rounded-xl border border-[#E5EAF0] bg-white p-3 shadow-xs">
+          <span className="text-[10px] font-semibold uppercase text-[#718096]">Forecast Error</span>
+          <p className={`mt-1 text-lg font-bold ${data && data.kpis.overallMape > 15 ? 'text-[#E9A23B]' : 'text-[#16A36A]'}`}>
             {data ? `${data.kpis.overallMape}%` : '0%'}
           </p>
-          <span className="text-[10px] text-slate-400">Overall MAPE</span>
+          <span className="text-[10px] text-[#718096]">Overall MAPE</span>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-100">
+      <div className="flex border-b border-[#E5EAF0]">
         <button
           onClick={() => setActiveTab('overview')}
           className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition-colors ${
             activeTab === 'overview'
-              ? 'border-brand text-teal-800'
-              : 'border-transparent text-slate-500 hover:text-slate-900'
+              ? 'border-[#087E8B] text-[#087E8B]'
+              : 'border-transparent text-[#718096] hover:text-[#253746]'
           }`}
         >
           <span>📊</span>
@@ -299,8 +299,8 @@ export default function AnalyticsDashboardPage() {
           onClick={() => setActiveTab('waste')}
           className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition-colors ${
             activeTab === 'waste'
-              ? 'border-brand text-teal-800'
-              : 'border-transparent text-slate-500 hover:text-slate-900'
+              ? 'border-[#087E8B] text-[#087E8B]'
+              : 'border-transparent text-[#718096] hover:text-[#253746]'
           }`}
         >
           <span>🗑️</span>
@@ -311,8 +311,8 @@ export default function AnalyticsDashboardPage() {
           onClick={() => setActiveTab('costs')}
           className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition-colors ${
             activeTab === 'costs'
-              ? 'border-brand text-teal-800'
-              : 'border-transparent text-slate-500 hover:text-slate-900'
+              ? 'border-[#087E8B] text-[#087E8B]'
+              : 'border-transparent text-[#718096] hover:text-[#253746]'
           }`}
         >
           <span>💰</span>
@@ -323,8 +323,8 @@ export default function AnalyticsDashboardPage() {
           onClick={() => setActiveTab('accuracy')}
           className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition-colors ${
             activeTab === 'accuracy'
-              ? 'border-brand text-teal-800'
-              : 'border-transparent text-slate-500 hover:text-slate-900'
+              ? 'border-[#087E8B] text-[#087E8B]'
+              : 'border-transparent text-[#718096] hover:text-[#253746]'
           }`}
         >
           <span>🎯</span>
@@ -335,8 +335,8 @@ export default function AnalyticsDashboardPage() {
           onClick={() => setActiveTab('reports')}
           className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition-colors ${
             activeTab === 'reports'
-              ? 'border-brand text-teal-800'
-              : 'border-transparent text-slate-500 hover:text-slate-900'
+              ? 'border-[#087E8B] text-[#087E8B]'
+              : 'border-transparent text-[#718096] hover:text-[#253746]'
           }`}
         >
           <span>📑</span>

@@ -38,24 +38,24 @@ export function Modal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-900/50 backdrop-blur-xs p-4 sm:p-6 animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#253746]/40 backdrop-blur-xs p-4 sm:p-6 animate-in fade-in duration-150">
       <div
         className="fixed inset-0"
         onClick={onClose}
         aria-hidden="true"
       />
       <div
-        className={`relative w-full ${maxWidthStyles[maxWidth]} rounded-2xl bg-white shadow-2xl border border-slate-100 z-10 overflow-hidden animate-in zoom-in-95 duration-150`}
+        className={`relative w-full ${maxWidthStyles[maxWidth]} rounded-2xl bg-white shadow-2xl border border-[#E5EAF0] z-10 overflow-hidden animate-in zoom-in-95 duration-150`}
       >
-        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-[#E5EAF0] px-6 py-4">
           <div>
-            <h3 className="text-base font-bold text-slate-900">{title}</h3>
-            {description && <p className="text-xs text-slate-400 mt-0.5">{description}</p>}
+            <h3 className="text-base font-bold text-[#253746]">{title}</h3>
+            {description && <p className="text-xs text-[#718096] mt-0.5">{description}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-[#718096] hover:bg-[#F5F7FA] hover:text-[#253746] transition"
             aria-label="Close dialog"
           >
             ✕

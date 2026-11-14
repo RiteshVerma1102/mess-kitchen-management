@@ -6,8 +6,8 @@ export function Table({
   ...props
 }: React.TableHTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="w-full overflow-x-auto rounded-2xl border border-slate-100 bg-white shadow-2xs">
-      <table className={`w-full text-left text-xs text-slate-700 ${className}`} {...props}>
+    <div className="w-full overflow-x-auto rounded-2xl border border-[#E5EAF0] bg-white shadow-xs">
+      <table className={`w-full text-left text-xs text-[#253746] ${className}`} {...props}>
         {children}
       </table>
     </div>
@@ -21,7 +21,7 @@ export function TableHead({
 }: React.HTMLAttributes<HTMLTableSectionElement>) {
   return (
     <thead
-      className={`border-b border-slate-100 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-400 ${className}`}
+      className={`border-b border-[#E5EAF0] bg-[#F5F7FA] text-[11px] font-bold uppercase tracking-wider text-[#718096] ${className}`}
       {...props}
     >
       {children}
@@ -35,7 +35,7 @@ export function TableBody({
   ...props
 }: React.HTMLAttributes<HTMLTableSectionElement>) {
   return (
-    <tbody className={`divide-y divide-slate-100/80 ${className}`} {...props}>
+    <tbody className={`divide-y divide-[#E5EAF0] ${className}`} {...props}>
       {children}
     </tbody>
   );
@@ -48,7 +48,7 @@ export function TableRow({
 }: React.HTMLAttributes<HTMLTableRowElement>) {
   return (
     <tr
-      className={`transition hover:bg-slate-50/60 ${className}`}
+      className={`transition hover:bg-[#F5F7FA]/80 ${className}`}
       {...props}
     >
       {children}

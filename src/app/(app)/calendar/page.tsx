@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/components/Toast';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Button } from '@/components/ui/Button';
 
 interface MonthDaySummary {
   date: string;
@@ -39,8 +41,6 @@ export default function CalendarPage() {
   const [month, setMonth] = useState(now.getUTCMonth() + 1); // 1-12
   const [data, setData] = useState<MonthlyData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [themeMode, setThemeMode] = useState<'logixDark' | 'cleanLight'>('cleanLight');
-  const [showLogixDishPopup, setShowLogixDishPopup] = useState(false);
 
   // Day inspection modal
   const [selectedDay, setSelectedDay] = useState<MonthDaySummary | null>(null);
@@ -102,7 +102,7 @@ export default function CalendarPage() {
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!eventTitle.trim()) {
-      error('Required', 'Please enter an event title');
+      error('Validation', 'Event title is required');
       return;
     }
 
@@ -115,7 +115,7 @@ export default function CalendarPage() {
           date: eventDate,
           title: eventTitle,
           eventType,
-          impactMultiplier: Number(eventMultiplier),
+          impactMultiplier: eventMultiplier,
           description: eventDescription,
           affectedMeals: ['breakfast', 'lunch', 'snacks', 'dinner'],
         }),
@@ -152,207 +152,75 @@ export default function CalendarPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Controls Bar with Logix Software Dark Mode Toggle */}
-      <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border transition ${
-        themeMode === 'logixDark'
-          ? 'bg-[#181F2C] border-slate-800 text-white shadow-xl'
-          : 'bg-white border-slate-100 text-slate-900 shadow-sm'
-      }`}>
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400 font-bold text-lg border border-amber-500/30">
-            📅
-          </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">
-              {themeMode === 'logixDark' ? 'Calendario Mense' : `${monthNames[month - 1]} ${year}`}
-            </h1>
-            <p className={`text-xs mt-0.5 ${themeMode === 'logixDark' ? 'text-slate-400' : 'text-slate-500'}`}>
-              Academic schedule, events registry, and daily dining hall impact
-            </p>
-          </div>
-        </div>
-
-        {/* View Controls & Dark Theme Switcher */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Switcher: Logix Software Dark (Image 4) vs Clean Light */}
-          <div className={`flex rounded-xl p-1 text-xs font-bold border ${
-            themeMode === 'logixDark' ? 'bg-slate-900 border-slate-700' : 'bg-slate-100 border-slate-200'
-          }`}>
-            <button
-              type="button"
-              onClick={() => setThemeMode('logixDark')}
-              className={`rounded-lg px-3 py-1.5 transition ${
-                themeMode === 'logixDark' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              🌙 Logix Dark (Image 4)
-            </button>
-            <button
-              type="button"
-              onClick={() => setThemeMode('cleanLight')}
-              className={`rounded-lg px-3 py-1.5 transition ${
-                themeMode === 'cleanLight' ? 'bg-white text-teal-900 shadow-sm' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              ☀️ Clean Light
-            </button>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={handlePrevMonth}
-              className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition ${
-                themeMode === 'logixDark'
-                  ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
-                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              ‹
-            </button>
-            <button
-              type="button"
-              onClick={handleToday}
-              className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition ${
-                themeMode === 'logixDark'
-                  ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
-                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              Today
-            </button>
-            <button
-              type="button"
-              onClick={handleNextMonth}
-              className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition ${
-                themeMode === 'logixDark'
-                  ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
-                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              ›
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setIsAddEventOpen(true)}
-            className="rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs px-3.5 py-2 shadow-sm transition"
-          >
-            + Aggiungi evento / menu
-          </button>
-        </div>
-      </div>
-
-      {/* Logix Software Interactive Dish Popover Demo Banner */}
-      {themeMode === 'logixDark' && (
-        <div className="relative rounded-2xl bg-[#1C2536] p-4 border border-slate-800 flex items-center justify-between text-xs text-slate-300">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-            <span className="font-bold text-white">Logix SGM Live Integration:</span>
-            <span>Click any day or meal badge to view dish portions, ingredients, and takeaway lunchbox rates.</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowLogixDishPopup(!showLogixDishPopup)}
-            className="rounded-lg bg-amber-500/20 border border-amber-500/40 px-3 py-1 text-amber-300 font-bold hover:bg-amber-500/30 transition"
-          >
-            {showLogixDishPopup ? 'Hide Dish Popover' : 'Preview Dish Popover (Image 4)'}
-          </button>
-        </div>
-      )}
-
-      {/* Popover Card Floating (Logix Image 4 Ditto) */}
-      {showLogixDishPopup && (
-        <div className="relative z-20 max-w-sm rounded-2xl bg-[#222B3C] p-4 text-white shadow-2xl border border-slate-700 space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-700 pb-2">
-            <div>
-              <p className="text-xs font-extrabold text-white">Menu Pesce</p>
-              <span className="rounded-sm bg-amber-500/20 text-amber-300 px-1.5 py-0.5 text-[10px] font-bold">
-                PRANZO (Take away)
-              </span>
+      {/* Top Header Bar (Unified SaaS Light Theme) */}
+      <PageHeader
+        icon="📅"
+        title={`${monthNames[month - 1]} ${year}`}
+        description="Academic schedules, holiday impact multipliers, and dining hall headcount forecasts"
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 bg-[#F5F7FA] p-1 rounded-xl border border-[#E5EAF0]">
+              <button
+                type="button"
+                onClick={handlePrevMonth}
+                className="rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-[#253746] hover:bg-[#E5EAF0] shadow-xs transition"
+                aria-label="Previous month"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                onClick={handleToday}
+                className="rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-[#253746] hover:bg-[#E5EAF0] shadow-xs transition"
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                onClick={handleNextMonth}
+                className="rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-[#253746] hover:bg-[#E5EAF0] shadow-xs transition"
+                aria-label="Next month"
+              >
+                ›
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowLogixDishPopup(false)}
-              className="text-slate-400 hover:text-white"
+
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setIsAddEventOpen(true)}
+              icon={<span>➕</span>}
             >
-              ✕
-            </button>
+              Add Academic Event
+            </Button>
           </div>
-
-          {/* Dish 1 */}
-          <div className="flex items-center gap-3 rounded-xl bg-slate-900/60 p-2.5 border border-slate-800">
-            <div className="h-12 w-12 rounded-lg bg-emerald-600 flex items-center justify-center text-xl shrink-0">
-              🥗
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-white truncate">Insalata di salmone</p>
-              <p className="text-[10px] text-slate-400 truncate">Salmone, lattuga, carote, zucchine...</p>
-              <div className="mt-1 flex items-center justify-between">
-                <span className="rounded-xs bg-slate-800 px-1.5 py-0.5 text-[9px] text-slate-300">
-                  Lunchbox
-                </span>
-                <span className="text-xs font-extrabold text-amber-400">5,70 €</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Dish 2 */}
-          <div className="flex items-center gap-3 rounded-xl bg-slate-900/60 p-2.5 border border-slate-800">
-            <div className="h-12 w-12 rounded-lg bg-teal-600 flex items-center justify-center text-xl shrink-0">
-              🍲
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-white truncate">Insalata e pesce mix</p>
-              <p className="text-[10px] text-slate-400 truncate">Salmone, gamberi, lattuga, mais...</p>
-              <div className="mt-1 flex items-center justify-between">
-                <span className="rounded-xs bg-slate-800 px-1.5 py-0.5 text-[9px] text-slate-300">
-                  Lunchbox
-                </span>
-                <span className="text-xs font-extrabold text-amber-400">5,70 €</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+        }
+      />
 
       {/* Calendar Grid Container */}
-      <div className={`rounded-2xl border overflow-hidden shadow-sm transition ${
-        themeMode === 'logixDark'
-          ? 'bg-[#181F2C] border-slate-800 text-white'
-          : 'bg-white border-slate-100 text-slate-900'
-      }`}>
-        {/* Day-of-Week Bar */}
-        <div className={`grid grid-cols-7 text-center text-[11px] font-extrabold uppercase tracking-wider py-3 border-b ${
-          themeMode === 'logixDark'
-            ? 'bg-[#141A25] border-slate-800 text-slate-400'
-            : 'bg-slate-50 border-slate-100 text-slate-500'
-        }`}>
-          <div>11 Lun</div>
-          <div>12 Mar</div>
-          <div>13 Mer</div>
-          <div>14 Gio</div>
-          <div>15 Ven</div>
-          <div>16 Sab</div>
-          <div>17 Dom</div>
+      <div className="rounded-2xl border border-[#E5EAF0] bg-white shadow-xs overflow-hidden">
+        {/* Day-of-Week Header Bar */}
+        <div className="grid grid-cols-7 text-center text-[11px] font-extrabold uppercase tracking-wider py-3 border-b border-[#E5EAF0] bg-[#F5F7FA] text-[#718096]">
+          <div>Sun</div>
+          <div>Mon</div>
+          <div>Tue</div>
+          <div>Wed</div>
+          <div>Thu</div>
+          <div>Fri</div>
+          <div>Sat</div>
         </div>
 
-        {/* Days Cells */}
+        {/* Days Grid Cells */}
         {loading ? (
-          <div className="p-20 text-center text-xs animate-pulse text-slate-400">
-            Caricamento calendario in corso...
+          <div className="p-20 text-center text-xs animate-pulse text-[#718096]">
+            Loading mess calendar events...
           </div>
         ) : (
-          <div className={`grid grid-cols-7 auto-rows-fr divide-x divide-y ${
-            themeMode === 'logixDark' ? 'divide-slate-800/80' : 'divide-slate-100'
-          }`}>
+          <div className="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-[#E5EAF0]">
             {paddingDays.map((_, i) => (
               <div
                 key={`pad-${i}`}
-                className={`min-h-[110px] p-2 ${
-                  themeMode === 'logixDark' ? 'bg-[#131924]/40' : 'bg-slate-50/50'
-                }`}
+                className="min-h-[110px] p-2 bg-[#F5F7FA]/40"
               />
             ))}
 
@@ -364,48 +232,42 @@ export default function CalendarPage() {
                 <div
                   key={day.date}
                   onClick={() => setSelectedDay(day)}
-                  className={`min-h-[110px] p-2.5 cursor-pointer transition flex flex-col justify-between ${
-                    themeMode === 'logixDark'
-                      ? 'hover:bg-slate-800/50 bg-[#181F2C]'
-                      : 'hover:bg-slate-50 bg-white'
-                  }`}
+                  className="min-h-[110px] p-2.5 cursor-pointer transition flex flex-col justify-between hover:bg-[#F5F7FA] bg-white"
                 >
                   <div className="flex items-center justify-between">
                     <span
                       className={`text-xs font-black ${
                         isToday
-                          ? 'flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-slate-950 shadow-sm'
-                          : themeMode === 'logixDark' ? 'text-slate-300' : 'text-slate-800'
+                          ? 'flex h-6 w-6 items-center justify-center rounded-full bg-[#087E8B] text-white shadow-xs'
+                          : 'text-[#253746]'
                       }`}
                     >
                       {day.dayOfMonth}
                     </span>
 
                     {day.isHoliday && (
-                      <span className="rounded-xs bg-rose-500/20 text-rose-300 px-1 py-0.5 text-[9px] font-bold">
-                        Festivo
+                      <span className="rounded-md bg-[#FCEEEE] text-[#DC5353] border border-[#DC5353]/20 px-1.5 py-0.5 text-[9px] font-bold">
+                        Holiday
                       </span>
                     )}
                   </div>
 
-                  {/* Logix-style meal badges */}
+                  {/* Meal badges */}
                   <div className="my-1.5 space-y-1">
-                    {/* Meal Pill 1 */}
-                    <div className="rounded-sm bg-amber-500/20 border border-amber-500/30 px-1.5 py-0.5 text-[10px] font-bold text-amber-300 truncate">
-                      Pranzo • Menu Pesce
+                    <div className="rounded-md bg-[#DDF3F3] border border-[#087E8B]/20 px-1.5 py-0.5 text-[10px] font-bold text-[#087E8B] truncate">
+                      Lunch • Standard Thali
                     </div>
-                    {/* Meal Pill 2 */}
-                    <div className="rounded-sm bg-orange-500/20 border border-orange-500/30 px-1.5 py-0.5 text-[10px] font-bold text-orange-300 truncate">
-                      Cena • Take Away
+                    <div className="rounded-md bg-[#F5F7FA] border border-[#E5EAF0] px-1.5 py-0.5 text-[10px] font-semibold text-[#718096] truncate">
+                      Dinner • Rotational Menu
                     </div>
                   </div>
 
                   {/* Events count */}
                   <div className="flex items-center justify-between text-[10px]">
-                    <span className="text-slate-500">
-                      {dayEvents.length > 0 ? `${dayEvents.length} eventi` : 'Regolare'}
+                    <span className="text-[#718096]">
+                      {dayEvents.length > 0 ? `${dayEvents.length} event${dayEvents.length > 1 ? 's' : ''}` : 'Regular'}
                     </span>
-                    <span className="text-emerald-400 font-semibold">● Menu OK</span>
+                    <span className="text-[#16A36A] font-semibold">● Menu OK</span>
                   </div>
                 </div>
               );
@@ -414,16 +276,61 @@ export default function CalendarPage() {
         )}
       </div>
 
+      {/* Day Details Modal */}
+      {selectedDay && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#253746]/40 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-[#E5EAF0]">
+            <div className="flex items-center justify-between border-b border-[#E5EAF0] pb-3">
+              <div>
+                <h3 className="text-base font-bold text-[#253746]">
+                  {selectedDay.date}
+                </h3>
+                <p className="text-xs text-[#718096]">
+                  Dining hall operations & calendar details
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedDay(null)}
+                className="rounded-lg p-1 text-[#718096] hover:bg-[#F5F7FA] hover:text-[#253746]"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <div className="rounded-xl bg-[#F5F7FA] border border-[#E5EAF0] p-3 text-xs">
+                <span className="font-bold text-[#718096] block mb-1">Status</span>
+                <p className="text-[#253746] font-semibold">
+                  {selectedDay.isHoliday ? 'Campus Holiday (Reduced turnout multiplier: 0.35x)' : 'Full Session Academic Day (Standard multiplier: 1.0x)'}
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-[#DDF3F3] border border-[#087E8B]/20 p-3 text-xs text-[#087E8B]">
+                <span className="font-bold block mb-1">Menu Schedule</span>
+                <p className="text-[#253746] font-medium">Breakfast, Lunch, Snacks, Dinner published and active.</p>
+              </div>
+            </div>
+
+            <div className="mt-5 flex justify-end">
+              <Button variant="outline" size="sm" onClick={() => setSelectedDay(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add Event Modal */}
       {isAddEventOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl text-slate-900 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900">Add Academic / Mess Event</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#253746]/40 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-[#E5EAF0] text-[#253746] animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-[#E5EAF0] pb-3">
+              <h3 className="text-base font-bold text-[#253746]">Add Academic / Mess Event</h3>
               <button
                 type="button"
                 onClick={() => setIsAddEventOpen(false)}
-                className="text-slate-400 hover:text-slate-700"
+                className="text-[#718096] hover:text-[#253746]"
               >
                 ✕
               </button>
@@ -431,32 +338,32 @@ export default function CalendarPage() {
 
             <form onSubmit={handleCreateEvent} className="mt-4 space-y-3.5">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Date</label>
+                <label className="block text-xs font-bold text-[#253746] mb-1">Date</label>
                 <input
                   type="date"
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
+                  className="w-full rounded-xl border border-[#E5EAF0] bg-white px-3 py-2 text-xs text-[#253746] focus:border-[#087E8B] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Title</label>
+                <label className="block text-xs font-bold text-[#253746] mb-1">Title</label>
                 <input
                   type="text"
                   placeholder="e.g. Midterm Examinations / Diwali Feast"
                   value={eventTitle}
                   onChange={(e) => setEventTitle(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
+                  className="w-full rounded-xl border border-[#E5EAF0] bg-white px-3 py-2 text-xs text-[#253746] focus:border-[#087E8B] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Event Type</label>
+                <label className="block text-xs font-bold text-[#253746] mb-1">Event Type</label>
                 <select
                   value={eventType}
                   onChange={(e) => setEventType(e.target.value as any)}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
+                  className="w-full rounded-xl border border-[#E5EAF0] bg-white px-3 py-2 text-xs text-[#253746] focus:border-[#087E8B] focus:outline-none"
                 >
                   <option value="holiday">Holiday (Reduced Demand)</option>
                   <option value="exam">Examinations (Morning Surge)</option>
@@ -467,7 +374,7 @@ export default function CalendarPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-[#253746] mb-1">
                   Demand Multiplier: {eventMultiplier}x
                 </label>
                 <input
@@ -477,22 +384,22 @@ export default function CalendarPage() {
                   step="0.05"
                   value={eventMultiplier}
                   onChange={(e) => setEventMultiplier(parseFloat(e.target.value))}
-                  className="w-full"
+                  className="w-full accent-[#087E8B]"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex justify-end gap-2 pt-3 border-t border-[#E5EAF0]">
                 <button
                   type="button"
                   onClick={() => setIsAddEventOpen(false)}
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  className="rounded-xl border border-[#E5EAF0] px-3 py-2 text-xs font-semibold text-[#718096] hover:bg-[#F5F7FA]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={savingEvent}
-                  className="rounded-xl bg-teal-800 px-4 py-2 text-xs font-bold text-white hover:bg-teal-900 transition"
+                  className="rounded-xl bg-[#087E8B] px-4 py-2 text-xs font-bold text-white hover:bg-[#066873] transition"
                 >
                   {savingEvent ? 'Saving...' : 'Add Event'}
                 </button>

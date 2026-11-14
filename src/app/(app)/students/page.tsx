@@ -168,34 +168,34 @@ export default function StudentsDirectoryPage() {
           <TableBody>
             {students.map((student) => (
               <TableRow key={student._id}>
-                <TableCell className="font-mono font-bold text-slate-800">
+                <TableCell className="font-mono font-bold text-[#253746]">
                   {student.enrollmentNumber}
                 </TableCell>
                 <TableCell>
-                  <p className="font-bold text-slate-900">{student.fullName}</p>
-                  <p className="text-[11px] text-slate-400">{student.email}</p>
+                  <p className="font-bold text-[#253746]">{student.fullName}</p>
+                  <p className="text-[11px] text-[#718096]">{student.email}</p>
                 </TableCell>
                 <TableCell>
-                  <p className="font-semibold text-slate-800">{student.hostelName}</p>
-                  <p className="text-[11px] text-slate-400">Room {student.roomNumber}</p>
+                  <p className="font-semibold text-[#253746]">{student.hostelName}</p>
+                  <p className="text-[11px] text-[#718096]">Room {student.roomNumber}</p>
                 </TableCell>
                 <TableCell>
-                  <span className="capitalize text-slate-700">
+                  <span className="capitalize text-[#253746]">
                     {student.messHallId.replace('_', ' ')}
                   </span>
                 </TableCell>
                 <TableCell>
-                  <span className="capitalize text-slate-700">
+                  <span className="capitalize text-[#253746]">
                     {student.dietaryPreference.replace('_', ' ')}
                   </span>
                 </TableCell>
                 <TableCell>
                   {student.rfidCardId ? (
-                    <span className="font-mono text-[11px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200">
+                    <span className="font-mono text-[11px] bg-[#F5F7FA] text-[#253746] px-2 py-0.5 rounded-md border border-[#E5EAF0]">
                       {student.rfidCardId}
                     </span>
                   ) : (
-                    <span className="text-slate-400 italic">Unassigned</span>
+                    <span className="text-[#718096] italic">Unassigned</span>
                   )}
                 </TableCell>
                 <TableCell>
@@ -216,7 +216,7 @@ export default function StudentsDirectoryPage() {
                   <button
                     type="button"
                     onClick={() => setSelectedStudent(student)}
-                    className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
+                    className="rounded-lg border border-[#E5EAF0] bg-white px-2.5 py-1 text-xs font-bold text-[#253746] hover:bg-[#F5F7FA] transition"
                   >
                     View Card
                   </button>

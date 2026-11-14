@@ -99,11 +99,11 @@ export function AiAssistantModal({ isOpen, onClose }: AiAssistantModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#253746]/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
-      <div className="relative w-full max-w-lg rounded-3xl bg-white shadow-2xl border border-slate-100 z-10 flex flex-col h-[600px] overflow-hidden animate-in zoom-in-95 duration-150">
+      <div className="relative w-full max-w-lg rounded-3xl bg-white shadow-2xl border border-[#E5EAF0] z-10 flex flex-col h-[600px] overflow-hidden animate-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-teal-900 to-teal-800 px-6 py-4 text-white">
+        <div className="flex items-center justify-between border-b border-[#E5EAF0] bg-[#087E8B] px-6 py-4 text-white">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-xl border border-white/20">
               ✨
@@ -111,11 +111,11 @@ export function AiAssistantModal({ isOpen, onClose }: AiAssistantModalProps) {
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-extrabold text-white">AI Kitchen Assistant</h3>
-                <span className="rounded-full bg-emerald-400/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-400/30">
+                <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold text-white border border-white/30">
                   Gemini Active
                 </span>
               </div>
-              <p className="text-[11px] text-teal-100/80">Real-time demand, buffer, and recipe intelligence</p>
+              <p className="text-[11px] text-[#DDF3F3]">Real-time demand, buffer, and recipe intelligence</p>
             </div>
           </div>
           <button
@@ -128,7 +128,7 @@ export function AiAssistantModal({ isOpen, onClose }: AiAssistantModalProps) {
         </div>
 
         {/* Chat Messages */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 scrollbar-thin bg-slate-50/40">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 scrollbar-thin bg-[#F5F7FA]">
           {messages.map((m) => (
             <div
               key={m.id}
@@ -137,27 +137,27 @@ export function AiAssistantModal({ isOpen, onClose }: AiAssistantModalProps) {
               <div
                 className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${
                   m.sender === 'user'
-                    ? 'bg-teal-800 text-white rounded-br-xs shadow-xs'
-                    : 'bg-white text-slate-800 border border-slate-200/70 rounded-bl-xs shadow-2xs'
+                    ? 'bg-[#087E8B] text-white rounded-br-xs shadow-xs'
+                    : 'bg-white text-[#253746] border border-[#E5EAF0] rounded-bl-xs shadow-2xs'
                 }`}
               >
                 <div className="whitespace-pre-line">{m.text}</div>
                 {m.source && (
-                  <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-teal-600 font-semibold border-t border-slate-100 pt-1">
+                  <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-[#087E8B] font-semibold border-t border-[#E5EAF0] pt-1">
                     <span>✨ {m.source}</span>
                   </div>
                 )}
               </div>
-              <span className="mt-1 px-1 text-[10px] text-slate-400">{m.timestamp}</span>
+              <span className="mt-1 px-1 text-[10px] text-[#718096]">{m.timestamp}</span>
             </div>
           ))}
 
           {loading && (
-            <div className="flex items-center gap-2 text-xs text-slate-400 bg-white p-3 rounded-2xl border border-slate-100 w-fit">
-              <span className="h-2 w-2 rounded-full bg-teal-600 animate-bounce" />
-              <span className="h-2 w-2 rounded-full bg-teal-600 animate-bounce delay-100" />
-              <span className="h-2 w-2 rounded-full bg-teal-600 animate-bounce delay-200" />
-              <span className="text-[11px] text-slate-500 font-medium">Analyzing kitchen records & models...</span>
+            <div className="flex items-center gap-2 text-xs text-[#718096] bg-white p-3 rounded-2xl border border-[#E5EAF0] w-fit">
+              <span className="h-2 w-2 rounded-full bg-[#087E8B] animate-bounce" />
+              <span className="h-2 w-2 rounded-full bg-[#087E8B] animate-bounce delay-100" />
+              <span className="h-2 w-2 rounded-full bg-[#087E8B] animate-bounce delay-200" />
+              <span className="text-[11px] text-[#718096] font-medium">Analyzing kitchen records & models...</span>
             </div>
           )}
 
@@ -165,8 +165,8 @@ export function AiAssistantModal({ isOpen, onClose }: AiAssistantModalProps) {
         </div>
 
         {/* Suggested Prompts */}
-        <div className="px-4 py-2 border-t border-slate-100 bg-white flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 shrink-0">
+        <div className="px-4 py-2 border-t border-[#E5EAF0] bg-white flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#718096] shrink-0">
             Suggested:
           </span>
           {suggestedQuestions.map((q, idx) => (
@@ -174,7 +174,7 @@ export function AiAssistantModal({ isOpen, onClose }: AiAssistantModalProps) {
               key={idx}
               type="button"
               onClick={() => handleSend(q)}
-              className="shrink-0 rounded-full bg-slate-100 hover:bg-teal-50 hover:text-teal-800 hover:border-teal-200 border border-slate-200/60 px-3 py-1 text-[11px] font-medium text-slate-600 transition"
+              className="shrink-0 rounded-full bg-[#F5F7FA] hover:bg-[#DDF3F3] hover:text-[#087E8B] hover:border-[#087E8B]/30 border border-[#E5EAF0] px-3 py-1 text-[11px] font-medium text-[#253746] transition"
             >
               {q}
             </button>
@@ -182,7 +182,7 @@ export function AiAssistantModal({ isOpen, onClose }: AiAssistantModalProps) {
         </div>
 
         {/* Chat Input Bar */}
-        <div className="p-4 border-t border-slate-100 bg-white">
+        <div className="p-4 border-t border-[#E5EAF0] bg-white">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -195,12 +195,12 @@ export function AiAssistantModal({ isOpen, onClose }: AiAssistantModalProps) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about meal turnout, buffers, waste, recipes..."
-              className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-teal-800 focus:outline-none focus:ring-1 focus:ring-teal-800 transition"
+              className="flex-1 rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-4 py-2.5 text-xs text-[#253746] placeholder-[#718096] focus:bg-white focus:border-[#087E8B] focus:outline-none focus:ring-1 focus:ring-[#087E8B] transition"
             />
             <button
               type="submit"
               disabled={!input.trim() || loading}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-800 text-white shadow-xs hover:bg-teal-900 disabled:opacity-40 transition"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#087E8B] text-white shadow-xs hover:bg-[#066873] disabled:opacity-40 transition"
               aria-label="Send message"
             >
               ➤

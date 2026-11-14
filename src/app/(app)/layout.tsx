@@ -70,10 +70,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#F4F7FE]">
+      <div className="flex h-screen items-center justify-center bg-[#F5F7FA]">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
-          <p className="text-sm text-slate-600 font-medium">Launching Smart Mess Operations...</p>
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#E5EAF0] border-t-[#087E8B]" />
+          <p className="text-sm text-[#718096] font-medium">Launching Smart Mess Operations...</p>
         </div>
       </div>
     );
@@ -81,7 +81,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <ToastProvider>
-      <div className="flex min-h-screen bg-[#F4F7FE] text-slate-800 antialiased font-sans">
+      <div className="flex min-h-screen bg-[#F5F7FA] text-[#253746] antialiased font-sans">
         <Sidebar
           role={user?.role}
           isOpen={sidebarOpen}

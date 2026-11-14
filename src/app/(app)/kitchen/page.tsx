@@ -357,13 +357,13 @@ export default function KitchenOperationsPage() {
       </div>
 
       {/* Main Tabs Navigation */}
-      <div className="flex items-center gap-2 border-b border-slate-200">
+      <div className="flex items-center gap-2 border-b border-[#E5EAF0]">
         <button
           onClick={() => setActiveTab('plans')}
           className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
             activeTab === 'plans'
-              ? 'border-blue-600 text-blue-800'
-              : 'border-transparent text-slate-400 hover:text-slate-700'
+              ? 'border-[#087E8B] text-[#087E8B]'
+              : 'border-transparent text-[#718096] hover:text-[#253746]'
           }`}
         >
           <span>🍳</span>
@@ -374,8 +374,8 @@ export default function KitchenOperationsPage() {
           onClick={() => setActiveTab('actuals')}
           className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
             activeTab === 'actuals'
-              ? 'border-blue-600 text-blue-800'
-              : 'border-transparent text-slate-400 hover:text-slate-700'
+              ? 'border-[#087E8B] text-[#087E8B]'
+              : 'border-transparent text-[#718096] hover:text-[#253746]'
           }`}
         >
           <span>⚖️</span>
@@ -386,8 +386,8 @@ export default function KitchenOperationsPage() {
           onClick={() => setActiveTab('variance')}
           className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
             activeTab === 'variance'
-              ? 'border-blue-600 text-blue-800'
-              : 'border-transparent text-slate-400 hover:text-slate-700'
+              ? 'border-[#087E8B] text-[#087E8B]'
+              : 'border-transparent text-[#718096] hover:text-[#253746]'
           }`}
         >
           <span>📊</span>
@@ -399,8 +399,8 @@ export default function KitchenOperationsPage() {
       {activeTab === 'plans' && (
         <div className="space-y-6">
           {/* Meal Service Sub-selector & Buffer Selector */}
-          <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-100 shadow-2xs">
-            <div className="flex items-center gap-2 rounded-xl bg-slate-100 p-1">
+          <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl border border-[#E5EAF0] shadow-xs">
+            <div className="flex items-center gap-2 rounded-xl bg-[#F5F7FA] p-1">
               {(['breakfast', 'lunch', 'snacks', 'dinner'] as const).map((meal) => (
                 <button
                   key={meal}
@@ -412,8 +412,8 @@ export default function KitchenOperationsPage() {
                   }}
                   className={`rounded-lg px-4 py-1.5 text-xs font-bold capitalize transition ${
                     activeMeal === meal
-                      ? 'bg-white text-blue-800 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white text-[#087E8B] shadow-xs'
+                      : 'text-[#718096] hover:text-[#253746]'
                   }`}
                 >
                   {meal}
@@ -423,12 +423,12 @@ export default function KitchenOperationsPage() {
 
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
-                <label className="text-xs font-bold text-slate-600">Buffer:</label>
+                <label className="text-xs font-bold text-[#253746]">Buffer:</label>
                 <select
                   aria-label="Preparation safety buffer percentage"
                   value={bufferPercentage}
                   onChange={(e) => setBufferPercentage(Number(e.target.value))}
-                  className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700"
+                  className="rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3 py-1.5 text-xs font-semibold text-[#253746] focus:border-[#087E8B] focus:outline-none"
                 >
                   <option value={5}>+5% (Standard)</option>
                   <option value={8}>+8% (Recommended)</option>
@@ -440,7 +440,7 @@ export default function KitchenOperationsPage() {
               <button
                 onClick={handleGeneratePlan}
                 disabled={generating}
-                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-blue-600/25 hover:bg-blue-700 transition disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#087E8B] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#066873] transition disabled:opacity-50"
               >
                 {generating ? 'Calculating...' : '⚡ Generate / Scale Plan'}
               </button>
@@ -448,23 +448,23 @@ export default function KitchenOperationsPage() {
           </div>
 
           {loading ? (
-            <div className="flex h-48 items-center justify-center rounded-2xl border border-slate-100 bg-white">
-              <p className="text-xs text-slate-400">Loading kitchen preparation plan...</p>
+            <div className="flex h-48 items-center justify-center rounded-2xl border border-[#E5EAF0] bg-white">
+              <p className="text-xs text-[#718096]">Loading kitchen preparation plan...</p>
             </div>
           ) : currentPlan ? (
             <div className="space-y-6">
               {/* Plan Overview Card */}
-              <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div className="rounded-2xl border border-[#E5EAF0] bg-white p-6 shadow-xs">
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E5EAF0] pb-4">
                   <div>
                     <div className="flex items-center gap-3">
-                      <h2 className="text-base font-bold capitalize text-slate-900">
+                      <h2 className="text-base font-bold capitalize text-[#253746]">
                         {currentPlan.mealType} Service Preparation Plan
                       </h2>
                       {getStatusBadge(currentPlan.status)}
                     </div>
-                    <p className="mt-1 text-xs text-slate-400">
-                      Forecasted Attendance: <strong className="text-slate-800">{currentPlan.forecastedHeadcount}</strong> | Safety Buffer: <strong className="text-slate-800">+{currentPlan.bufferPercentage}%</strong> | Target Portions to Cook: <strong className="text-blue-600 text-sm">{currentPlan.plannedPortions}</strong>
+                    <p className="mt-1 text-xs text-[#718096]">
+                      Forecasted Attendance: <strong className="text-[#253746]">{currentPlan.forecastedHeadcount}</strong> | Safety Buffer: <strong className="text-[#253746]">+{currentPlan.bufferPercentage}%</strong> | Target Portions to Cook: <strong className="text-[#087E8B] text-sm">{currentPlan.plannedPortions}</strong>
                     </p>
                   </div>
 
@@ -472,7 +472,7 @@ export default function KitchenOperationsPage() {
                     {currentPlan.status === 'draft' && (
                       <button
                         onClick={() => handleUpdateStatus(currentPlan._id, 'approved')}
-                        className="rounded-xl bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700"
+                        className="rounded-xl bg-[#087E8B] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#066873]"
                       >
                         ✓ Approve Plan
                       </button>
@@ -480,7 +480,7 @@ export default function KitchenOperationsPage() {
                     {currentPlan.status === 'approved' && (
                       <button
                         onClick={() => handleUpdateStatus(currentPlan._id, 'in_kitchen')}
-                        className="rounded-xl bg-amber-500 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-amber-600"
+                        className="rounded-xl bg-[#E9A23B] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#d4902f]"
                       >
                         🍳 Send to Cooking Line
                       </button>
@@ -488,7 +488,7 @@ export default function KitchenOperationsPage() {
                     {currentPlan.status === 'in_kitchen' && (
                       <button
                         onClick={() => handleUpdateStatus(currentPlan._id, 'completed')}
-                        className="rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
+                        className="rounded-xl bg-[#16A36A] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#128a59]"
                       >
                         🏁 Complete Service
                       </button>
@@ -497,9 +497,9 @@ export default function KitchenOperationsPage() {
                 </div>
 
                 {/* Planned Dishes Table */}
-                <div className="mt-4 overflow-x-auto rounded-xl border border-slate-100">
+                <div className="mt-4 overflow-x-auto rounded-xl border border-[#E5EAF0]">
                   <table className="w-full text-left text-xs">
-                    <thead className="border-b border-slate-100 bg-slate-50/70 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                    <thead className="border-b border-[#E5EAF0] bg-[#F5F7FA] text-[#718096] font-bold uppercase tracking-wider text-[10px]">
                       <tr>
                         <th className="px-4 py-3">Planned Dish</th>
                         <th className="px-4 py-3">Portions to Cook</th>
@@ -508,13 +508,13 @@ export default function KitchenOperationsPage() {
                         <th className="px-4 py-3 text-right">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 text-slate-700">
+                    <tbody className="divide-y divide-[#E5EAF0] text-[#253746]">
                       {currentPlan.items.map((item, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50/80 transition">
-                          <td className="px-4 py-3 font-bold text-slate-900">{item.dishName}</td>
-                          <td className="px-4 py-3 font-bold text-blue-600">{item.plannedPortions}</td>
-                          <td className="px-4 py-3 text-slate-500">{item.prepNotes || 'Standard Batch'}</td>
-                          <td className="px-4 py-3 font-medium text-slate-800">₹{(item.estimatedCostPaise / 100).toFixed(2)}</td>
+                        <tr key={idx} className="hover:bg-[#F5F7FA]/80 transition">
+                          <td className="px-4 py-3 font-bold text-[#253746]">{item.dishName}</td>
+                          <td className="px-4 py-3 font-bold text-[#087E8B]">{item.plannedPortions}</td>
+                          <td className="px-4 py-3 text-[#718096]">{item.prepNotes || 'Standard Batch'}</td>
+                          <td className="px-4 py-3 font-medium text-[#253746]">₹{(item.estimatedCostPaise / 100).toFixed(2)}</td>
                           <td className="px-4 py-3 text-right">
                             <button
                               onClick={() => {
@@ -524,7 +524,7 @@ export default function KitchenOperationsPage() {
                                 setActualServed(item.plannedPortions);
                                 setActiveTab('actuals');
                               }}
-                              className="font-bold text-blue-600 hover:underline"
+                              className="font-bold text-[#087E8B] hover:underline"
                             >
                               Log Actuals →
                             </button>
@@ -536,14 +536,14 @@ export default function KitchenOperationsPage() {
                 </div>
               </div>
 
-              {/* Ingredient Requirements & Shortages Card (Lakeland Low Stock Layout) */}
-              <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              {/* Ingredient Requirements & Shortages Card */}
+              <div className="rounded-2xl border border-[#E5EAF0] bg-white p-6 shadow-xs">
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E5EAF0] pb-4">
                   <div>
-                    <h3 className="text-base font-bold text-slate-900">
+                    <h3 className="text-base font-bold text-[#253746]">
                       Raw Commodity Explosion & Shortfall Check
                     </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-xs text-[#718096] mt-0.5">
                       Net inventory exploded from recipe Bill of Materials (BOM) including prep yield factors
                     </p>
                   </div>
@@ -551,7 +551,7 @@ export default function KitchenOperationsPage() {
                   {totalShortfallCostPaise > 0 && (
                     <button
                       onClick={handleCreateIndentFromShortage}
-                      className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-3.5 py-2 text-xs font-bold text-white shadow-md shadow-rose-600/25 hover:bg-rose-700 transition"
+                      className="inline-flex items-center gap-2 rounded-xl bg-[#DC5353] px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#c04343] transition"
                     >
                       <span>📦</span>
                       <span>Generate Indent for Shortages (₹{(totalShortfallCostPaise / 100).toFixed(2)})</span>
@@ -559,9 +559,9 @@ export default function KitchenOperationsPage() {
                   )}
                 </div>
 
-                <div className="mt-4 overflow-x-auto rounded-xl border border-slate-100">
+                <div className="mt-4 overflow-x-auto rounded-xl border border-[#E5EAF0]">
                   <table className="w-full text-left text-xs">
-                    <thead className="border-b border-slate-100 bg-slate-50/70 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                    <thead className="border-b border-[#E5EAF0] bg-[#F5F7FA] text-[#718096] font-bold uppercase tracking-wider text-[10px]">
                       <tr>
                         <th className="px-4 py-3">Ingredient</th>
                         <th className="px-4 py-3">Category</th>
@@ -572,28 +572,28 @@ export default function KitchenOperationsPage() {
                         <th className="px-4 py-3">Mapped Dishes</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 text-slate-700">
+                    <tbody className="divide-y divide-[#E5EAF0] text-[#253746]">
                       {selectedPlanRequirements.map((ing) => (
-                        <tr key={ing.ingredientId} className="hover:bg-slate-50/80 transition">
-                          <td className="px-4 py-3 font-bold text-slate-900">{ing.name}</td>
-                          <td className="px-4 py-3 capitalize text-slate-500">{ing.category}</td>
-                          <td className="px-4 py-3 font-bold text-slate-800">{ing.grossRequiredQty} {ing.unit}</td>
-                          <td className="px-4 py-3 text-slate-600">{ing.currentStock} {ing.unit}</td>
+                        <tr key={ing.ingredientId} className="hover:bg-[#F5F7FA]/80 transition">
+                          <td className="px-4 py-3 font-bold text-[#253746]">{ing.name}</td>
+                          <td className="px-4 py-3 capitalize text-[#718096]">{ing.category}</td>
+                          <td className="px-4 py-3 font-bold text-[#253746]">{ing.grossRequiredQty} {ing.unit}</td>
+                          <td className="px-4 py-3 text-[#718096]">{ing.currentStock} {ing.unit}</td>
                           <td className="px-4 py-3">
                             {ing.shortfall > 0 ? (
-                              <span className="rounded-full bg-rose-50 border border-rose-200 px-2.5 py-0.5 text-[10px] font-bold text-rose-700">
+                              <span className="rounded-full bg-[#FEF6E9] border border-[#E9A23B]/30 px-2.5 py-0.5 text-[10px] font-bold text-[#E9A23B]">
                                 Deficit Shortage
                               </span>
                             ) : (
-                              <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                              <span className="rounded-full bg-[#E8F7F0] border border-[#16A36A]/20 px-2.5 py-0.5 text-[10px] font-bold text-[#16A36A]">
                                 In Stock
                               </span>
                             )}
                           </td>
-                          <td className="px-4 py-3 font-bold text-rose-600">
+                          <td className="px-4 py-3 font-bold text-[#DC5353]">
                             {ing.shortfall > 0 ? `${ing.shortfall} ${ing.unit}` : '—'}
                           </td>
-                          <td className="px-4 py-3 text-slate-400">{ing.associatedDishes.join(', ')}</td>
+                          <td className="px-4 py-3 text-[#718096]">{ing.associatedDishes.join(', ')}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -602,16 +602,16 @@ export default function KitchenOperationsPage() {
               </div>
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center shadow-sm">
+            <div className="rounded-2xl border border-dashed border-[#E5EAF0] bg-white p-12 text-center shadow-xs">
               <span className="text-4xl">🍲</span>
-              <h3 className="mt-3 text-base font-bold text-slate-800">No Preparation Plan Generated</h3>
-              <p className="mt-1 text-xs text-slate-400">
+              <h3 className="mt-3 text-base font-bold text-[#253746]">No Preparation Plan Generated</h3>
+              <p className="mt-1 text-xs text-[#718096]">
                 Click below to compute forecasted turnout and scale recipe BOMs for {activeMeal} on {selectedDate}.
               </p>
               <button
                 onClick={handleGeneratePlan}
                 disabled={generating}
-                className="mt-4 rounded-xl bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-blue-600/20 hover:bg-blue-700 transition"
+                className="mt-4 rounded-xl bg-[#087E8B] px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#066873] transition"
               >
                 {generating ? 'Calculating Plan...' : `Generate ${activeMeal} Plan Now`}
               </button>
@@ -668,25 +668,25 @@ export default function KitchenOperationsPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700">Prepared Qty</label>
+                  <label className="block text-xs font-bold text-[#253746]">Prepared Qty</label>
                   <input
                     type="number"
                     min="0"
                     value={actualPrepared}
                     onChange={(e) => setActualPrepared(Number(e.target.value))}
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-blue-600"
+                    className="mt-1 w-full rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3 py-2 text-xs font-bold text-[#087E8B]"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700">Served Qty</label>
+                  <label className="block text-xs font-bold text-[#253746]">Served Qty</label>
                   <input
                     type="number"
                     min="0"
                     value={actualServed}
                     onChange={(e) => setActualServed(Number(e.target.value))}
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-emerald-600"
+                    className="mt-1 w-full rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3 py-2 text-xs font-bold text-[#16A36A]"
                     required
                   />
                 </div>
@@ -694,54 +694,54 @@ export default function KitchenOperationsPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700">Leftover Portions</label>
+                  <label className="block text-xs font-bold text-[#253746]">Leftover Portions</label>
                   <input
                     type="number"
                     min="0"
                     value={actualLeftover}
                     onChange={(e) => setActualLeftover(Number(e.target.value))}
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-amber-600 font-bold"
+                    className="mt-1 w-full rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3 py-2 text-xs text-[#E9A23B] font-bold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700">Spoiled / Waste</label>
+                  <label className="block text-xs font-bold text-[#253746]">Spoiled / Waste</label>
                   <input
                     type="number"
                     min="0"
                     value={actualSpoiled}
                     onChange={(e) => setActualSpoiled(Number(e.target.value))}
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-rose-600 font-bold"
+                    className="mt-1 w-full rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3 py-2 text-xs text-[#DC5353] font-bold"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700">Kitchen Staff Log Notes</label>
+                <label className="block text-xs font-bold text-[#253746]">Kitchen Staff Log Notes</label>
                 <textarea
                   rows={2}
                   value={actualNotes}
                   onChange={(e) => setActualNotes(e.target.value)}
                   placeholder="e.g. Extra rain caused lower turnout; stored in freezer"
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs"
+                  className="mt-1 w-full rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3.5 py-2 text-xs text-[#253746]"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={submittingActual}
-                className="w-full rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-600/20 hover:bg-blue-700 transition"
+                className="w-full rounded-xl bg-[#087E8B] py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[#066873] transition"
               >
                 {submittingActual ? 'Submitting...' : 'Save Kitchen Actuals'}
               </button>
             </form>
           </div>
 
-          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm lg:col-span-2">
-            <h2 className="text-base font-bold text-slate-900">Recorded Service Actuals for {selectedDate}</h2>
-            <div className="mt-4 overflow-x-auto rounded-xl border border-slate-100">
+          <div className="rounded-2xl border border-[#E5EAF0] bg-white p-6 shadow-xs lg:col-span-2">
+            <h2 className="text-base font-bold text-[#253746]">Recorded Service Actuals for {selectedDate}</h2>
+            <div className="mt-4 overflow-x-auto rounded-xl border border-[#E5EAF0]">
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-slate-100 bg-slate-50/70 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                <thead className="border-b border-[#E5EAF0] bg-[#F5F7FA] text-[#718096] font-bold uppercase tracking-wider text-[10px]">
                   <tr>
                     <th className="px-4 py-3">Meal</th>
                     <th className="px-4 py-3">Dish</th>
@@ -752,18 +752,18 @@ export default function KitchenOperationsPage() {
                     <th className="px-4 py-3">Variance</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-[#E5EAF0] text-[#253746]">
                   {varianceData && varianceData.items.length > 0 ? (
                     varianceData.items.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/80 transition">
-                        <td className="px-4 py-3 capitalize font-bold text-slate-800">{item.mealType}</td>
-                        <td className="px-4 py-3 font-semibold text-slate-900">{item.dishName}</td>
-                        <td className="px-4 py-3 text-slate-500">{item.plannedPortions}</td>
-                        <td className="px-4 py-3 font-bold text-blue-600">{item.quantityPrepared}</td>
-                        <td className="px-4 py-3 font-bold text-emerald-600">{item.quantityServed}</td>
-                        <td className="px-4 py-3 font-medium text-amber-600">{item.quantityLeftover}</td>
+                      <tr key={idx} className="hover:bg-[#F5F7FA]/80 transition">
+                        <td className="px-4 py-3 capitalize font-bold text-[#253746]">{item.mealType}</td>
+                        <td className="px-4 py-3 font-semibold text-[#253746]">{item.dishName}</td>
+                        <td className="px-4 py-3 text-[#718096]">{item.plannedPortions}</td>
+                        <td className="px-4 py-3 font-bold text-[#087E8B]">{item.quantityPrepared}</td>
+                        <td className="px-4 py-3 font-bold text-[#16A36A]">{item.quantityServed}</td>
+                        <td className="px-4 py-3 font-medium text-[#E9A23B]">{item.quantityLeftover}</td>
                         <td className="px-4 py-3">
-                          <span className={`font-bold ${item.variancePortions > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                          <span className={`font-bold ${item.variancePortions > 0 ? 'text-[#DC5353]' : 'text-[#16A36A]'}`}>
                             {item.variancePortions > 0 ? `+${item.variancePortions}` : item.variancePortions} ({item.variancePercentage}%)
                           </span>
                         </td>
@@ -771,7 +771,7 @@ export default function KitchenOperationsPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={7} className="px-4 py-6 text-center text-slate-400">
+                      <td colSpan={7} className="px-4 py-6 text-center text-[#718096]">
                         No service actuals logged for this date yet.
                       </td>
                     </tr>
@@ -786,15 +786,15 @@ export default function KitchenOperationsPage() {
       {/* TAB 3: VARIANCE SUMMARY */}
       {activeTab === 'variance' && (
         <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-            <h2 className="text-base font-bold text-slate-900">Planned vs Actual Variance Analysis</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+          <div className="rounded-2xl border border-[#E5EAF0] bg-white p-6 shadow-xs">
+            <h2 className="text-base font-bold text-[#253746]">Planned vs Actual Variance Analysis</h2>
+            <p className="text-xs text-[#718096] mt-0.5">
               Production precision analysis and leftover volumes to reach zero food waste
             </p>
 
-            <div className="mt-4 overflow-x-auto rounded-xl border border-slate-100">
+            <div className="mt-4 overflow-x-auto rounded-xl border border-[#E5EAF0]">
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-slate-100 bg-slate-50/70 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                <thead className="border-b border-[#E5EAF0] bg-[#F5F7FA] text-[#718096] font-bold uppercase tracking-wider text-[10px]">
                   <tr>
                     <th className="px-4 py-3">Meal Service</th>
                     <th className="px-4 py-3">Dish</th>
@@ -806,25 +806,25 @@ export default function KitchenOperationsPage() {
                     <th className="px-4 py-3">Over/Under Prep</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-[#E5EAF0] text-[#253746]">
                   {varianceData && varianceData.items.length > 0 ? (
                     varianceData.items.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/80 transition">
-                        <td className="px-4 py-3 capitalize font-bold text-slate-800">{item.mealType}</td>
-                        <td className="px-4 py-3 font-semibold text-slate-900">{item.dishName}</td>
-                        <td className="px-4 py-3 text-slate-500">{item.plannedPortions}</td>
-                        <td className="px-4 py-3 font-bold text-blue-600">{item.quantityPrepared}</td>
-                        <td className="px-4 py-3 font-bold text-emerald-600">{item.quantityServed}</td>
-                        <td className="px-4 py-3 font-medium text-amber-600">{item.quantityLeftover}</td>
-                        <td className="px-4 py-3 text-rose-600">{item.quantitySpoiled}</td>
+                      <tr key={idx} className="hover:bg-[#F5F7FA]/80 transition">
+                        <td className="px-4 py-3 capitalize font-bold text-[#253746]">{item.mealType}</td>
+                        <td className="px-4 py-3 font-semibold text-[#253746]">{item.dishName}</td>
+                        <td className="px-4 py-3 text-[#718096]">{item.plannedPortions}</td>
+                        <td className="px-4 py-3 font-bold text-[#087E8B]">{item.quantityPrepared}</td>
+                        <td className="px-4 py-3 font-bold text-[#16A36A]">{item.quantityServed}</td>
+                        <td className="px-4 py-3 font-medium text-[#E9A23B]">{item.quantityLeftover}</td>
+                        <td className="px-4 py-3 text-[#DC5353]">{item.quantitySpoiled}</td>
                         <td className="px-4 py-3">
                           <span
-                            className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                            className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold border ${
                               item.variancePortions > 10
-                                ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                ? 'bg-[#FCEEEE] text-[#DC5353] border-[#DC5353]/20'
                                 : item.variancePortions < -10
-                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                                : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                ? 'bg-[#FEF6E9] text-[#E9A23B] border-[#E9A23B]/30'
+                                : 'bg-[#E8F7F0] text-[#16A36A] border-[#16A36A]/20'
                             }`}
                           >
                             {item.variancePortions > 0 ? `+${item.variancePortions}` : item.variancePortions} ({item.variancePercentage}%)
@@ -834,7 +834,7 @@ export default function KitchenOperationsPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={8} className="px-4 py-6 text-center text-slate-400">
+                      <td colSpan={8} className="px-4 py-6 text-center text-[#718096]">
                         No variance data available.
                       </td>
                     </tr>
