@@ -1,9 +1,11 @@
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { connectDb } from '@/lib/db';
-import { AppError, ConflictError, NotFoundError, UnauthorizedError } from '@/lib/errors';
+import { AppError, ConflictError, ForbiddenError, NotFoundError, UnauthorizedError, ValidationError } from '@/lib/errors';
 import { writeAudit } from '@/core/audit/audit.service';
 import type { Session } from '@/core/auth/session';
 import { InstitutionModel } from '@/core/tenant/institution.model';
+import { sendEmail, renderVerificationEmail, renderPasswordResetEmail } from '@/lib/email';
 import { userRepository } from './user.repository';
 import { UserModel, type IUser, type UserDoc, type SafeUser } from './user.model';
 import type { CreateUserInput, LoginInput, UpdateUserInput, ListUsersQuery } from './user.schema';
@@ -24,6 +26,10 @@ export function toSafeUser(user: UserDoc | (IUser & { _id: unknown; createdAt?: 
     : { ...(user as unknown as Record<string, unknown>) };
 
   delete obj.hashedPassword;
+  delete obj.verificationCode;
+  delete obj.verificationCodeExpiresAt;
+  delete obj.resetPasswordToken;
+  delete obj.resetPasswordExpiresAt;
   return obj as unknown as SafeUser;
 }
 
@@ -70,6 +76,11 @@ export async function authenticateUser(input: LoginInput): Promise<AuthResult> {
   const isValid = await verifyPassword(input.password, user.hashedPassword);
   if (!isValid) {
     throw new UnauthorizedError('Invalid email or password');
+  }
+
+  // 3b. Verify email activation status
+  if (user.isEmailVerified === false) {
+    throw new ForbiddenError('Email verification required. Please verify your email to access your account.');
   }
 
   // 4. Update last login
@@ -119,6 +130,7 @@ export async function createUser(session: Session, input: CreateUserInput, ip?: 
     role: input.role,
     hallIds: input.hallIds || [],
     active: input.active ?? true,
+    isEmailVerified: true,
     isSynthetic: false,
   });
 
@@ -261,4 +273,279 @@ export async function getUserProfile(session: Session): Promise<SafeUser & { ins
       code: institution?.code ?? 'DEFAULT',
     },
   };
+}
+
+export interface RegisterUserInput {
+  fullName: string;
+  email: string;
+  password: string;
+  institutionSlug?: string;
+}
+
+/**
+ * Register a new user account with email verification workflow (Clerk-style)
+ */
+export async function registerUser(input: RegisterUserInput): Promise<{ user: SafeUser; verificationCode: string }> {
+  await connectDb();
+
+  const slug = (input.institutionSlug || 'thapar-demo').trim().toLowerCase();
+  const institution = await InstitutionModel.findOne({
+    $or: [{ slug }, { code: slug.toUpperCase() }],
+    active: true,
+  }).lean();
+
+  if (!institution) {
+    throw new ValidationError('Invalid campus or institution identifier.');
+  }
+
+  const institutionId = String(institution._id);
+  const normalizedEmail = input.email.trim().toLowerCase();
+
+  // Validate password strength
+  if (!input.password || input.password.length < 8) {
+    throw new ValidationError('Password must be at least 8 characters long.');
+  }
+
+  // Check duplicate account
+  const existing = await UserModel.findOne({
+    institutionId,
+    email: normalizedEmail,
+  });
+
+  if (existing) {
+    throw new ConflictError('An account with this email address already exists at this institution.');
+  }
+
+  // Hash password
+  const hashedPassword = await hashPassword(input.password);
+
+  // Generate 6-digit random code and token
+  const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const verificationExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+  const user = await UserModel.create({
+    institutionId,
+    email: normalizedEmail,
+    hashedPassword,
+    fullName: input.fullName.trim(),
+    role: 'student', // public registrations default to student role
+    hallIds: ['hall_a'],
+    active: true,
+    isEmailVerified: false,
+    verificationCode,
+    verificationCodeExpiresAt: verificationExpiresAt,
+  });
+
+  // Dispatch verification email
+  const verifyLink = `http://localhost:3000/verify-email?email=${encodeURIComponent(normalizedEmail)}&code=${verificationCode}&institution=${encodeURIComponent(slug)}`;
+  const emailContent = renderVerificationEmail(input.fullName, verificationCode, verifyLink);
+  await sendEmail({
+    to: normalizedEmail,
+    subject: emailContent.subject,
+    text: emailContent.text,
+    html: emailContent.html,
+    verificationCode,
+  });
+
+  return {
+    user: toSafeUser(user as unknown as UserDoc),
+    verificationCode,
+  };
+}
+
+/**
+ * Verify user email via 6-digit code or link token
+ */
+export async function verifyEmailCode(input: {
+  email: string;
+  code: string;
+  institutionSlug?: string;
+}): Promise<{ user: SafeUser; institution: { id: string; name: string; slug: string; code: string } }> {
+  await connectDb();
+
+  const slug = (input.institutionSlug || 'thapar-demo').trim().toLowerCase();
+  const institution = await InstitutionModel.findOne({
+    $or: [{ slug }, { code: slug.toUpperCase() }],
+    active: true,
+  }).lean();
+
+  if (!institution) {
+    throw new ValidationError('Invalid institution identifier.');
+  }
+
+  const institutionId = String(institution._id);
+  const normalizedEmail = input.email.trim().toLowerCase();
+  const inputCode = input.code.trim();
+
+  // Find user with verification code
+  const user = await UserModel.findOne({
+    institutionId,
+    email: normalizedEmail,
+  }).select('+verificationCode +verificationCodeExpiresAt');
+
+  if (!user) {
+    throw new NotFoundError('User account not found.');
+  }
+
+  if (user.isEmailVerified) {
+    return {
+      user: toSafeUser(user as unknown as UserDoc),
+      institution: {
+        id: institutionId,
+        name: institution.name,
+        slug: institution.slug,
+        code: institution.code,
+      },
+    };
+  }
+
+  if (!user.verificationCode || user.verificationCode !== inputCode) {
+    throw new ValidationError('Invalid verification code. Please check your email and try again.');
+  }
+
+  if (user.verificationCodeExpiresAt && user.verificationCodeExpiresAt < new Date()) {
+    throw new ValidationError('Verification code has expired. Please request a new code.');
+  }
+
+  // Mark verified
+  user.isEmailVerified = true;
+  user.verificationCode = undefined;
+  user.verificationCodeExpiresAt = undefined;
+  await user.save();
+
+  return {
+    user: toSafeUser(user as unknown as UserDoc),
+    institution: {
+      id: institutionId,
+      name: institution.name,
+      slug: institution.slug,
+      code: institution.code,
+    },
+  };
+}
+
+/**
+ * Resend verification email code with 60s cooldown safeguard
+ */
+export async function resendVerificationCode(input: { email: string; institutionSlug?: string }): Promise<boolean> {
+  await connectDb();
+
+  const slug = (input.institutionSlug || 'thapar-demo').trim().toLowerCase();
+  const institution = await InstitutionModel.findOne({
+    $or: [{ slug }, { code: slug.toUpperCase() }],
+    active: true,
+  }).lean();
+
+  if (!institution) return true; // generic response
+
+  const normalizedEmail = input.email.trim().toLowerCase();
+  const user = await UserModel.findOne({
+    institutionId: String(institution._id),
+    email: normalizedEmail,
+  });
+
+  if (!user || user.isEmailVerified) {
+    return true; // Already verified or not found
+  }
+
+  const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+  user.verificationCode = newCode;
+  user.verificationCodeExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+  await user.save();
+
+  const verifyLink = `http://localhost:3000/verify-email?email=${encodeURIComponent(normalizedEmail)}&code=${newCode}&institution=${encodeURIComponent(slug)}`;
+  const emailContent = renderVerificationEmail(user.fullName, newCode, verifyLink);
+  await sendEmail({
+    to: normalizedEmail,
+    subject: emailContent.subject,
+    text: emailContent.text,
+    html: emailContent.html,
+    verificationCode: newCode,
+  });
+
+  return true;
+}
+
+/**
+ * Initiate password reset request (Clerk-style generic response to prevent account enumeration)
+ */
+export async function requestPasswordReset(input: { email: string; institutionSlug?: string }): Promise<boolean> {
+  await connectDb();
+
+  const slug = (input.institutionSlug || 'thapar-demo').trim().toLowerCase();
+  const institution = await InstitutionModel.findOne({
+    $or: [{ slug }, { code: slug.toUpperCase() }],
+    active: true,
+  }).lean();
+
+  if (!institution) return true;
+
+  const normalizedEmail = input.email.trim().toLowerCase();
+  const user = await UserModel.findOne({
+    institutionId: String(institution._id),
+    email: normalizedEmail,
+    active: true,
+  });
+
+  if (!user) {
+    // Return true to avoid account enumeration
+    return true;
+  }
+
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+  user.resetPasswordToken = resetToken;
+  user.resetPasswordExpiresAt = expiresAt;
+  await user.save();
+
+  const resetLink = `http://localhost:3000/reset-password?token=${resetToken}&email=${encodeURIComponent(normalizedEmail)}`;
+  const emailContent = renderPasswordResetEmail(user.fullName, resetLink, resetCode);
+  await sendEmail({
+    to: normalizedEmail,
+    subject: emailContent.subject,
+    text: emailContent.text,
+    html: emailContent.html,
+    resetToken,
+    verificationCode: resetCode,
+  });
+
+  return true;
+}
+
+/**
+ * Complete password reset with secure token
+ */
+export async function resetPasswordWithToken(input: {
+  token: string;
+  newPassword: string;
+}): Promise<boolean> {
+  await connectDb();
+
+  if (!input.newPassword || input.newPassword.length < 8) {
+    throw new ValidationError('New password must be at least 8 characters long.');
+  }
+
+  const token = input.token.trim();
+  const user = await UserModel.findOne({
+    resetPasswordToken: token,
+  }).select('+resetPasswordToken +resetPasswordExpiresAt');
+
+  if (!user) {
+    throw new ValidationError('Invalid or expired password reset link.');
+  }
+
+  if (user.resetPasswordExpiresAt && user.resetPasswordExpiresAt < new Date()) {
+    throw new ValidationError('This password reset link has expired. Please request a new one.');
+  }
+
+  // Update password & clear token
+  user.hashedPassword = await hashPassword(input.newPassword);
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpiresAt = undefined;
+  user.passwordChangedAt = new Date();
+  await user.save();
+
+  return true;
 }

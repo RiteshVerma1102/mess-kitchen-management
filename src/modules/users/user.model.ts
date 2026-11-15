@@ -9,6 +9,11 @@ export interface IUser {
   role: Role;
   hallIds: string[]; // assigned dining halls for kitchen_staff / attendance operators
   active: boolean;
+  isEmailVerified?: boolean;
+  verificationCode?: string;
+  verificationCodeExpiresAt?: Date;
+  resetPasswordToken?: string;
+  resetPasswordExpiresAt?: Date;
   lastLoginAt?: Date;
   passwordChangedAt?: Date;
   isSynthetic?: boolean;
@@ -37,6 +42,11 @@ const userSchema = new Schema<IUser>(
     },
     hallIds: { type: [String], default: [] },
     active: { type: Boolean, default: true },
+    isEmailVerified: { type: Boolean, default: false },
+    verificationCode: { type: String, select: false },
+    verificationCodeExpiresAt: { type: Date, select: false },
+    resetPasswordToken: { type: String, select: false },
+    resetPasswordExpiresAt: { type: Date, select: false },
     lastLoginAt: { type: Date },
     passwordChangedAt: { type: Date },
     isSynthetic: { type: Boolean, default: false },

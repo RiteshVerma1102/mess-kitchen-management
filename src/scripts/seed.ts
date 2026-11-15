@@ -101,6 +101,7 @@ export async function seedDemoData(targetInstId = 'inst_thapar_demo'): Promise<S
           role: u.role,
           hallIds: u.hallIds,
           active: true,
+          isEmailVerified: true,
           isSynthetic: true,
         },
       },

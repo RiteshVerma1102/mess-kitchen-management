@@ -15,17 +15,20 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isUnverified, setIsUnverified] = useState(false);
 
   const fillDemoCredentials = (demoEmail: string, demoPass: string) => {
     setEmail(demoEmail);
     setPassword(demoPass);
     setInstitutionSlug('thapar-demo');
     setErrorMessage(null);
+    setIsUnverified(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+    setIsUnverified(false);
     setLoading(true);
 
     try {
@@ -40,6 +43,9 @@ export default function LoginPage() {
       if (!res.ok) {
         const msg = body?.error?.message ?? 'Invalid email or password';
         setErrorMessage(msg);
+        if (msg.toLowerCase().includes('verification')) {
+          setIsUnverified(true);
+        }
         error('Sign In Failed', msg);
         setLoading(false);
         return;
@@ -106,7 +112,18 @@ export default function LoginPage() {
       {/* Error alert */}
       {errorMessage && (
         <div className="mt-4 rounded-xl border border-[#DC5353]/20 bg-[#FCEEEE] p-3 text-xs text-[#DC5353] font-medium">
-          {errorMessage}
+          <p>{errorMessage}</p>
+          {isUnverified && (
+            <div className="mt-2 pt-2 border-t border-[#DC5353]/20 flex items-center justify-between">
+              <span className="text-[#253746]">Need to enter your 6-digit code?</span>
+              <Link
+                href={`/verify-email?email=${encodeURIComponent(email)}&institutionSlug=${encodeURIComponent(institutionSlug)}`}
+                className="font-bold text-[#087E8B] hover:underline"
+              >
+                Verify Now →
+              </Link>
+            </div>
+          )}
         </div>
       )}
 
@@ -181,6 +198,15 @@ export default function LoginPage() {
         >
           {loading ? 'Authenticating...' : 'Sign In to Operations Portal'}
         </button>
+
+        <div className="text-center pt-2">
+          <p className="text-xs text-[#718096]">
+            Don&apos;t have an account yet?{' '}
+            <Link href="/signup" className="font-bold text-[#087E8B] hover:underline">
+              Create an Account
+            </Link>
+          </p>
+        </div>
       </form>
 
       <div className="mt-6 text-center text-xs text-[#718096]">

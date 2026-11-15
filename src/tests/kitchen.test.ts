@@ -166,7 +166,7 @@ describe('Kitchen Operations & Inventory Module', () => {
         movementType: 'outward_kitchen',
         notes: 'Excessive kitchen draw',
       }),
-    ).rejects.toThrow('Request validation failed');
+    ).rejects.toThrow(/insufficient stock/i);
   });
 
   it('accurately updates stock and records stock movement on valid adjustment', async () => {

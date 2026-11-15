@@ -10,7 +10,15 @@ export class AppError extends Error {
   }
 }
 export class ValidationError extends AppError {
-  constructor(details: unknown) { super(400, 'VALIDATION_ERROR', 'Request validation failed', details); }
+  constructor(detailsOrMessage: unknown, details?: unknown) {
+    const isMsg = typeof detailsOrMessage === 'string';
+    super(
+      400,
+      'VALIDATION_ERROR',
+      isMsg ? detailsOrMessage : 'Request validation failed',
+      isMsg ? details : detailsOrMessage,
+    );
+  }
 }
 export class UnauthorizedError extends AppError {
   constructor(msg = 'Authentication required') { super(401, 'UNAUTHORIZED', msg); }

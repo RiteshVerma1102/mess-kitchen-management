@@ -15,51 +15,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function loadSession() {
       try {
-        let res = await fetch('/api/v1/auth/me');
+        const res = await fetch('/api/v1/auth/me');
         if (!res.ok) {
-          // Attempt seamless automatic login with the pre-seeded demo admin
-          const loginRes = await fetch('/api/v1/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: 'admin@thapar.edu',
-              password: 'Password123!',
-              institutionCode: 'thapar-demo',
-            }),
-          });
-          if (loginRes.ok) {
-            res = await fetch('/api/v1/auth/me');
-          }
+          router.push('/login');
+          return;
         }
 
-        if (res.ok) {
-          const body = await res.json();
-          const u = body.data;
-          setUser({
-            userId: u._id,
-            fullName: u.fullName || 'Sarah Johnson',
-            email: u.email,
-            role: u.role,
-            institutionName: u.institution?.name || 'Thapar Institute of Eng & Tech',
-          });
-        } else {
-          // Fallback to active demo session so the user never gets locked out of the dashboard
-          setUser({
-            userId: 'demo_admin',
-            fullName: 'Sarah Johnson',
-            email: 'admin@thapar.edu',
-            role: 'admin',
-            institutionName: 'Thapar Institute of Eng & Tech',
-          });
-        }
-      } catch {
+        const body = await res.json();
+        const u = body.data;
         setUser({
-          userId: 'demo_admin',
-          fullName: 'Sarah Johnson',
-          email: 'admin@thapar.edu',
-          role: 'admin',
-          institutionName: 'Thapar Institute of Eng & Tech',
+          userId: u._id,
+          fullName: u.fullName || 'Sarah Johnson',
+          email: u.email,
+          role: u.role,
+          institutionName: u.institution?.name || 'Thapar Institute of Eng & Tech',
         });
+      } catch {
+        router.push('/login');
       } finally {
         setLoading(false);
       }
