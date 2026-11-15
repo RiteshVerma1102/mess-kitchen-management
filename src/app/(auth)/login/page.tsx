@@ -62,56 +62,76 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="rounded-3xl border border-[#E5EAF0] bg-white p-8 sm:p-10 shadow-xl">
-      {/* Brand header (FoodFlow Inspired) */}
-      <div className="text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#087E8B] text-2xl text-white shadow-xs">
-          🍃
-        </div>
-        <h2 className="mt-4 text-2xl font-black tracking-tight text-[#253746]">FoodFlow Portal</h2>
-        <p className="mt-1 text-xs text-[#718096]">
-          Smart Food Waste Reduction & Central Kitchen Demand Planning
-        </p>
+    <div className="w-full">
+      {/* Green status indicator */}
+      <div className="flex items-center gap-2 mb-2">
+        <span className="h-2 w-2 rounded-full bg-[#16A36A] animate-pulse" />
+        <span className="text-[11px] font-extrabold tracking-widest text-[#16A36A] uppercase">
+          Your FoodFlow Account
+        </span>
       </div>
 
-      {/* Demo helper pill bar */}
-      <div className="mt-6 rounded-2xl border border-[#087E8B]/20 bg-[#DDF3F3]/50 p-3.5">
-        <p className="text-xs font-bold text-[#087E8B]">Quick 1-Click Demo Sign-In (Select Role):</p>
-        <div className="mt-2.5 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => fillDemoCredentials('admin@thapar.edu', 'Password123!')}
-            className="rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-[#253746] border border-[#E5EAF0] hover:border-[#087E8B] hover:text-[#087E8B] shadow-2xs transition"
-          >
-            👑 Super Admin
-          </button>
-          <button
-            type="button"
-            onClick={() => fillDemoCredentials('manager@thapar.edu', 'Password123!')}
-            className="rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-[#253746] border border-[#E5EAF0] hover:border-[#087E8B] hover:text-[#087E8B] shadow-2xs transition"
-          >
-            📋 Mess Manager
-          </button>
-          <button
-            type="button"
-            onClick={() => fillDemoCredentials('kitchen@thapar.edu', 'Password123!')}
-            className="rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-[#253746] border border-[#E5EAF0] hover:border-[#087E8B] hover:text-[#087E8B] shadow-2xs transition"
-          >
-            🍳 Kitchen Chef
-          </button>
-          <button
-            type="button"
-            onClick={() => fillDemoCredentials('student@thapar.edu', 'Password123!')}
-            className="rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-[#253746] border border-[#E5EAF0] hover:border-[#087E8B] hover:text-[#087E8B] shadow-2xs transition"
-          >
-            🎓 Resident
-          </button>
+      {/* Main Form Heading */}
+      <h2 className="text-3xl font-black tracking-tight text-[#253746]">
+        Good to have you back.
+      </h2>
+      <p className="mt-1.5 text-xs text-[#718096]">
+        Sign in to your FoodFlow workspace.
+      </p>
+
+      {/* 1-Click Instant Demo Role Selection */}
+      <div className="mt-6">
+        <div className="rounded-2xl border border-[#087E8B]/20 bg-[#DDF3F3]/40 p-3">
+          <p className="text-[11px] font-bold text-[#087E8B] mb-2 flex items-center gap-1.5">
+            <span>⚡</span>
+            <span>1-Click Demo Login (Select Role):</span>
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => fillDemoCredentials('admin@thapar.edu', 'Password123!')}
+              className="rounded-xl border border-[#E5EAF0] bg-white px-2.5 py-1.5 text-xs font-bold text-[#253746] hover:border-[#087E8B] hover:text-[#087E8B] shadow-2xs transition text-left"
+            >
+              👑 Admin
+            </button>
+            <button
+              type="button"
+              onClick={() => fillDemoCredentials('manager@thapar.edu', 'Password123!')}
+              className="rounded-xl border border-[#E5EAF0] bg-white px-2.5 py-1.5 text-xs font-bold text-[#253746] hover:border-[#087E8B] hover:text-[#087E8B] shadow-2xs transition text-left"
+            >
+              📋 Manager
+            </button>
+            <button
+              type="button"
+              onClick={() => fillDemoCredentials('kitchen@thapar.edu', 'Password123!')}
+              className="rounded-xl border border-[#E5EAF0] bg-white px-2.5 py-1.5 text-xs font-bold text-[#253746] hover:border-[#087E8B] hover:text-[#087E8B] shadow-2xs transition text-left"
+            >
+              🍳 Chef
+            </button>
+            <button
+              type="button"
+              onClick={() => fillDemoCredentials('student@thapar.edu', 'Password123!')}
+              className="rounded-xl border border-[#E5EAF0] bg-white px-2.5 py-1.5 text-xs font-bold text-[#253746] hover:border-[#087E8B] hover:text-[#087E8B] shadow-2xs transition text-left"
+            >
+              🎓 Resident
+            </button>
+          </div>
         </div>
+      </div>
+
+      {/* Divider */}
+      <div className="relative my-6 text-center">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-[#E5EAF0]" />
+        </div>
+        <span className="relative bg-white px-3 text-[10px] font-bold text-[#718096] uppercase tracking-wider">
+          Or continue with email
+        </span>
       </div>
 
       {/* Error alert */}
       {errorMessage && (
-        <div className="mt-4 rounded-xl border border-[#DC5353]/20 bg-[#FCEEEE] p-3 text-xs text-[#DC5353] font-medium">
+        <div className="mb-4 rounded-xl border border-[#DC5353]/20 bg-[#FCEEEE] p-3 text-xs text-[#DC5353] font-medium">
           <p>{errorMessage}</p>
           {isUnverified && (
             <div className="mt-2 pt-2 border-t border-[#DC5353]/20 flex items-center justify-between">
@@ -128,7 +148,7 @@ export default function LoginPage() {
       )}
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="instSlug" className="block text-xs font-bold text-[#253746] mb-1.5">
             Institution Code / Campus ID
@@ -146,7 +166,7 @@ export default function LoginPage() {
 
         <div>
           <label htmlFor="email" className="block text-xs font-bold text-[#253746] mb-1.5">
-            Email Address
+            Email address
           </label>
           <input
             id="email"
@@ -155,7 +175,7 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="block w-full rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3.5 py-2.5 text-xs font-semibold text-[#253746] shadow-2xs focus:border-[#087E8B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#087E8B] transition"
-            placeholder="admin@thapar.edu"
+            placeholder="you@institution.edu"
           />
         </div>
 
@@ -179,7 +199,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="block w-full rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3.5 py-2.5 pr-10 text-xs font-semibold text-[#253746] shadow-2xs focus:border-[#087E8B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#087E8B] transition"
-              placeholder="••••••••"
+              placeholder="At least 8 characters"
             />
             <button
               type="button"
@@ -194,24 +214,21 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="mt-2 flex w-full items-center justify-center rounded-xl bg-[#087E8B] px-4 py-3 text-xs font-bold text-white shadow-xs hover:bg-[#066873] transition disabled:opacity-50"
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#087E8B] px-4 py-3 text-xs font-bold text-white shadow-xs hover:bg-[#066873] transition disabled:opacity-50"
         >
-          {loading ? 'Authenticating...' : 'Sign In to Operations Portal'}
+          <span>{loading ? 'Authenticating...' : 'Sign in to FoodFlow'}</span>
+          <span>→</span>
         </button>
 
         <div className="text-center pt-2">
           <p className="text-xs text-[#718096]">
-            Don&apos;t have an account yet?{' '}
+            New to FoodFlow?{' '}
             <Link href="/signup" className="font-bold text-[#087E8B] hover:underline">
-              Create an Account
+              Create your account
             </Link>
           </p>
         </div>
       </form>
-
-      <div className="mt-6 text-center text-xs text-[#718096]">
-        Demo seed users have password: <span className="font-mono font-bold text-[#253746]">Password123!</span>
-      </div>
     </div>
   );
 }

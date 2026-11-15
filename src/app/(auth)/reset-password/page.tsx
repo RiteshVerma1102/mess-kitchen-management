@@ -73,11 +73,11 @@ function ResetPasswordForm() {
 
   if (isSuccess) {
     return (
-      <div className="rounded-3xl border border-[#E5EAF0] bg-white p-8 sm:p-10 shadow-xl text-center">
+      <div className="w-full text-center">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E8F7F0] text-3xl text-[#16A36A] border border-[#16A36A]/20 shadow-2xs">
           ✓
         </div>
-        <h2 className="mt-4 text-2xl font-black tracking-tight text-[#253746]">Password Updated!</h2>
+        <h2 className="mt-4 text-3xl font-black tracking-tight text-[#253746]">Password Updated!</h2>
         <p className="mt-2 text-xs text-[#718096] leading-relaxed">
           Your credentials have been securely refreshed. You may now access the Operations Portal with your new password.
         </p>
@@ -95,17 +95,19 @@ function ResetPasswordForm() {
   }
 
   return (
-    <div className="rounded-3xl border border-[#E5EAF0] bg-white p-8 sm:p-10 shadow-xl">
-      {/* Brand Header */}
-      <div className="text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#DDF3F3] text-2xl text-[#087E8B] border border-[#087E8B]/20 shadow-2xs">
-          🔒
-        </div>
-        <h2 className="mt-4 text-2xl font-black tracking-tight text-[#253746]">Set New Password</h2>
-        <p className="mt-1 text-xs text-[#718096]">
-          Enter your verification reset token and choose a strong password.
-        </p>
+    <div className="w-full">
+      {/* Green status indicator */}
+      <div className="flex items-center gap-2 mb-2">
+        <span className="h-2 w-2 rounded-full bg-[#16A36A] animate-pulse" />
+        <span className="text-[11px] font-extrabold tracking-widest text-[#16A36A] uppercase">
+          Your FoodFlow Account
+        </span>
       </div>
+
+      <h2 className="text-3xl font-black tracking-tight text-[#253746]">Set New Password</h2>
+      <p className="mt-1.5 text-xs text-[#718096]">
+        Enter your verification reset token and choose a strong password.
+      </p>
 
       {errorMessage && (
         <div className="mt-4 rounded-xl border border-[#DC5353]/20 bg-[#FCEEEE] p-3 text-xs text-[#DC5353] font-medium">
@@ -224,3 +226,4 @@ export default function ResetPasswordPage() {
     </Suspense>
   );
 }
+

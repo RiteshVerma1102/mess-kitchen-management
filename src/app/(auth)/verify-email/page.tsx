@@ -110,11 +110,11 @@ function VerifyEmailContent() {
 
   if (isVerified) {
     return (
-      <div className="rounded-3xl border border-[#E5EAF0] bg-white p-8 sm:p-10 shadow-xl text-center animate-in zoom-in-95">
+      <div className="w-full text-center animate-in zoom-in-95">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#E8F7F0] text-3xl text-[#16A36A] border border-[#16A36A]/20 shadow-xs">
           ✓
         </div>
-        <h2 className="mt-4 text-2xl font-black text-[#253746]">Email Verified!</h2>
+        <h2 className="mt-4 text-3xl font-black text-[#253746]">Email Verified!</h2>
         <p className="mt-1.5 text-xs text-[#718096]">
           Your account has been verified and activated. Logging you in now...
         </p>
@@ -126,16 +126,19 @@ function VerifyEmailContent() {
   }
 
   return (
-    <div className="rounded-3xl border border-[#E5EAF0] bg-white p-8 sm:p-10 shadow-xl">
-      <div className="text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#DDF3F3] text-2xl text-[#087E8B] border border-[#087E8B]/20 shadow-xs">
-          ✉️
-        </div>
-        <h2 className="mt-4 text-2xl font-black tracking-tight text-[#253746]">Verify Your Email</h2>
-        <p className="mt-1 text-xs text-[#718096]">
-          We sent a 6-digit verification code to <span className="font-bold text-[#253746]">{email || 'your email'}</span>
-        </p>
+    <div className="w-full">
+      {/* Green status indicator */}
+      <div className="flex items-center gap-2 mb-2">
+        <span className="h-2 w-2 rounded-full bg-[#16A36A] animate-pulse" />
+        <span className="text-[11px] font-extrabold tracking-widest text-[#16A36A] uppercase">
+          Your FoodFlow Account
+        </span>
       </div>
+
+      <h2 className="text-3xl font-black tracking-tight text-[#253746]">Verify Your Email</h2>
+      <p className="mt-1.5 text-xs text-[#718096]">
+        We sent a 6-digit verification code to <span className="font-bold text-[#253746]">{email || 'your email'}</span>
+      </p>
 
       {errorMessage && (
         <div className="mt-4 rounded-xl border border-[#DC5353]/20 bg-[#FCEEEE] p-3 text-xs text-[#DC5353] font-medium">
@@ -197,3 +200,4 @@ export default function VerifyEmailPage() {
     </Suspense>
   );
 }
+

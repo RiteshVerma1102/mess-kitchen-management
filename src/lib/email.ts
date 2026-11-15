@@ -179,3 +179,4 @@ export function renderPasswordResetEmail(fullName: string, resetLink: string, co
 
   return { subject, text, html };
 }
+

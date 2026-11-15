@@ -14,7 +14,7 @@ export default function SignupPage() {
   const [institutionSlug, setInstitutionSlug] = useState('thapar-demo');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -29,7 +29,7 @@ export default function SignupPage() {
     setErrorMessage(null);
 
     if (!agreeTerms) {
-      setErrorMessage('You must accept the institutional terms of service to create an account.');
+      setErrorMessage('Please accept the institutional terms to register.');
       return;
     }
 
@@ -77,30 +77,45 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="rounded-3xl border border-[#E5EAF0] bg-white p-8 sm:p-10 shadow-xl">
-      {/* Brand header */}
-      <div className="text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#087E8B] text-2xl text-white shadow-xs">
-          🍃
+    <div className="w-full">
+      {/* Green status indicator */}
+      <div className="flex items-center gap-2 mb-2">
+        <span className="h-2 w-2 rounded-full bg-[#16A36A] animate-pulse" />
+        <span className="text-[11px] font-extrabold tracking-widest text-[#16A36A] uppercase">
+          Your FoodFlow Account
+        </span>
+      </div>
+
+      {/* Main Form Heading (Matching Screenshot 6) */}
+      <h2 className="text-3xl font-black tracking-tight text-[#253746]">
+        Bring your kitchen together.
+      </h2>
+      <p className="mt-1.5 text-xs text-[#718096]">
+        Create an account and set up your institution.
+      </p>
+
+      {/* Divider */}
+      <div className="relative my-6 text-center">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-[#E5EAF0]" />
         </div>
-        <h2 className="mt-4 text-2xl font-black tracking-tight text-[#253746]">Create FoodFlow Account</h2>
-        <p className="mt-1 text-xs text-[#718096]">
-          Register for institutional dining hall, meal booking, and kitchen access
-        </p>
+        <span className="relative bg-white px-3 text-[10px] font-bold text-[#718096] uppercase tracking-wider">
+          Or continue with email
+        </span>
       </div>
 
       {/* Error alert */}
       {errorMessage && (
-        <div className="mt-4 rounded-xl border border-[#DC5353]/20 bg-[#FCEEEE] p-3 text-xs text-[#DC5353] font-medium">
+        <div className="mb-4 rounded-xl border border-[#DC5353]/20 bg-[#FCEEEE] p-3 text-xs text-[#DC5353] font-medium">
           {errorMessage}
         </div>
       )}
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="fullName" className="block text-xs font-bold text-[#253746] mb-1.5">
-            Full Name
+            Your name
           </label>
           <input
             id="fullName"
@@ -109,13 +124,13 @@ export default function SignupPage() {
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             className="block w-full rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3.5 py-2.5 text-xs font-semibold text-[#253746] shadow-2xs focus:border-[#087E8B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#087E8B] transition"
-            placeholder="e.g. Ritesh Verma"
+            placeholder="e.g. Vikram Sharma"
           />
         </div>
 
         <div>
           <label htmlFor="signupEmail" className="block text-xs font-bold text-[#253746] mb-1.5">
-            University / Campus Email
+            Email address
           </label>
           <input
             id="signupEmail"
@@ -124,13 +139,13 @@ export default function SignupPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="block w-full rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3.5 py-2.5 text-xs font-semibold text-[#253746] shadow-2xs focus:border-[#087E8B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#087E8B] transition"
-            placeholder="e.g. ritesh.verma@thapar.edu"
+            placeholder="you@institution.edu"
           />
         </div>
 
         <div>
           <label htmlFor="instSlug" className="block text-xs font-bold text-[#253746] mb-1.5">
-            Campus ID / Institution Code
+            Institution code / Campus ID
           </label>
           <input
             id="instSlug"
@@ -144,41 +159,32 @@ export default function SignupPage() {
         </div>
 
         <div>
-          <label htmlFor="signupPassword" aria-label="Password" className="block text-xs font-bold text-[#253746] mb-1.5">
-            Password (Min 8 Characters)
-          </label>
-          <div className="relative">
-            <input
-              id="signupPassword"
-              type={showPassword ? 'text' : 'password'}
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="block w-full rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3.5 py-2.5 pr-10 text-xs font-semibold text-[#253746] shadow-2xs focus:border-[#087E8B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#087E8B] transition"
-              placeholder="••••••••"
-            />
+          <div className="flex justify-between items-center mb-1.5">
+            <label htmlFor="password" aria-label="Password" className="block text-xs font-bold text-[#253746]">
+              Password
+            </label>
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-xs text-[#718096] hover:text-[#253746]"
+              className="text-xs text-[#718096] hover:text-[#253746]"
             >
               {showPassword ? 'Hide' : 'Show'}
             </button>
           </div>
-          {/* Password strength checklist */}
-          <div className="mt-2 flex items-center gap-3 text-[11px]">
-            <span className={hasMinLength ? 'text-[#16A36A] font-bold' : 'text-[#718096]'}>
-              {hasMinLength ? '✓' : '○'} 8+ characters
-            </span>
-            <span className={hasNumberOrSpecial ? 'text-[#16A36A] font-bold' : 'text-[#718096]'}>
-              {hasNumberOrSpecial ? '✓' : '○'} Number or symbol
-            </span>
-          </div>
+          <input
+            id="password"
+            type={showPassword ? 'text' : 'password'}
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="block w-full rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3.5 py-2.5 text-xs font-semibold text-[#253746] shadow-2xs focus:border-[#087E8B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#087E8B] transition"
+            placeholder="At least 8 characters"
+          />
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="block text-xs font-bold text-[#253746] mb-1.5">
-            Confirm Password
+          <label htmlFor="confirmPassword" aria-label="Confirm Password" className="block text-xs font-bold text-[#253746] mb-1.5">
+            Confirm password
           </label>
           <input
             id="confirmPassword"
@@ -187,42 +193,58 @@ export default function SignupPage() {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             className="block w-full rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3.5 py-2.5 text-xs font-semibold text-[#253746] shadow-2xs focus:border-[#087E8B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#087E8B] transition"
-            placeholder="••••••••"
+            placeholder="Enter your password again"
           />
-          {confirmPassword.length > 0 && !isMatch && (
-            <p className="mt-1 text-[11px] text-[#DC5353]">Passwords do not match.</p>
-          )}
         </div>
 
+        {/* Real-time Checklist */}
+        <div className="rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] p-3 text-xs space-y-1">
+          <div className={`flex items-center gap-1.5 ${hasMinLength ? 'text-[#16A36A] font-medium' : 'text-[#718096]'}`}>
+            <span>{hasMinLength ? '✓' : '○'}</span>
+            <span>At least 8 characters long</span>
+          </div>
+          <div className={`flex items-center gap-1.5 ${hasNumberOrSpecial ? 'text-[#16A36A] font-medium' : 'text-[#718096]'}`}>
+            <span>{hasNumberOrSpecial ? '✓' : '○'}</span>
+            <span>Contains number or special character</span>
+          </div>
+          <div className={`flex items-center gap-1.5 ${isMatch ? 'text-[#16A36A] font-medium' : 'text-[#718096]'}`}>
+            <span>{isMatch ? '✓' : '○'}</span>
+            <span>Passwords match</span>
+          </div>
+        </div>
+
+        {/* Terms Agreement */}
         <div className="flex items-start gap-2 pt-1">
           <input
-            id="terms"
+            id="agreeTerms"
             type="checkbox"
             checked={agreeTerms}
             onChange={(e) => setAgreeTerms(e.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded-md border-[#E5EAF0] text-[#087E8B] focus:ring-[#087E8B]"
-            required
+            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#087E8B] focus:ring-[#087E8B]"
           />
-          <label htmlFor="terms" className="text-xs text-[#718096] leading-tight">
-            I agree to the <span className="font-bold text-[#253746]">Institutional Mess Dining Regulations</span> and <span className="font-bold text-[#253746]">Data Privacy Policy</span>.
+          <label htmlFor="agreeTerms" className="text-xs text-[#718096] leading-tight">
+            I agree to the institutional FoodFlow service policies, meal security guidelines, and data terms.
           </label>
         </div>
 
         <button
           type="submit"
-          disabled={loading}
-          className="mt-2 flex w-full items-center justify-center rounded-xl bg-[#087E8B] px-4 py-3 text-xs font-bold text-white shadow-xs hover:bg-[#066873] transition disabled:opacity-50"
+          disabled={loading || !hasMinLength || !isMatch || !agreeTerms}
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#087E8B] px-4 py-3 text-xs font-bold text-white shadow-xs hover:bg-[#066873] transition disabled:opacity-50"
         >
-          {loading ? 'Creating Account...' : 'Register & Verify Email →'}
+          <span>✓</span>
+          <span>{loading ? 'Creating Account...' : 'Create FoodFlow account'}</span>
         </button>
-      </form>
 
-      <div className="mt-6 text-center text-xs text-[#718096]">
-        Already have an account?{' '}
-        <Link href="/login" className="font-bold text-[#087E8B] hover:underline">
-          Sign In
-        </Link>
-      </div>
+        <div className="text-center pt-2">
+          <p className="text-xs text-[#718096]">
+            Already have an account?{' '}
+            <Link href="/login" className="font-bold text-[#087E8B] hover:underline">
+              Sign in
+            </Link>
+          </p>
+        </div>
+      </form>
     </div>
   );
 }

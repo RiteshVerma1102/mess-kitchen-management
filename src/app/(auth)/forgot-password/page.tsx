@@ -48,26 +48,41 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="rounded-3xl border border-[#E5EAF0] bg-white p-8 sm:p-10 shadow-xl">
-      {/* Brand Header */}
-      <div className="text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#DDF3F3] text-2xl text-[#087E8B] border border-[#087E8B]/20 shadow-2xs">
-          🔑
+    <div className="w-full">
+      {/* Green status indicator */}
+      <div className="flex items-center gap-2 mb-2">
+        <span className="h-2 w-2 rounded-full bg-[#16A36A] animate-pulse" />
+        <span className="text-[11px] font-extrabold tracking-widest text-[#16A36A] uppercase">
+          Your FoodFlow Account
+        </span>
+      </div>
+
+      {/* Main Form Heading (Matching Screenshot 7) */}
+      <h2 className="text-3xl font-black tracking-tight text-[#253746]">
+        Reset your password.
+      </h2>
+      <p className="mt-1.5 text-xs text-[#718096]">
+        We&apos;ll email a password reset link.
+      </p>
+
+      {/* Divider */}
+      <div className="relative my-6 text-center">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-[#E5EAF0]" />
         </div>
-        <h2 className="mt-4 text-2xl font-black tracking-tight text-[#253746]">Forgot Password</h2>
-        <p className="mt-1 text-xs text-[#718096]">
-          Enter your institutional credentials to receive a secure password reset token.
-        </p>
+        <span className="relative bg-white px-3 text-[10px] font-bold text-[#718096] uppercase tracking-wider">
+          Or continue with email
+        </span>
       </div>
 
       {errorMessage && (
-        <div className="mt-4 rounded-xl border border-[#DC5353]/20 bg-[#FCEEEE] p-3 text-xs text-[#DC5353] font-medium">
+        <div className="mb-4 rounded-xl border border-[#DC5353]/20 bg-[#FCEEEE] p-3 text-xs text-[#DC5353] font-medium">
           {errorMessage}
         </div>
       )}
 
       {submitted ? (
-        <div className="mt-6 rounded-2xl border border-[#16A36A]/20 bg-[#E8F7F0] p-6 text-center">
+        <div className="rounded-2xl border border-[#16A36A]/20 bg-[#E8F7F0] p-6 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#16A36A] text-white text-xl mb-3 shadow-xs">
             ✓
           </div>
@@ -94,10 +109,10 @@ export default function ForgotPasswordPage() {
           </div>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="instSlug" className="block text-xs font-bold text-[#253746] mb-1.5">
-              Institution Code
+              Institution Code / Campus ID
             </label>
             <input
               id="instSlug"
@@ -112,7 +127,7 @@ export default function ForgotPasswordPage() {
 
           <div>
             <label htmlFor="recoveryEmail" className="block text-xs font-bold text-[#253746] mb-1.5">
-              Registered University / Staff Email
+              Email address
             </label>
             <input
               id="recoveryEmail"
@@ -121,16 +136,17 @@ export default function ForgotPasswordPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="block w-full rounded-xl border border-[#E5EAF0] bg-[#F5F7FA] px-3.5 py-2.5 text-xs font-semibold text-[#253746] shadow-2xs focus:border-[#087E8B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#087E8B] transition"
-              placeholder="e.g. manager@thapar.edu"
+              placeholder="you@institution.edu"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="flex w-full items-center justify-center rounded-xl bg-[#087E8B] px-4 py-3 text-xs font-bold text-white shadow-xs hover:bg-[#066873] transition disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#087E8B] px-4 py-3 text-xs font-bold text-white shadow-xs hover:bg-[#066873] transition disabled:opacity-50"
           >
-            {loading ? 'Dispatching Instructions...' : 'Send Recovery Token'}
+            <span>✉️</span>
+            <span>{loading ? 'Dispatching...' : 'Send reset link'}</span>
           </button>
 
           <div className="text-center pt-2">
