@@ -73,6 +73,7 @@ export default function KitchenOperationsPage() {
   );
   const [messHallId, setMessHallId] = useState<string>('hall_a');
   const [activeTab, setActiveTab] = useState<'plans' | 'actuals' | 'variance'>('plans');
+  const [isTabletMode, setIsTabletMode] = useState<boolean>(false);
 
   const [plans, setPlans] = useState<PreparationPlan[]>([]);
   const [activeMeal, setActiveMeal] = useState<'breakfast' | 'lunch' | 'snacks' | 'dinner'>('lunch');
@@ -303,19 +304,33 @@ export default function KitchenOperationsPage() {
         description="Dynamic recipe BOM scaling, safety buffer management, live kitchen execution, and variance tracking"
         actions={
           <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setIsTabletMode(!isTabletMode)}
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition shadow-xs ${
+                isTabletMode
+                  ? 'bg-[#087E8B] text-white border-[#087E8B]'
+                  : 'bg-white text-[#253746] border-[#E5EAF0] hover:bg-[#F5F7FA]'
+              }`}
+              title="Toggle Kitchen Tablet Terminal (Photo 11 Reference)"
+            >
+              <span>📱</span>
+              <span>{isTabletMode ? 'Exit Tablet View' : 'Tablet Terminal Mode'}</span>
+            </button>
+
             <input
               type="date"
               aria-label="Filter by service date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:border-teal-700"
+              className="rounded-xl border border-[#E5EAF0] bg-white px-3 py-1.5 text-xs font-bold text-[#253746] shadow-xs focus:border-[#087E8B] focus:outline-none"
             />
 
             <select
               aria-label="Filter by mess hall location"
               value={messHallId}
               onChange={(e) => setMessHallId(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:border-teal-700"
+              className="rounded-xl border border-[#E5EAF0] bg-white px-3 py-1.5 text-xs font-bold text-[#253746] shadow-xs focus:border-[#087E8B] focus:outline-none"
             >
               <option value="hall_a">Main Dining Hall (Hall A)</option>
               <option value="hall_b">Annex Kitchen (Hall B)</option>
@@ -356,6 +371,48 @@ export default function KitchenOperationsPage() {
         />
       </div>
 
+      {/* Lakeland Central Kitchen Financial & Stock Summary (Photo 9 Reference) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="rounded-2xl bg-white border border-[#E5EAF0] p-5 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#718096]">Total Value on Hand</p>
+            <p className="mt-1 text-2xl font-black text-[#087E8B]">
+              ₹80,920 <span className="text-xs font-semibold text-[#718096]">($952)</span>
+            </p>
+            <span className="text-[11px] text-[#16A36A] font-semibold">Live raw commodity valuation</span>
+          </div>
+          <div className="h-12 w-12 rounded-2xl bg-[#DDF3F3] text-[#087E8B] flex items-center justify-center text-xl font-bold">
+            💎
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-white border border-[#E5EAF0] p-5 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#718096]">Non-Consume Orders</p>
+            <p className="mt-1 text-2xl font-black text-[#E9A23B]">
+              13 <span className="text-xs font-semibold text-[#718096]">batches</span>
+            </p>
+            <span className="text-[11px] text-[#718096]">Queued & pending cook dispatch</span>
+          </div>
+          <div className="h-12 w-12 rounded-2xl bg-[#FEF6E9] text-[#E9A23B] flex items-center justify-center text-xl font-bold">
+            📋
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-white border border-[#E5EAF0] p-5 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#718096]">Cost of Goods Sold (COGS)</p>
+            <p className="mt-1 text-2xl font-black text-[#16A36A]">
+              ₹27,285 <span className="text-xs font-semibold text-[#718096]">($321)</span>
+            </p>
+            <span className="text-[11px] text-[#087E8B] font-semibold">Today&apos;s batch consumption</span>
+          </div>
+          <div className="h-12 w-12 rounded-2xl bg-[#E8F7F0] text-[#16A36A] flex items-center justify-center text-xl font-bold">
+            💵
+          </div>
+        </div>
+      </div>
+
       {/* Main Tabs Navigation */}
       <div className="flex items-center gap-2 border-b border-[#E5EAF0]">
         <button
@@ -394,6 +451,129 @@ export default function KitchenOperationsPage() {
           <span>Variance & Waste Analysis</span>
         </button>
       </div>
+
+      {/* Tablet Kitchen Terminal View (Unnic AI Reference 11) */}
+      {isTabletMode && (
+        <div className="rounded-3xl border-2 border-[#087E8B] bg-white p-6 shadow-xl animate-in fade-in slide-in-from-top-4">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E5EAF0] pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-[#16A36A] h-3 w-3 animate-ping" />
+                <span className="rounded-md bg-[#DDF3F3] px-2.5 py-0.5 text-xs font-black text-[#087E8B]">
+                  LIVE KITCHEN KIOSK TERMINAL
+                </span>
+              </div>
+              <h2 className="text-xl font-black text-[#253746] mt-1 capitalize">
+                {activeMeal} Batch Cooker Console — {selectedDate}
+              </h2>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-[#718096]">Station: Central Cooking Line A</span>
+              <button
+                type="button"
+                onClick={() => setIsTabletMode(false)}
+                className="rounded-xl border border-[#E5EAF0] px-3.5 py-2 text-xs font-bold text-[#718096] hover:bg-[#F5F7FA] transition"
+              >
+                ✕ Close Terminal
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Quick Batch Target Card */}
+            <div className="rounded-2xl bg-[#F5F7FA] p-6 border border-[#E5EAF0] text-center flex flex-col justify-between">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-[#718096]">Target Portions to Cook</span>
+                <p className="mt-2 text-5xl font-black text-[#087E8B]">
+                  {currentPlan ? currentPlan.plannedPortions : 350}
+                </p>
+                <span className="mt-2 inline-block rounded-full bg-[#DDF3F3] px-3 py-1 text-xs font-bold text-[#087E8B]">
+                  +8% Safety Buffer Included
+                </span>
+              </div>
+
+              <div className="mt-6 flex justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (currentPlan) handleUpdateStatus(currentPlan._id, 'in_kitchen');
+                    toast('info', 'Cooking Started', 'Batch status updated to in-kitchen line.');
+                  }}
+                  className="w-full rounded-2xl bg-[#087E8B] py-3.5 text-sm font-black text-white shadow-md hover:bg-[#066873] active:scale-95 transition"
+                >
+                  🔥 Start Cooking Batch
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Completion Card */}
+            <div className="rounded-2xl bg-[#F5F7FA] p-6 border border-[#E5EAF0] text-center flex flex-col justify-between">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-[#718096]">Dispatched to Line</span>
+                <p className="mt-2 text-5xl font-black text-[#16A36A]">
+                  {actualPrepared > 0 ? actualPrepared : (currentPlan ? currentPlan.plannedPortions : 350)}
+                </p>
+                <span className="mt-2 inline-block rounded-full bg-[#E8F7F0] px-3 py-1 text-xs font-bold text-[#16A36A]">
+                  Quality Checked & Ready
+                </span>
+              </div>
+
+              <div className="mt-6 flex justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (currentPlan) handleUpdateStatus(currentPlan._id, 'completed');
+                    success('Batch Completed', 'Service readiness marked 100% complete.');
+                  }}
+                  className="w-full rounded-2xl bg-[#16A36A] py-3.5 text-sm font-black text-white shadow-md hover:bg-[#128a59] active:scale-95 transition"
+                >
+                  ✓ Complete & Dispatch
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Leftovers & Waste Card */}
+            <div className="rounded-2xl bg-[#F5F7FA] p-6 border border-[#E5EAF0] text-center flex flex-col justify-between">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-[#718096]">Log Unserved Leftover</span>
+                <p className="mt-2 text-5xl font-black text-[#E9A23B]">
+                  {actualLeftover} <span className="text-xl">pts</span>
+                </p>
+                <span className="mt-2 inline-block rounded-full bg-[#FEF6E9] px-3 py-1 text-xs font-bold text-[#E9A23B]">
+                  Audit Tolerance: &lt;5%
+                </span>
+              </div>
+
+              <div className="mt-6 flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setActualLeftover(Math.max(0, actualLeftover - 5))}
+                  className="h-12 w-12 rounded-xl bg-white border border-[#E5EAF0] text-xl font-black text-[#253746] shadow-xs active:scale-90"
+                >
+                  -5
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActualLeftover(actualLeftover + 5)}
+                  className="h-12 w-12 rounded-xl bg-white border border-[#E5EAF0] text-xl font-black text-[#253746] shadow-xs active:scale-90"
+                >
+                  +5
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    toast('info', 'Leftovers Saved', `${actualLeftover} portions queued for evening repurposing.`);
+                  }}
+                  className="flex-1 rounded-xl bg-[#E9A23B] py-3.5 text-xs font-black text-white shadow-xs hover:bg-[#d4902f] transition"
+                >
+                  Save Leftovers
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* TAB 1: PREPARATION PLANNING */}
       {activeTab === 'plans' && (
