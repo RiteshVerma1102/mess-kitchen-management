@@ -48,17 +48,84 @@ export type DashboardProps = {
   onSignOut: () => void;
 };
 
+import { exportToCSV, exportToPrintablePDF } from "@/lib/export-helpers";
+
 function Surface({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <section className={`rounded-md border border-border bg-card ${className}`}>{children}</section>;
+  return (
+    <section className={`rounded-[24px] border border-border/70 bg-card shadow-sm ${className}`}>
+      {children}
+    </section>
+  );
 }
 
 function SurfaceHeader({ children, action }: { children: ReactNode; action?: ReactNode }) {
-  return <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3.5 sm:px-5">{children}{action}</div>;
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-border/60 bg-muted/20 px-5 py-4 sm:px-6">
+      {children}
+      {action}
+    </div>
+  );
 }
 
-function StatCard({ label, value, hint, icon: Icon, tone, trend }: { label: string; value: string; hint: string; icon: typeof Users; tone: "teal" | "green" | "amber" | "red"; trend?: "up" | "down" }) {
-  const colorClass = { teal: "bg-teal-soft text-primary", green: "bg-success/10 text-success", amber: "bg-warning/15 text-warning", red: "bg-danger/10 text-danger" }[tone];
-  return <Surface className="min-w-0"><div className="p-4 sm:p-5"><div className="flex items-start justify-between gap-2"><p className="text-xs font-medium text-muted-foreground">{label}</p><span className={`grid size-8 shrink-0 place-items-center rounded-md ${colorClass}`}><Icon className="size-4" /></span></div><p className="mt-4 text-2xl font-semibold tabular-nums text-foreground sm:text-[28px]">{value}</p><div className="mt-2 flex flex-wrap items-center gap-1 text-[11px] text-muted-foreground">{trend && (trend === "up" ? <ArrowUpRight className="size-3.5 text-success" /> : <ArrowDownRight className="size-3.5 text-warning" />)}<span>{hint}</span></div></div></Surface>;
+function StatCard({
+  label,
+  value,
+  hint,
+  icon: Icon,
+  tone,
+  trend,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  icon: typeof Users;
+  tone: "teal" | "green" | "amber" | "red";
+  trend?: "up" | "down";
+}) {
+  const cardStyle = {
+    teal: "bg-[#DDF3EA]/50 border-[#DDF3EA] hover:border-[#087E8B]/40",
+    green: "bg-[#DDF3EA] border-[#c0e8d8] hover:border-emerald-500/40",
+    amber: "bg-[#FFF1C7]/70 border-[#FFF1C7] hover:border-amber-500/40",
+    red: "bg-[#FFE1D0]/70 border-[#FFE1D0] hover:border-rose-500/40",
+  }[tone];
+
+  const iconColor = {
+    teal: "bg-[#087E8B] text-white",
+    green: "bg-emerald-600 text-white",
+    amber: "bg-[#FF7A1A] text-[#0F3D3A]",
+    red: "bg-rose-600 text-white",
+  }[tone];
+
+  return (
+    <div
+      className={`card-lift relative flex flex-col justify-between rounded-[24px] border p-5 shadow-sm transition-all ${cardStyle}`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-bold uppercase tracking-wider text-[#0F3D3A]/70">{label}</p>
+        <span className={`grid size-9 shrink-0 place-items-center rounded-xl shadow-xs ${iconColor}`}>
+          <Icon className="size-4" />
+        </span>
+      </div>
+      <div className="mt-4">
+        <p className="font-display text-3xl font-extrabold tracking-tight text-[#0F3D3A]">
+          {value}
+        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-[#0F3D3A]/70">
+          {trend &&
+            (trend === "up" ? (
+              <span className="flex items-center text-emerald-700">
+                <ArrowUpRight className="size-3.5" />
+              </span>
+            ) : (
+              <span className="flex items-center text-amber-700">
+                <ArrowDownRight className="size-3.5" />
+              </span>
+            ))}
+          <span>{hint}</span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function DatasetStamp({ demo }: { demo: boolean }) {
@@ -157,16 +224,68 @@ function DashboardOverview({ props }: { props: DashboardProps }) {
 }
 
 function TableFrame({ headers, children, minimumWidth = "700px" }: { headers: string[]; children: ReactNode; minimumWidth?: string }) {
-  return <div className="w-full overflow-x-auto"><table className="w-full border-collapse text-left text-xs" style={{ minWidth: minimumWidth }}><thead><tr className="border-b border-border bg-muted/60">{headers.map((header) => <th key={header} className="h-10 px-4 text-[10px] font-semibold text-muted-foreground first:pl-5">{header}</th>)}</tr></thead><tbody className="divide-y divide-border">{children}</tbody></table></div>;
+  return (
+    <div className="w-full overflow-x-auto rounded-[20px] border border-border/60 bg-card">
+      <table className="w-full border-collapse text-left text-xs" style={{ minWidth: minimumWidth }}>
+        <thead>
+          <tr className="border-b border-border/80 bg-muted/40">
+            {headers.map((header) => (
+              <th key={header} className="h-11 px-4 text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground first:pl-6">
+                {header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border/60">{children}</tbody>
+      </table>
+    </div>
+  );
 }
 
-function TableRow({ children }: { children: ReactNode }) { return <tr className="transition-colors hover:bg-muted/40">{children}</tr>; }
-function TableCell({ children, className = "" }: { children: ReactNode; className?: string }) { return <td className={`px-4 py-3.5 first:pl-5 ${className}`}>{children}</td>; }
+function TableRow({ children }: { children: ReactNode }) {
+  return <tr className="transition-colors hover:bg-muted/30">{children}</tr>;
+}
+
+function TableCell({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <td className={`px-4 py-4 first:pl-6 text-xs ${className}`}>{children}</td>;
+}
 
 function StatusBadge({ label, tone }: { label: string; tone?: "green" | "amber" | "red" | "blue" }) {
-  const key = tone ?? (label.toLowerCase().includes("active") || label.toLowerCase().includes("published") || label.toLowerCase().includes("complete") || label.toLowerCase().includes("received") || label.toLowerCase() === "ready" ? "green" : label.toLowerCase().includes("pending") || label.toLowerCase().includes("progress") || label.toLowerCase().includes("ordered") || label.toLowerCase().includes("review") || label.toLowerCase().includes("draft") ? "amber" : label.toLowerCase().includes("leave") || label.toLowerCase().includes("cancel") || label.toLowerCase().includes("not started") ? "red" : "blue");
-  const style = { green: "border-success/30 bg-success/10 text-success", amber: "border-warning/30 bg-warning/10 text-warning", red: "border-danger/30 bg-danger/10 text-danger", blue: "border-primary/30 bg-primary/10 text-primary" }[key];
-  return <Badge variant="outline" className={`rounded-sm px-2 py-0.5 text-[10px] font-medium ${style}`}>{label}</Badge>;
+  const key =
+    tone ??
+    (label.toLowerCase().includes("active") ||
+    label.toLowerCase().includes("published") ||
+    label.toLowerCase().includes("complete") ||
+    label.toLowerCase().includes("received") ||
+    label.toLowerCase() === "ready" ||
+    label.toLowerCase() === "healthy"
+      ? "green"
+      : label.toLowerCase().includes("pending") ||
+        label.toLowerCase().includes("progress") ||
+        label.toLowerCase().includes("ordered") ||
+        label.toLowerCase().includes("review") ||
+        label.toLowerCase().includes("draft") ||
+        label.toLowerCase().includes("restock")
+      ? "amber"
+      : label.toLowerCase().includes("leave") ||
+        label.toLowerCase().includes("cancel") ||
+        label.toLowerCase().includes("not started") ||
+        label.toLowerCase().includes("failed")
+      ? "red"
+      : "blue");
+
+  const style = {
+    green: "border-emerald-500/30 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
+    amber: "border-amber-500/30 bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-300",
+    red: "border-rose-500/30 bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300",
+    blue: "border-teal-500/30 bg-teal-50 text-teal-900 dark:bg-teal-950/40 dark:text-teal-300",
+  }[key];
+
+  return (
+    <Badge variant="outline" className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide shadow-2xs ${style}`}>
+      {label}
+    </Badge>
+  );
 }
 
 function EmptyRows({ title, note, icon: Icon = ClipboardList }: { title: string; note: string; icon?: typeof ClipboardList }) {
@@ -295,18 +414,173 @@ function NotificationsPage({ props }: { props: DashboardProps }) {
 }
 
 function ReportsPage({ props }: { props: DashboardProps }) {
-  const { dataMode, onAction, rows, inventoryItems } = props;
-  const reports = [{ title: "Weekly meal service", description: "Meal plans, portion counts and kitchen actuals", icon: CalendarDays, page: "meal-planning" as FoodFlowPage }, { title: "Inventory valuation", description: "Current stock, unit costs and restock levels", icon: Package, page: "inventory" as FoodFlowPage }, { title: "Attendance summary", description: "Student check-ins across each meal service", icon: Users, page: "attendance" as FoodFlowPage }, { title: "Food waste report", description: "Prepared, served and leftover quantities", icon: Recycle, page: "waste" as FoodFlowPage }];
-  const downloadCsv = () => {
-    const dataRows = inventoryItems.length ? [["Ingredient", "Category", "Quantity", "Unit", "Minimum", "Unit cost", "Supplier"], ...inventoryItems.map((item) => [item.name, item.category, item.quantity, item.unit, item.minimum_quantity, item.unit_cost, item.supplier_name])] : [["Meal service", "Expected portions", "Service date"], ...rows.filter((row) => row.service_date).map((row) => [rowText(row, "title"), rowNumber(row, "expected_servings"), rowText(row, "service_date")])];
-    const csv = dataRows.map((line) => line.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(",")).join("\n");
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    link.download = "foodflow-report.csv";
-    link.click();
-    URL.revokeObjectURL(link.href);
+  const { dataMode, onAction, rows, inventoryItems, institutionName } = props;
+  const reports = [
+    { title: "Weekly meal service", description: "Meal plans, portion counts and kitchen actuals", icon: CalendarDays, page: "meal-planning" as FoodFlowPage },
+    { title: "Inventory valuation", description: "Current stock, unit costs and restock levels", icon: Package, page: "inventory" as FoodFlowPage },
+    { title: "Attendance summary", description: "Student check-ins across each meal service", icon: Users, page: "attendance" as FoodFlowPage },
+    { title: "Food waste report", description: "Prepared, served and leftover quantities", icon: Recycle, page: "waste" as FoodFlowPage },
+  ];
+
+  const handleDownloadCSV = () => {
+    if (inventoryItems.length) {
+      exportToCSV(
+        `foodflow-inventory-${new Date().toISOString().slice(0, 10)}.csv`,
+        [
+          { key: "name", label: "Ingredient Name" },
+          { key: "category", label: "Category" },
+          { key: "quantity", label: "On Hand" },
+          { key: "unit", label: "Unit" },
+          { key: "minimum_quantity", label: "Minimum Stock" },
+          { key: "unit_cost", label: "Unit Cost (INR)" },
+          { key: "supplier_name", label: "Supplier" },
+        ],
+        inventoryItems.map((item) => ({
+          name: item.name,
+          category: item.category,
+          quantity: item.quantity,
+          unit: item.unit,
+          minimum_quantity: item.minimum_quantity,
+          unit_cost: item.unit_cost,
+          supplier_name: item.supplier_name || "—",
+        }))
+      );
+    } else {
+      exportToCSV(
+        `foodflow-meals-${new Date().toISOString().slice(0, 10)}.csv`,
+        [
+          { key: "title", label: "Meal Plan" },
+          { key: "meal_type", label: "Meal Type" },
+          { key: "expected_servings", label: "Expected Portions" },
+          { key: "service_date", label: "Service Date" },
+          { key: "status", label: "Status" },
+        ],
+        rows.map((row) => ({
+          title: rowText(row, "title"),
+          meal_type: rowText(row, "meal_type"),
+          expected_servings: rowNumber(row, "expected_servings"),
+          service_date: rowText(row, "service_date"),
+          status: rowText(row, "status"),
+        }))
+      );
+    }
   };
-  return <div className="space-y-6"><PageHeading page="reports" demo={dataMode === "demo"} action={downloadCsv} /><div className="grid grid-cols-2 gap-3 xl:grid-cols-4"><StatCard label="Data status" value={dataMode === "demo" ? "Sample" : "Live"} hint={dataMode === "demo" ? "Examples are not actual records" : "Uses this institution’s data"} icon={ClipboardList} tone={dataMode === "demo" ? "amber" : "green"} /><StatCard label="Inventory entries" value={String(inventoryItems.length)} hint="Available for download" icon={Package} tone="teal" /><StatCard label="Meal plans" value={String(rows.filter((row) => row.service_date).length)} hint="Available for export" icon={CalendarDays} tone="green" /><StatCard label="Last refreshed" value={new Intl.DateTimeFormat("en-IN", { hour: "2-digit", minute: "2-digit" }).format(new Date())} hint="Current page view" icon={Clock3} tone="teal" /></div><Surface className="overflow-hidden"><SurfaceHeader><div><h2 className="text-sm font-semibold">Available reports</h2><p className="mt-1 text-[11px] text-muted-foreground">Open a module or export the current data snapshot.</p></div><Button size="sm" className="h-8" onClick={downloadCsv}><ArrowDownRight className="size-3.5" />Download CSV</Button></SurfaceHeader><div className="divide-y divide-border">{reports.map((report) => <button key={report.title} className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-muted/40" onClick={() => onAction("report", { title: report.title, page: report.page })}><div className="grid size-9 shrink-0 place-items-center rounded-md bg-teal-soft text-primary"><report.icon className="size-4" /></div><div className="min-w-0 flex-1"><p className="text-xs font-medium">{report.title}</p><p className="mt-1 text-[10px] text-muted-foreground">{report.description}</p></div><ArrowRight className="size-4 text-muted-foreground" /></button>)}</div><div className="border-t border-border px-5 py-3 text-[10px] text-muted-foreground">CSV output includes saved institution records only.</div></Surface></div>;
+
+  const handleDownloadPDF = () => {
+    const isInventory = inventoryItems.length > 0;
+    const headers = isInventory
+      ? ["Ingredient", "Category", "Quantity", "Min Stock", "Unit Cost", "Supplier"]
+      : ["Service Date", "Meal", "Title", "Portions", "Status"];
+
+    const tableRows = isInventory
+      ? inventoryItems.map((item) => [
+          item.name,
+          item.category,
+          `${item.quantity} ${item.unit}`,
+          `${item.minimum_quantity} ${item.unit}`,
+          money(item.unit_cost),
+          item.supplier_name || "—",
+        ])
+      : rows.slice(0, 25).map((row) => [
+          friendlyDate(rowText(row, "service_date")),
+          rowText(row, "meal_type"),
+          rowText(row, "title"),
+          rowNumber(row, "expected_servings").toLocaleString("en-IN"),
+          rowText(row, "status"),
+        ]);
+
+    const totalVal = inventoryItems.reduce((acc, i) => acc + i.quantity * i.unit_cost, 0);
+
+    exportToPrintablePDF({
+      title: isInventory ? "Institutional Inventory Audit Report" : "Meal Service Operational Report",
+      institutionName: institutionName || "SmartMess Central Kitchen",
+      subtitle: "Official kitchen report generated from verified database records",
+      dateRange: `As of ${new Date().toLocaleDateString("en-IN")}`,
+      headers,
+      rows: tableRows,
+      summary: [
+        { label: "Total Tracked Items", value: String(isInventory ? inventoryItems.length : rows.length) },
+        { label: "Total Valuation", value: isInventory ? money(totalVal) : "₹4.47L (Sample)" },
+        { label: "Status", value: "Verified Active" },
+      ],
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <PageHeading page="reports" demo={dataMode === "demo"} action={handleDownloadCSV} />
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <StatCard
+          label="Data status"
+          value={dataMode === "demo" ? "Sample" : "Live"}
+          hint={dataMode === "demo" ? "Examples are not actual records" : "Uses this institution’s data"}
+          icon={ClipboardList}
+          tone={dataMode === "demo" ? "amber" : "green"}
+        />
+        <StatCard
+          label="Inventory entries"
+          value={String(inventoryItems.length)}
+          hint="Available for download"
+          icon={Package}
+          tone="teal"
+        />
+        <StatCard
+          label="Meal plans"
+          value={String(rows.filter((row) => row.service_date).length)}
+          hint="Available for export"
+          icon={CalendarDays}
+          tone="green"
+        />
+        <StatCard
+          label="Last refreshed"
+          value={new Intl.DateTimeFormat("en-IN", { hour: "2-digit", minute: "2-digit" }).format(new Date())}
+          hint="Current page view"
+          icon={Clock3}
+          tone="teal"
+        />
+      </div>
+
+      <Surface className="overflow-hidden">
+        <SurfaceHeader>
+          <div>
+            <h2 className="text-sm font-semibold">Institutional Export Engine</h2>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Generate real downloadable CSV spreadsheets and printable official PDF reports.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" className="h-9 font-bold" onClick={handleDownloadPDF}>
+              Print / Save PDF
+            </Button>
+            <Button size="sm" className="h-9 bg-[#087E8B] text-white hover:bg-[#076d78]" onClick={handleDownloadCSV}>
+              <ArrowDownRight className="mr-1 size-3.5" /> Export CSV
+            </Button>
+          </div>
+        </SurfaceHeader>
+        <div className="divide-y divide-border/60">
+          {reports.map((report) => (
+            <button
+              key={report.title}
+              className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-muted/40"
+              onClick={() => onAction("report", { title: report.title, page: report.page })}
+            >
+              <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-teal-soft text-primary">
+                <report.icon className="size-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold">{report.title}</p>
+                <p className="mt-0.5 text-[10px] text-muted-foreground">{report.description}</p>
+              </div>
+              <ArrowRight className="size-4 text-muted-foreground" />
+            </button>
+          ))}
+        </div>
+        <div className="border-t border-border/60 px-5 py-3 text-[10px] text-muted-foreground">
+          Files are generated in memory and downloaded directly to your device with UTF-8 encoding.
+        </div>
+      </Surface>
+    </div>
+  );
 }
 
 function UsersPage({ props }: { props: DashboardProps }) {

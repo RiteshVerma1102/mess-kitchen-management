@@ -12,26 +12,15 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design system definition.
- *
- * The design lives in this file: oklch color tokens on the shadcn variables
- * (--background, --foreground, --primary, --secondary, --muted, --accent, ...) plus
- * new tokens as needed, font tokens, and custom styles and animations.
- *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
- *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ * Design system definition:
+ * Bold food-tech brand:
+ * Deep teal primary (#087E8B), saffron-orange action (#FF7A1A), deep forest green (#0F3D3A),
+ * cream neutral (#FFF6E5), and soft pastel card tints (mint, butter, peach, lavender).
  */
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 8px);
+  --radius-md: calc(var(--radius) - 4px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
@@ -70,93 +59,136 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --font-sans: "Inter", "DM Sans", ui-sans-serif, system-ui, sans-serif;
-}
 
-:root {
-  --radius: 0.5rem;
-  --background: oklch(0.982 0.006 235);
-  --foreground: oklch(0.245 0.027 240);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.245 0.027 240);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.245 0.027 240);
-  --primary: oklch(0.535 0.09 207);
-  --primary-foreground: oklch(0.99 0.004 210);
-  --secondary: oklch(0.952 0.025 205);
-  --secondary-foreground: oklch(0.36 0.07 211);
-  --muted: oklch(0.962 0.009 236);
-  --muted-foreground: oklch(0.55 0.024 239);
-  --accent: oklch(0.942 0.034 194);
-  --accent-foreground: oklch(0.31 0.073 208);
-  --destructive: oklch(0.59 0.19 26);
-  --destructive-foreground: oklch(0.99 0.004 210);
-  --border: oklch(0.91 0.016 235);
-  --input: oklch(0.91 0.016 235);
-  --ring: oklch(0.535 0.09 207);
-  --chart-1: oklch(0.535 0.09 207);
-  --chart-2: oklch(0.63 0.13 154);
-  --chart-3: oklch(0.72 0.13 75);
-  --chart-4: oklch(0.67 0.16 32);
-  --chart-5: oklch(0.55 0.08 255);
-  --sidebar: oklch(0.995 0.003 220);
-  --sidebar-foreground: oklch(0.31 0.025 239);
-  --sidebar-primary: oklch(0.535 0.09 207);
-  --sidebar-primary-foreground: oklch(0.99 0.004 210);
-  --sidebar-accent: oklch(0.942 0.034 194);
-  --sidebar-accent-foreground: oklch(0.31 0.073 208);
-  --sidebar-border: oklch(0.925 0.014 230);
-  --sidebar-ring: oklch(0.535 0.09 207);
-  --success: oklch(0.59 0.12 156);
-  --warning: oklch(0.73 0.13 81);
-  --danger: oklch(0.61 0.18 27);
-  --teal-soft: oklch(0.96 0.028 200);
-}
-
-.dark {
-  --background: oklch(0.19 0.018 239);
-  --foreground: oklch(0.96 0.007 223);
-  --card: oklch(0.235 0.02 239);
-  --card-foreground: oklch(0.96 0.007 223);
-  --popover: oklch(0.235 0.02 239);
-  --popover-foreground: oklch(0.96 0.007 223);
-  --primary: oklch(0.71 0.09 198);
-  --primary-foreground: oklch(0.18 0.03 224);
-  --secondary: oklch(0.29 0.025 236);
-  --secondary-foreground: oklch(0.94 0.01 224);
-  --muted: oklch(0.28 0.022 236);
-  --muted-foreground: oklch(0.72 0.022 230);
-  --accent: oklch(0.32 0.045 202);
-  --accent-foreground: oklch(0.95 0.018 207);
-  --destructive: oklch(0.67 0.16 25);
-  --destructive-foreground: oklch(0.17 0.022 230);
-  --border: oklch(1 0 0 / 11%);
-  --input: oklch(1 0 0 / 14%);
-  --ring: oklch(0.71 0.09 198);
-  --chart-1: oklch(0.71 0.09 198);
-  --chart-2: oklch(0.72 0.13 156);
-  --chart-3: oklch(0.79 0.13 81);
-  --chart-4: oklch(0.72 0.15 31);
-  --chart-5: oklch(0.69 0.07 255);
-  --sidebar: oklch(0.215 0.02 239);
-  --sidebar-foreground: oklch(0.94 0.008 224);
-  --sidebar-primary: oklch(0.71 0.09 198);
-  --sidebar-primary-foreground: oklch(0.18 0.03 224);
-  --sidebar-accent: oklch(0.32 0.045 202);
-  --sidebar-accent-foreground: oklch(0.95 0.018 207);
-  --sidebar-border: oklch(1 0 0 / 11%);
-  --sidebar-ring: oklch(0.71 0.09 198);
-  --success: oklch(0.72 0.13 156);
-  --warning: oklch(0.79 0.13 81);
-  --danger: oklch(0.72 0.15 31);
-  --teal-soft: oklch(0.32 0.045 202);
-}
-
-@theme inline {
+  /* FoodFlow Pro Max Brand Palette */
+  --color-saffron: var(--saffron);
+  --color-saffron-foreground: var(--saffron-foreground);
+  --color-forest: var(--forest);
+  --color-forest-foreground: var(--forest-foreground);
+  --color-cream: var(--cream);
+  --color-cream-foreground: var(--cream-foreground);
+  --color-mint: var(--mint);
+  --color-butter: var(--butter);
+  --color-peach: var(--peach);
+  --color-lavender: var(--lavender);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-teal-soft: var(--teal-soft);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Fraunces", serif;
+  --font-hindi: "Noto Sans Devanagari", sans-serif;
+}
+
+:root {
+  --radius: 1.5rem; /* 24px cards per spec */
+  --background: oklch(0.975 0.015 285); /* soft lavender-tinted page canvas so cards pop */
+  --foreground: oklch(0.24 0.035 185);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.24 0.035 185);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.24 0.035 185);
+  --primary: oklch(0.535 0.09 207); /* SmartMess Teal #087E8B */
+  --primary-foreground: oklch(0.99 0.005 210);
+  --secondary: oklch(0.95 0.025 205);
+  --secondary-foreground: oklch(0.36 0.07 211);
+  --muted: oklch(0.96 0.01 236);
+  --muted-foreground: oklch(0.52 0.025 239);
+  --accent: oklch(0.95 0.04 165); /* Mint accent */
+  --accent-foreground: oklch(0.26 0.065 185);
+  --destructive: oklch(0.59 0.19 26);
+  --destructive-foreground: oklch(0.99 0.004 210);
+  --border: oklch(0.92 0.015 235);
+  --input: oklch(0.92 0.015 235);
+  --ring: oklch(0.535 0.09 207);
+
+  /* Specific Brand Colors */
+  --saffron: oklch(0.70 0.19 42); /* #FF7A1A Saffron action */
+  --saffron-foreground: oklch(0.26 0.065 185); /* Deep green text for AA contrast */
+  --forest: oklch(0.26 0.065 185); /* #0F3D3A Deep forest green */
+  --forest-foreground: oklch(0.98 0.01 90);
+  --cream: oklch(0.98 0.03 90); /* #FFF6E5 Warm cream */
+  --cream-foreground: oklch(0.26 0.065 185);
+  --mint: oklch(0.95 0.045 165); /* #DDF3EA */
+  --butter: oklch(0.97 0.065 90); /* #FFF1C7 */
+  --peach: oklch(0.93 0.065 35); /* #FFE1D0 */
+  --lavender: oklch(0.94 0.04 285); /* #E9E4FF */
+
+  --chart-1: oklch(0.535 0.09 207);
+  --chart-2: oklch(0.70 0.19 42);
+  --chart-3: oklch(0.63 0.13 154);
+  --chart-4: oklch(0.72 0.13 75);
+  --chart-5: oklch(0.55 0.08 255);
+
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.28 0.03 239);
+  --sidebar-primary: oklch(0.535 0.09 207);
+  --sidebar-primary-foreground: oklch(0.99 0.004 210);
+  --sidebar-accent: oklch(0.95 0.025 205);
+  --sidebar-accent-foreground: oklch(0.26 0.065 185);
+  --sidebar-border: oklch(0.93 0.015 230);
+  --sidebar-ring: oklch(0.535 0.09 207);
+
+  --success: oklch(0.59 0.12 156);
+  --warning: oklch(0.73 0.13 81);
+  --danger: oklch(0.61 0.18 27);
+  --teal-soft: oklch(0.95 0.035 205);
+}
+
+.dark {
+  --radius: 1.5rem;
+  --background: oklch(0.14 0.03 185); /* #0B1614 cinematic deep green-black */
+  --foreground: oklch(0.96 0.008 223);
+  --card: oklch(0.18 0.028 185);
+  --card-foreground: oklch(0.96 0.008 223);
+  --popover: oklch(0.18 0.028 185);
+  --popover-foreground: oklch(0.96 0.008 223);
+  --primary: oklch(0.65 0.10 205);
+  --primary-foreground: oklch(0.14 0.03 185);
+  --secondary: oklch(0.25 0.03 185);
+  --secondary-foreground: oklch(0.94 0.01 224);
+  --muted: oklch(0.22 0.02 185);
+  --muted-foreground: oklch(0.70 0.02 230);
+  --accent: oklch(0.25 0.04 165);
+  --accent-foreground: oklch(0.95 0.02 207);
+  --destructive: oklch(0.67 0.16 25);
+  --destructive-foreground: oklch(0.17 0.022 230);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.65 0.10 205);
+
+  --saffron: oklch(0.75 0.19 45);
+  --saffron-foreground: oklch(0.14 0.03 185);
+  --forest: oklch(0.20 0.045 185);
+  --forest-foreground: oklch(0.96 0.01 90);
+  --cream: oklch(0.22 0.02 90);
+  --cream-foreground: oklch(0.96 0.01 90);
+  --mint: oklch(0.25 0.04 165);
+  --butter: oklch(0.25 0.05 90);
+  --peach: oklch(0.24 0.05 35);
+  --lavender: oklch(0.24 0.04 285);
+
+  --chart-1: oklch(0.65 0.10 205);
+  --chart-2: oklch(0.75 0.19 45);
+  --chart-3: oklch(0.72 0.13 156);
+  --chart-4: oklch(0.79 0.13 81);
+  --chart-5: oklch(0.69 0.07 255);
+
+  --sidebar: oklch(0.16 0.03 185);
+  --sidebar-foreground: oklch(0.94 0.008 224);
+  --sidebar-primary: oklch(0.65 0.10 205);
+  --sidebar-primary-foreground: oklch(0.14 0.03 185);
+  --sidebar-accent: oklch(0.24 0.035 185);
+  --sidebar-accent-foreground: oklch(0.95 0.018 207);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.65 0.10 205);
+
+  --success: oklch(0.72 0.13 156);
+  --warning: oklch(0.79 0.13 81);
+  --danger: oklch(0.72 0.15 31);
+  --teal-soft: oklch(0.26 0.04 205);
 }
 
 @layer base {
@@ -172,6 +204,19 @@
 }
 
 @layer components {
+  /* Food brand typography classes */
+  .font-display {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+
+  .font-serif-accent {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 400;
+  }
+
   .foodflow-google-button {
     border: 1px solid #E5EAF0;
     background: #FFFFFF;
@@ -184,13 +229,57 @@
     border-color: #CBD5E1;
   }
 
-  .foodflow-grid {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(48px, 1fr));
-  }
-
   .foodflow-nav-scroll {
     scrollbar-width: thin;
     scrollbar-color: var(--color-sidebar-border) transparent;
+  }
+
+  /* Animations for marketing and dashboard */
+  @keyframes marquee-scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .animate-marquee {
+    display: flex;
+    width: max-content;
+    animation: marquee-scroll 24s linear infinite;
+  }
+
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(-4deg); }
+    50% { transform: rotate(4deg); }
+  }
+
+  .animate-wiggle {
+    animation: wiggle 3s ease-in-out infinite;
+  }
+
+  @keyframes float-gentle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  .animate-float {
+    animation: float-gentle 6s ease-in-out infinite;
+  }
+
+  /* Card lift on hover */
+  .card-lift {
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  }
+  .card-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px -6px oklch(0.2 0.05 185 / 0.1);
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
