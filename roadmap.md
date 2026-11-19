@@ -1,0 +1,6 @@
+- [x] Rebuild FoodFlow dashboard, design tokens, and responsive navigation.
+- [x] Port the source’s operational screens and key user flows.
+- [x] Add Lovable Cloud data/auth with separate roles and tenant access rules.
+- [ ] Polish the experience against the supplied professional SmartMess brief and visual references.
+- [ ] Verify preview behavior and produce a clean, refreshed downloadable ZIP.
+- [ ] Keep production record/user import and Gemini live verification pending until exports/credentials are supplied.

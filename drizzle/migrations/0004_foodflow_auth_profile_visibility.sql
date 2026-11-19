@@ -1,0 +1,1 @@
+GRANT SELECT (user_id, display_name, institution_id) ON public.foodflow_profiles TO authenticated;

@@ -1,79 +1,22 @@
-import React from 'react';
+import * as React from "react";
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  error?: string;
-  icon?: React.ReactNode;
-}
+import { cn } from "@/lib/utils";
 
-export function Input({
-  label,
-  error,
-  icon,
-  className = '',
-  id,
-  ...props
-}: InputProps) {
-  const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
-
-  return (
-    <div className="w-full">
-      {label && (
-        <label htmlFor={inputId} className="block text-xs font-bold text-[#253746] mb-1.5">
-          {label}
-        </label>
-      )}
-      <div className="relative rounded-xl">
-        {icon && (
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#718096]">
-            {icon}
-          </div>
+const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
+  ({ className, type, ...props }, ref) => {
+    return (
+      <input
+        type={type}
+        className={cn(
+          "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          className,
         )}
-        <input
-          id={inputId}
-          className={`w-full rounded-xl border border-[#E5EAF0] bg-white px-3.5 py-2 text-xs text-[#253746] placeholder-[#718096] transition focus:border-[#087E8B] focus:outline-none focus:ring-1 focus:ring-[#087E8B] disabled:bg-[#F5F7FA] disabled:text-[#718096] ${
-            icon ? 'pl-10' : ''
-          } ${error ? 'border-[#DC5353] focus:border-[#DC5353] focus:ring-[#DC5353]' : ''} ${className}`}
-          {...props}
-        />
-      </div>
-      {error && <p className="mt-1 text-[11px] text-[#DC5353] font-medium">{error}</p>}
-    </div>
-  );
-}
-
-interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
-  label?: string;
-  error?: string;
-}
-
-export function Select({
-  label,
-  error,
-  className = '',
-  id,
-  children,
-  ...props
-}: SelectProps) {
-  const selectId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
-
-  return (
-    <div className="w-full">
-      {label && (
-        <label htmlFor={selectId} className="block text-xs font-bold text-[#253746] mb-1.5">
-          {label}
-        </label>
-      )}
-      <select
-        id={selectId}
-        className={`w-full rounded-xl border border-[#E5EAF0] bg-white px-3.5 py-2 text-xs text-[#253746] transition focus:border-[#087E8B] focus:outline-none focus:ring-1 focus:ring-[#087E8B] disabled:bg-[#F5F7FA] ${
-          error ? 'border-[#DC5353] focus:border-[#DC5353] focus:ring-[#DC5353]' : ''
-        } ${className}`}
+        ref={ref}
         {...props}
-      >
-        {children}
-      </select>
-      {error && <p className="mt-1 text-[11px] text-[#DC5353] font-medium">{error}</p>}
-    </div>
-  );
-}
+      />
+    );
+  },
+);
+Input.displayName = "Input";
+
+export { Input };

@@ -1,73 +1,32 @@
-import React from 'react';
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
 
-export type BadgeVariant =
-  | 'success'
-  | 'warning'
-  | 'danger'
-  | 'info'
-  | 'neutral'
-  | 'primary';
+import { cn } from "@/lib/utils";
 
-interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: BadgeVariant;
-  withDot?: boolean;
+const badgeVariants = cva(
+  "inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  {
+    variants: {
+      variant: {
+        default: "border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80",
+        secondary:
+          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        destructive:
+          "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
+        outline: "text-foreground",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  },
+);
+
+export interface BadgeProps
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {}
+
+function Badge({ className, variant, ...props }: BadgeProps) {
+  return <div className={cn(badgeVariants({ variant }), className)} {...props} />;
 }
 
-export function Badge({
-  variant = 'neutral',
-  withDot = false,
-  className = '',
-  children,
-  ...props
-}: BadgeProps) {
-  const variantStyles: Record<BadgeVariant, { bg: string; text: string; dot: string; border: string }> = {
-    success: {
-      bg: 'bg-[#E8F7F0]',
-      text: 'text-[#16A36A]',
-      dot: 'bg-[#16A36A]',
-      border: 'border-[#16A36A]/20',
-    },
-    warning: {
-      bg: 'bg-[#FEF6E9]',
-      text: 'text-[#E9A23B]',
-      dot: 'bg-[#E9A23B]',
-      border: 'border-[#E9A23B]/30',
-    },
-    danger: {
-      bg: 'bg-[#FCEEEE]',
-      text: 'text-[#DC5353]',
-      dot: 'bg-[#DC5353]',
-      border: 'border-[#DC5353]/20',
-    },
-    info: {
-      bg: 'bg-[#DDF3F3]',
-      text: 'text-[#087E8B]',
-      dot: 'bg-[#087E8B]',
-      border: 'border-[#087E8B]/20',
-    },
-    neutral: {
-      bg: 'bg-[#F5F7FA]',
-      text: 'text-[#718096]',
-      dot: 'bg-[#718096]',
-      border: 'border-[#E5EAF0]',
-    },
-    primary: {
-      bg: 'bg-[#DDF3F3]',
-      text: 'text-[#087E8B]',
-      dot: 'bg-[#087E8B]',
-      border: 'border-[#087E8B]/20',
-    },
-  };
-
-  const style = variantStyles[variant];
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-0.5 text-[11px] font-bold ${style.bg} ${style.text} ${style.border} ${className}`}
-      {...props}
-    >
-      {withDot && <span className={`h-1.5 w-1.5 rounded-full ${style.dot}`} />}
-      {children}
-    </span>
-  );
-}
+export { Badge, badgeVariants };

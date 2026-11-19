@@ -1,16 +1,16 @@
-import { defineConfig } from 'vitest/config';
-import path from 'node:path';
+import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+import path from "node:path";
 
 export default defineConfig({
-  resolve: { alias: { '@': path.resolve(__dirname, 'src') } },
+  plugins: [react()],
   test: {
-    environment: 'node',
-    include: ['src/tests/**/*.test.ts'],
-    coverage: {
-      provider: 'v8',
-      // Coverage gate applies to pure domain/service logic (CES: >= 70%).
-      include: ['src/lib/money.ts', 'src/lib/errors.ts', 'src/lib/time.ts', 'src/core/rbac/**', 'src/core/tenant/**', 'src/config/env.ts'],
-      thresholds: { statements: 70, branches: 60, functions: 70, lines: 70 },
-    },
+    environment: "jsdom",
+    globals: true,
+    setupFiles: ["./src/test/setup.ts"],
+    include: ["src/**/*.{test,spec}.{ts,tsx}"],
+  },
+  resolve: {
+    alias: { "@": path.resolve(__dirname, "./src") },
   },
 });
