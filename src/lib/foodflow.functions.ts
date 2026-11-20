@@ -54,7 +54,7 @@ export const getFoodFlowContext = createServerFn({ method: "GET" })
 
 export const createFoodFlowInstitution = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { name: string }) => {
+  .validator((input: { name: string }) => {
     const name = input.name.trim();
     if (name.length < 2 || name.length > 120) throw new Error("Enter an institution name between 2 and 120 characters.");
     return { name };
@@ -67,7 +67,7 @@ export const createFoodFlowInstitution = createServerFn({ method: "POST" })
 
 export const updateFoodFlowDisplayName = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { displayName: string }) => {
+  .validator((input: { displayName: string }) => {
     const displayName = input.displayName.trim();
     if (displayName.length < 2 || displayName.length > 80) throw new Error("Enter a display name between 2 and 80 characters.");
     return { displayName };
@@ -83,7 +83,7 @@ export const updateFoodFlowDisplayName = createServerFn({ method: "POST" })
 
 export const assignFoodFlowRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { email: string; role: AppRole }) => {
+  .validator((input: { email: string; role: AppRole }) => {
     const email = input.email.trim().toLowerCase();
     if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error("Enter a valid email address.");
     if (!roleValues.includes(input.role) || input.role === "institution_admin") throw new Error("Choose a standard FoodFlow role.");
@@ -119,7 +119,7 @@ export const listFoodFlowTeam = createServerFn({ method: "GET" })
 
 export const listFoodFlowBusinessRows = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { table: "foodflow_meal_plans" | "foodflow_recipes" | "foodflow_students" | "foodflow_kitchen_tasks" | "foodflow_forecasts" | "foodflow_purchase_orders" | "foodflow_waste_entries" | "foodflow_service_actuals" | "foodflow_calendar_events" | "foodflow_suppliers" | "foodflow_halls" | "foodflow_attendance" | "foodflow_stock_movements" }) => {
+  .validator((input: { table: "foodflow_meal_plans" | "foodflow_recipes" | "foodflow_students" | "foodflow_kitchen_tasks" | "foodflow_forecasts" | "foodflow_purchase_orders" | "foodflow_waste_entries" | "foodflow_service_actuals" | "foodflow_calendar_events" | "foodflow_suppliers" | "foodflow_halls" | "foodflow_attendance" | "foodflow_stock_movements" }) => {
     const allowed: string[] = ["foodflow_meal_plans", "foodflow_recipes", "foodflow_students", "foodflow_kitchen_tasks", "foodflow_forecasts", "foodflow_purchase_orders", "foodflow_waste_entries", "foodflow_service_actuals", "foodflow_calendar_events", "foodflow_suppliers", "foodflow_halls", "foodflow_attendance", "foodflow_stock_movements"];
     if (!allowed.includes(input.table)) throw new Error("Choose a valid FoodFlow page.");
     return { table: input.table };
@@ -147,7 +147,7 @@ export const listFoodFlowBusinessRows = createServerFn({ method: "POST" })
 
 export const createFoodFlowBusinessRecord = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { kind: "meal" | "recipe" | "task" | "student" | "order" | "waste" | "forecast" | "event" | "supplier" | "actual" | "attendance" | "hall"; fields: Record<string, string | number | boolean | null | string[]> }) => {
+  .validator((input: { kind: "meal" | "recipe" | "task" | "student" | "order" | "waste" | "forecast" | "event" | "supplier" | "actual" | "attendance" | "hall"; fields: Record<string, string | number | boolean | null | string[]> }) => {
     const allowed = ["meal", "recipe", "task", "student", "order", "waste", "forecast", "event", "supplier", "actual", "attendance", "hall"];
     if (!allowed.includes(input.kind) || Object.keys(input.fields).length > 20) throw new Error("Choose a valid FoodFlow record.");
     for (const value of Object.values(input.fields)) {
@@ -214,7 +214,7 @@ export const createFoodFlowBusinessRecord = createServerFn({ method: "POST" })
 
 export const updateFoodFlowBusinessRecord = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { table: "foodflow_meal_plans" | "foodflow_kitchen_tasks" | "foodflow_purchase_orders" | "foodflow_forecasts"; id: string; fields: Record<string, string | number | boolean | null | string[]> }) => {
+  .validator((input: { table: "foodflow_meal_plans" | "foodflow_kitchen_tasks" | "foodflow_purchase_orders" | "foodflow_forecasts"; id: string; fields: Record<string, string | number | boolean | null | string[]> }) => {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.id)) throw new Error("Select a valid FoodFlow record.");
     const writableFields: Record<string, string[]> = {
       foodflow_meal_plans: ["service_date", "meal_type", "title", "dishes", "expected_servings", "status"],
@@ -236,7 +236,7 @@ export const updateFoodFlowBusinessRecord = createServerFn({ method: "POST" })
 
 export const updateFoodFlowOrderStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { id: string; status: "Pending" | "Approved" | "Ordered" | "Received" | "Cancelled" }) => {
+  .validator((input: { id: string; status: "Pending" | "Approved" | "Ordered" | "Received" | "Cancelled" }) => {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.id)) throw new Error("Select a valid purchase order.");
     if (!["Pending", "Approved", "Ordered", "Received", "Cancelled"].includes(input.status)) throw new Error("Choose a valid purchase-order status.");
     return input;
@@ -249,7 +249,7 @@ export const updateFoodFlowOrderStatus = createServerFn({ method: "POST" })
 
 export const removeFoodFlowRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { userId: string; role: AppRole }) => {
+  .validator((input: { userId: string; role: AppRole }) => {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.userId)) throw new Error("Select a valid account.");
     if (!roleValues.includes(input.role) || input.role === "institution_admin") throw new Error("The first administrator role cannot be removed here.");
     return input;
@@ -281,7 +281,7 @@ export const listFoodFlowInventory = createServerFn({ method: "GET" })
 
 export const createFoodFlowInventoryItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { name: string; category: string; quantity: number; unit: string; minimumQuantity: number; unitCost: number; supplierName: string }) => {
+  .validator((input: { name: string; category: string; quantity: number; unit: string; minimumQuantity: number; unitCost: number; supplierName: string }) => {
     const name = input.name.trim();
     const category = input.category.trim() || "General";
     const unit = input.unit.trim() || "kg";
@@ -313,7 +313,7 @@ export const createFoodFlowInventoryItem = createServerFn({ method: "POST" })
 
 export const adjustFoodFlowInventory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { id: string; delta: number; reason: string }) => {
+  .validator((input: { id: string; delta: number; reason: string }) => {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.id)) throw new Error("Select a valid ingredient.");
     if (!Number.isFinite(input.delta) || input.delta === 0 || Math.abs(input.delta) > 100000) throw new Error("Enter a non-zero stock adjustment.");
     const reason = input.reason.trim().slice(0, 120) || "Stock adjustment";
@@ -338,7 +338,7 @@ export const adjustFoodFlowInventory = createServerFn({ method: "POST" })
 
 export const deleteFoodFlowInventoryItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { id: string }) => {
+  .validator((input: { id: string }) => {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.id)) throw new Error("Select a valid ingredient.");
     return input;
   })
