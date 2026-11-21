@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { BrandLogo } from "@/features/marketing/brand";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -13,7 +14,6 @@ import {
   ClipboardCheck,
   CookingPot,
   Flame,
-  ForkKnife,
   HelpCircle,
   Layers,
   Leaf,
@@ -209,17 +209,7 @@ export function FoodFlowHomepage() {
       <header className="sticky top-0 z-40 border-b border-[#0F3D3A]/10 bg-[#FFF6E5]/90 backdrop-blur-md">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-3">
-            <span className="grid size-11 place-items-center rounded-2xl bg-[#087E8B] text-white shadow-md shadow-[#087E8B]/20">
-              <ForkKnife className="size-6" />
-            </span>
-            <div className="flex flex-col">
-              <span className="font-display text-2xl font-extrabold tracking-tight text-[#0F3D3A]">
-                SmartMess
-              </span>
-              <span className="text-[10px] font-semibold tracking-wider uppercase text-[#087E8B]">
-                FoodFlow Pro Max
-              </span>
-            </div>
+            <BrandLogo />
           </Link>
 
           <nav className="hidden items-center gap-8 md:flex">
@@ -683,10 +673,7 @@ export function FoodFlowHomepage() {
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
             <div>
               <div className="flex items-center gap-2">
-                <span className="grid size-8 place-items-center rounded-xl bg-[#087E8B] text-white">
-                  <ForkKnife className="size-4" />
-                </span>
-                <span className="font-display text-lg font-bold">SmartMess</span>
+                <BrandLogo className="text-white [&_.text-ink]:text-white" />
               </div>
               <p className="mt-3 text-xs leading-relaxed text-white/70">
                 Operating system for institutional dining, university hostels, and corporate cafeterias.
@@ -725,7 +712,7 @@ export function FoodFlowHomepage() {
           </div>
 
           <div className="mt-12 flex flex-col items-center justify-between border-t border-white/10 pt-6 text-xs text-white/60 sm:flex-row">
-            <p>&copy; {new Date().getFullYear()} SmartMess &middot; FoodFlow Pro Max. All rights reserved.</p>
+            <p>&copy; 2026 FoodFlow</p>
             <p className="mt-2 sm:mt-0">Designed &amp; Engineered for Indian Higher Education.</p>
           </div>
         </div>

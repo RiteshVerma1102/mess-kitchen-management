@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, ForkKnife, LoaderCircle, ShieldCheck, Users } from "lucide-react";
+import { ArrowRight, CheckCircle2, LoaderCircle, ShieldCheck, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { BrandMark } from "@/features/marketing/brand";
 import { foodFlowHead } from "@/lib/foodflow-route-head";
 
 export const Route = createFileRoute("/join/$code")({
@@ -46,9 +47,7 @@ export function JoinCodePage() {
     <div className="flex min-h-screen items-center justify-center bg-[#F5F8FA] p-6">
       <div className="w-full max-w-md rounded-3xl border border-[#E5EAF0] bg-white p-8 shadow-sm sm:p-10">
         <div className="mb-6 flex items-center gap-3">
-          <div className="grid size-12 place-items-center rounded-2xl bg-[#087E8B] text-white shadow-md shadow-[#087E8B]/20">
-            <ForkKnife className="size-6" />
-          </div>
+          <BrandMark className="size-12 shadow-md" />
           <div>
             <h1 className="font-display text-xl font-bold text-[#172B3A]">
               Join Dining Hall

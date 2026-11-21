@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Activity,
+  AlertCircle,
   ArrowRight,
   Check,
   CheckCircle2,
@@ -16,7 +17,6 @@ import {
   Mail,
   ShieldCheck,
   TrendingDown,
-  UtensilsCrossed,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,7 +31,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { BrandLogo, BrandMark } from "@/features/marketing/brand";
+import { HealthCheckBanner, useFoodFlowHealth } from "@/components/foodflow-health";
 import { supabase } from "@/integrations/supabase/client";
+import { bootstrapWorkspace } from "@/lib/foodflow-bootstrap";
 
 type AuthMode = "signin" | "signup" | "forgot";
 
@@ -41,8 +44,25 @@ const INSTITUTION_TYPES = [
   "Hostel",
   "Institutional Kitchen",
   "Food Service Contractor",
+  "School",
+  "Hospital",
   "Other",
 ] as const;
+
+// Helper to enforce a strict timeout on async auth requests
+async function withAuthTimeout<T>(promise: Promise<T>, timeoutMs = 20000): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error("Taking too long. Check your internet connection or try again."));
+    }, timeoutMs);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    clearTimeout(timer!);
+  }
+}
 
 export function AuthPage({
   onExploreDemo,
@@ -57,6 +77,8 @@ export function AuthPage({
 } = {}) {
   const navigate = useNavigate();
   const [mode, setMode] = useState<AuthMode>(initialMode);
+  const health = useFoodFlowHealth();
+  const [dismissHealth, setDismissHealth] = useState(false);
 
   // Sign-in / Sign-up state
   const [name, setName] = useState("");
@@ -76,6 +98,12 @@ export function AuthPage({
   const [confirmationEmail, setConfirmationEmail] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
 
+  // Sync mode with props if route changes
+  useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
+
+  // Resend cooldown countdown
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const timer = setInterval(() => setResendCooldown((c) => c - 1), 1000);
@@ -100,35 +128,82 @@ export function AuthPage({
     if (resendCooldown > 0 || !confirmationEmail) return;
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.resend({
-        type: "signup",
-        email: confirmationEmail,
-      });
+      const { error } = await withAuthTimeout(
+        supabase.auth.resend({
+          type: "signup",
+          email: confirmationEmail,
+        })
+      );
       if (error) throw error;
       setResendCooldown(60);
       toast.success("Verification link resent. Please check your inbox.");
     } catch (err) {
+      console.error("[auth] Resend error:", err);
       toast.error(err instanceof Error ? err.message : "Could not resend email.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const goToApp = () => void navigate({ to: (redirectTo as never) || "/" });
+  const handleNavigateMode = (targetMode: AuthMode) => {
+    setMode(targetMode);
+    setShowConfirmation(false);
+    if (targetMode === "signin") {
+      void navigate({ to: "/login", search: redirectTo ? { redirect: redirectTo } : undefined });
+    } else if (targetMode === "signup") {
+      void navigate({ to: "/signup", search: defaultPlan ? { plan: defaultPlan } : undefined });
+    } else if (targetMode === "forgot") {
+      void navigate({ to: "/forgot-password" });
+    }
+  };
+
+  const handlePostAuthRedirect = async () => {
+    if (redirectTo) {
+      void navigate({ to: redirectTo as never });
+      return;
+    }
+    const bootstrap = await bootstrapWorkspace();
+    if (bootstrap.status === "ready") {
+      void navigate({ to: bootstrap.destination });
+    } else if (bootstrap.status === "needs_onboarding") {
+      void navigate({ to: "/onboarding" });
+    } else {
+      void navigate({ to: "/overview" });
+    }
+  };
 
   // Handle Google OAuth via native Supabase
+  const isGoogleAuthEnabled = import.meta.env.VITE_GOOGLE_AUTH_ENABLED !== "false";
+
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
+      const { error } = await withAuthTimeout(
+        supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: `${window.location.origin}/auth/callback`,
+            queryParams: {
+              prompt: "select_account",
+            },
+          },
+        }),
+        10000
+      );
       if (error) throw error;
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not connect to Google sign-in.");
+      console.error("[auth] Google OAuth error:", error);
+      const msg = error instanceof Error ? error.message : "";
+      if (
+        msg.includes("Unsupported provider") ||
+        msg.includes("missing OAuth secret") ||
+        msg.includes("validation_failed") ||
+        msg.includes("provider is not enabled")
+      ) {
+        toast.error("Google sign-in isn't set up for this workspace yet. Use email and password.");
+      } else {
+        toast.error(msg || "Could not connect to Google sign-in. Use email and password.");
+      }
       setIsLoading(false);
     }
   };
@@ -140,14 +215,17 @@ export function AuthPage({
 
     try {
       if (mode === "forgot") {
-        if (!email.trim() || !email.includes("@")) {
+        const cleanEmail = email.trim().toLowerCase();
+        if (!cleanEmail || !cleanEmail.includes("@")) {
           throw new Error("Please enter a valid email address.");
         }
-        const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-          redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
-        });
+        const { error } = await withAuthTimeout(
+          supabase.auth.resetPasswordForEmail(cleanEmail, {
+            redirectTo: `${window.location.origin}/reset-password`,
+          })
+        );
         if (error) throw error;
-        setConfirmationEmail(email.trim().toLowerCase());
+        setConfirmationEmail(cleanEmail);
         setShowConfirmation(true);
         toast.success("Password reset instructions sent.");
         return;
@@ -177,24 +255,36 @@ export function AuthPage({
           throw new Error("Please accept the terms of service to create your workspace.");
         }
 
-        const { data, error } = await supabase.auth.signUp({
-          email: cleanEmail,
-          password,
-          options: {
-            data: {
-              full_name: cleanName,
-              institution_name: cleanInstitution,
-              institution_type: institutionType,
+        const { data, error } = await withAuthTimeout(
+          supabase.auth.signUp({
+            email: cleanEmail,
+            password,
+            options: {
+              data: {
+                full_name: cleanName,
+                institution_name: cleanInstitution,
+                pending_institution_name: cleanInstitution,
+                institution_type: institutionType.toLowerCase(),
+                pending_institution_type: institutionType.toLowerCase(),
+              },
+              emailRedirectTo: `${window.location.origin}/auth/callback`,
             },
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-          },
-        });
+          })
+        );
 
-        if (error) throw error;
+        if (error) {
+          console.error("[auth] Sign up error:", error);
+          if (error.message.toLowerCase().includes("already registered") || error.message.toLowerCase().includes("user already exists")) {
+            toast.error("An account already exists with this email. Please sign in instead.");
+            setMode("signin");
+            return;
+          }
+          throw error;
+        }
 
         if (data.session) {
-          toast.success("Welcome to FoodFlow! Your workspace is ready.");
-          goToApp();
+          toast.success("Welcome to FoodFlow! Setting up your workspace...");
+          await handlePostAuthRedirect();
         } else {
           setConfirmationEmail(cleanEmail);
           setShowConfirmation(true);
@@ -209,26 +299,35 @@ export function AuthPage({
         throw new Error("Please enter both email and password.");
       }
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: cleanEmail,
-        password,
-      });
+      const { data, error } = await withAuthTimeout(
+        supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password,
+        })
+      );
 
       if (error) {
+        console.error("[auth] Sign in error:", error);
         if (error.message.toLowerCase().includes("invalid login credentials")) {
           throw new Error("Incorrect email or password. Please verify your details.");
         }
         if (error.message.toLowerCase().includes("email not confirmed")) {
-          throw new Error("Your email address has not been confirmed yet. Please check your inbox.");
+          setConfirmationEmail(cleanEmail);
+          setShowConfirmation(true);
+          throw new Error("Your email address has not been confirmed yet. Please verify your inbox.");
+        }
+        if (error.message.toLowerCase().includes("too many requests")) {
+          throw new Error("Too many sign in attempts. Please wait a moment and try again.");
         }
         throw error;
       }
 
       if (data.user) {
         toast.success("Welcome back to FoodFlow.");
-        goToApp();
+        await handlePostAuthRedirect();
       }
     } catch (error) {
+      console.error("[auth] Authentication exception:", error);
       toast.error(error instanceof Error ? error.message : "Authentication failed. Please try again.");
     } finally {
       setIsLoading(false);
@@ -237,6 +336,16 @@ export function AuthPage({
 
   return (
     <div className="grid min-h-screen bg-[#F5F8FA] lg:grid-cols-[1.1fr_1fr] xl:grid-cols-[1.2fr_1fr]">
+      {/* Schema / Health Check Banner if database tables missing */}
+      {!dismissHealth && (
+        <HealthCheckBanner
+          status={health.status}
+          details={health.details}
+          onRetry={health.retry}
+          onDismiss={() => setDismissHealth(true)}
+        />
+      )}
+
       {/* LEFT COLUMN: Premium Enterprise Brand & Value Showcase */}
       <aside className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-[#07545B] via-[#087E8B] to-[#054349] p-10 text-white lg:flex xl:p-14">
         {/* Subtle decorative mesh background accents */}
@@ -247,53 +356,48 @@ export function AuthPage({
         {/* Top Header & Brand Identity */}
         <div className="relative z-10 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex size-11 items-center justify-center rounded-xl bg-white/10 shadow-inner backdrop-blur-md">
-              <UtensilsCrossed className="size-6 text-white" />
-            </div>
+            <BrandMark className="size-11 rounded-2xl shadow-md" />
             <div>
-              <span className="text-2xl font-bold tracking-tight text-white">FoodFlow</span>
-              <span className="block text-xs font-medium text-white/70">Institutional Kitchen Platform</span>
+              <span className="font-display text-2xl font-bold tracking-tight text-white">FoodFlow</span>
+              <span className="block text-xs font-medium text-white/70">Institutional Kitchen OS</span>
             </div>
           </div>
           <div className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
-            <ShieldCheck className="size-3.5 text-[#34D399]" /> Enterprise Ready
+            <ShieldCheck className="size-3.5 text-[#34D399]" /> Multi-Tenant Architecture
           </div>
         </div>
 
-        {/* Middle Value Proposition */}
-        <div className="relative z-10 my-auto max-w-lg py-8">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-white">
-            <Flame className="size-3.5 text-amber-300" /> Smart Mess & Canteen Operations
-          </div>
-          <h1 className="text-4xl font-extrabold leading-[1.15] tracking-tight text-white xl:text-5xl">
-            Better food operations start here.
+        {/* Value Pitch & Features Showcase */}
+        <div className="relative z-10 my-auto py-8">
+          <h1 className="font-display text-3xl font-extrabold leading-tight tracking-tight text-white xl:text-4xl">
+            Better food operations <br className="hidden xl:inline" />
+            start here.
           </h1>
-          <p className="mt-4 text-base leading-relaxed text-white/80 xl:text-lg">
-            Coordinate meal planning, kitchen prep schedules, ingredient inventory, and student attendance in one unified institutional workspace.
+          <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/80 xl:text-base">
+            Coordinate cycle menus, kitchen prep schedules, pantry inventory, and student dining attendance in one connected institutional platform.
           </p>
 
-          {/* 3 Pillars / Value Props */}
-          <div className="mt-8 space-y-4">
+          <div className="mt-8 space-y-3.5 max-w-md">
             <div className="flex items-start gap-3.5 rounded-xl border border-white/10 bg-white/[0.06] p-3.5 backdrop-blur-sm transition-all hover:bg-white/[0.1]">
               <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white">
-                <Layers className="size-5" />
+                <Layers className="size-5 text-emerald-300" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-white">Plan Smarter Menus</h3>
+                <h3 className="text-sm font-semibold text-white">Cycle Menu Planning</h3>
                 <p className="mt-0.5 text-xs leading-normal text-white/70">
-                  Manage cycle menus, standardized recipes, and nutritional dietary tags across halls.
+                  Plan balanced cycle menus, standardize recipes, and monitor cost per portion.
                 </p>
               </div>
             </div>
 
             <div className="flex items-start gap-3.5 rounded-xl border border-white/10 bg-white/[0.06] p-3.5 backdrop-blur-sm transition-all hover:bg-white/[0.1]">
               <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white">
-                <Activity className="size-5" />
+                <Activity className="size-5 text-emerald-300" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-white">Real-Time Stock & Supplier Control</h3>
+                <h3 className="text-sm font-semibold text-white">Real-Time Stock & Supplier Orders</h3>
                 <p className="mt-0.5 text-xs leading-normal text-white/70">
-                  Track pantry stock movements, restock minimum thresholds, and pending vendor orders.
+                  Track pantry ledger movements, reorder thresholds, and vendor purchase orders.
                 </p>
               </div>
             </div>
@@ -303,19 +407,19 @@ export function AuthPage({
                 <TrendingDown className="size-5 text-emerald-300" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-white">Cut Food Waste by up to 35%</h3>
+                <h3 className="text-sm font-semibold text-white">Demand Forecast & Waste Tracking</h3>
                 <p className="mt-0.5 text-xs leading-normal text-white/70">
-                  Forecast portions using student attendance actuals, weather factors, and exam periods.
+                  Forecast meal headcounts using attendance actuals and log post-service leftover waste.
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Bottom Social Proof / Trust */}
+        {/* Bottom Verification Label */}
         <div className="relative z-10 flex items-center justify-between border-t border-white/15 pt-5 text-xs text-white/70">
-          <span>Trusted by universities, residential schools & hostels</span>
-          <span className="font-medium text-white/90">v2.4 Production</span>
+          <span>Enterprise Kitchen Management</span>
+          <span className="font-medium text-white/90">Production Platform</span>
         </div>
       </aside>
 
@@ -324,10 +428,7 @@ export function AuthPage({
         {/* Mobile / Compact Top Bar */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 lg:hidden">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-[#087E8B] text-white">
-              <UtensilsCrossed className="size-5" />
-            </div>
-            <span className="text-lg font-bold text-[#172B3A]">FoodFlow</span>
+            <BrandLogo />
           </div>
 
           {mode !== "signin" ? (
@@ -335,10 +436,7 @@ export function AuthPage({
               variant="ghost"
               size="sm"
               className="ml-auto text-xs font-medium text-[#718096] hover:text-[#172B3A]"
-              onClick={() => {
-                setMode("signin");
-                setShowConfirmation(false);
-              }}
+              onClick={() => handleNavigateMode("signin")}
             >
               <ChevronLeft className="mr-1 size-4" /> Back to sign in
             </Button>
@@ -358,7 +456,7 @@ export function AuthPage({
               <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-[#E5F5F4] text-[#087E8B]">
                 <Mail className="size-6" />
               </div>
-              <h2 className="text-2xl font-bold tracking-tight text-[#172B3A]">
+              <h2 className="font-display text-2xl font-bold tracking-tight text-[#172B3A]">
                 {mode === "forgot" ? "Check your email" : "Confirm your email"}
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-[#718096]">
@@ -388,10 +486,7 @@ export function AuthPage({
                 )}
                 <Button
                   className="w-full bg-[#087E8B] font-medium text-white hover:bg-[#066873]"
-                  onClick={() => {
-                    setShowConfirmation(false);
-                    setMode("signin");
-                  }}
+                  onClick={() => handleNavigateMode("signin")}
                 >
                   <ArrowRight className="mr-2 size-4" /> Return to sign in
                 </Button>
@@ -414,7 +509,7 @@ export function AuthPage({
                           ? "bg-white text-[#172B3A] shadow-xs"
                           : "text-[#718096] hover:text-[#172B3A]"
                       }`}
-                      onClick={() => setMode("signin")}
+                      onClick={() => handleNavigateMode("signin")}
                     >
                       Sign In
                     </button>
@@ -425,7 +520,7 @@ export function AuthPage({
                           ? "bg-white text-[#172B3A] shadow-xs"
                           : "text-[#718096] hover:text-[#172B3A]"
                       }`}
-                      onClick={() => setMode("signup")}
+                      onClick={() => handleNavigateMode("signup")}
                     >
                       Create Workspace
                     </button>
@@ -437,7 +532,7 @@ export function AuthPage({
                     Plan: <span className="capitalize">{defaultPlan}</span>
                   </div>
                 )}
-                <h2 className="text-2xl font-bold tracking-tight text-[#172B3A]">
+                <h2 className="font-display text-2xl font-bold tracking-tight text-[#172B3A]">
                   {mode === "signup"
                     ? "Set up your FoodFlow workspace"
                     : mode === "forgot"
@@ -453,8 +548,8 @@ export function AuthPage({
                 </p>
               </div>
 
-              {/* Native Google OAuth Button (Visible for Sign In & Sign Up) */}
-              {mode !== "forgot" && (
+              {/* Native Google OAuth Button */}
+              {mode !== "forgot" && isGoogleAuthEnabled && (
                 <>
                   <Button
                     type="button"
@@ -579,7 +674,7 @@ export function AuthPage({
                         <button
                           type="button"
                           className="text-xs font-medium text-[#087E8B] hover:underline"
-                          onClick={() => setMode("forgot")}
+                          onClick={() => handleNavigateMode("forgot")}
                         >
                           Forgot password?
                         </button>
@@ -606,6 +701,7 @@ export function AuthPage({
                         {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                       </button>
                     </div>
+
                     {/* Password Strength Meter (Signup Mode) */}
                     {mode === "signup" && password && (
                       <div className="space-y-1.5 pt-1.5">
@@ -715,7 +811,7 @@ export function AuthPage({
                   <button
                     type="button"
                     className="font-semibold text-[#087E8B] hover:underline"
-                    onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
+                    onClick={() => handleNavigateMode(mode === "signup" ? "signin" : "signup")}
                   >
                     {mode === "signup" ? "Sign in" : "Create one now"}
                   </button>
@@ -726,7 +822,7 @@ export function AuthPage({
                   <button
                     type="button"
                     className="font-semibold text-[#087E8B] hover:underline"
-                    onClick={() => setMode("signin")}
+                    onClick={() => handleNavigateMode("signin")}
                   >
                     Back to sign in
                   </button>
@@ -753,7 +849,7 @@ export function AuthPage({
 
         {/* Footer */}
         <div className="text-center text-xs text-[#718096]">
-          © {new Date().getFullYear()} FoodFlow Inc. All institutional rights reserved.
+          © 2026 FoodFlow
         </div>
       </main>
     </div>
@@ -796,14 +892,15 @@ export function ResetPasswordPage() {
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password });
+      const { error } = await withAuthTimeout(supabase.auth.updateUser({ password }));
       if (error) throw error;
       setIsSuccess(true);
       toast.success("Your password has been successfully reset.");
       setTimeout(() => {
-        window.location.replace("/auth");
+        window.location.replace("/login");
       }, 2000);
     } catch (error) {
+      console.error("[auth] Reset password error:", error);
       toast.error(error instanceof Error ? error.message : "Could not reset your password. Please request a new link.");
     } finally {
       setIsLoading(false);
@@ -814,13 +911,7 @@ export function ResetPasswordPage() {
     <div className="flex min-h-screen items-center justify-center bg-[#F5F8FA] px-4 py-12">
       <div className="w-full max-w-md space-y-6">
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-[#087E8B] text-white">
-            <UtensilsCrossed className="size-5" />
-          </div>
-          <div>
-            <span className="text-xl font-bold text-[#172B3A]">FoodFlow</span>
-            <span className="block text-xs text-[#718096]">Security & Password Recovery</span>
-          </div>
+          <BrandLogo />
         </div>
 
         <div className="rounded-2xl border border-[#E5EAF0] bg-white p-8 shadow-xs">
@@ -829,18 +920,18 @@ export function ResetPasswordPage() {
               <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-100 text-[#16A36A]">
                 <Check className="size-6" />
               </div>
-              <h2 className="text-2xl font-bold text-[#172B3A]">Password Updated</h2>
+              <h2 className="font-display text-2xl font-bold text-[#172B3A]">Password Updated</h2>
               <p className="text-sm text-[#718096]">
                 Your FoodFlow password has been reset successfully. Redirecting you to sign in...
               </p>
               <Button asChild className="w-full bg-[#087E8B] text-white hover:bg-[#066873]">
-                <a href="/auth">Sign In Now</a>
+                <Link to="/login">Sign In Now</Link>
               </Button>
             </div>
           ) : recoveryReady ? (
             <div>
               <div className="mb-6">
-                <h1 className="text-2xl font-bold text-[#172B3A]">Set a new password</h1>
+                <h1 className="font-display text-2xl font-bold text-[#172B3A]">Set a new password</h1>
                 <p className="mt-1 text-sm text-[#718096]">
                   Enter a secure new password for your institutional FoodFlow account.
                 </p>
@@ -916,13 +1007,13 @@ export function ResetPasswordPage() {
               <div className="flex size-11 items-center justify-center rounded-full bg-amber-100 text-[#E9A23B]">
                 <KeyRound className="size-5" />
               </div>
-              <h2 className="text-xl font-bold text-[#172B3A]">Recovery Link Required</h2>
+              <h2 className="font-display text-xl font-bold text-[#172B3A]">Recovery Link Required</h2>
               <p className="text-sm leading-relaxed text-[#718096]">
                 This password reset page requires a valid, one-time recovery link sent to your institutional email.
               </p>
               <div className="pt-2">
                 <Button asChild variant="outline" className="w-full border-[#E5EAF0]">
-                  <a href="/auth">Request a new reset link</a>
+                  <Link to="/forgot-password">Request a new reset link</Link>
                 </Button>
               </div>
             </div>

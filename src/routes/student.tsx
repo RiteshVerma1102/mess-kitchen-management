@@ -26,6 +26,7 @@ import {
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
+import { BrandMark } from "@/features/marketing/brand";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -119,12 +120,10 @@ export function StudentPortalPage() {
       <header className="sticky top-0 z-30 border-b border-[#E5EAF0] bg-white px-4 py-3 shadow-xs">
         <div className="mx-auto flex max-w-xl items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="grid size-9 place-items-center rounded-xl bg-[#087E8B] text-white">
-              <ForkKnife className="size-4" />
-            </div>
+            <BrandMark className="size-9 rounded-xl shadow-xs" />
             <div>
               <span className="font-display text-sm font-bold text-[#172B3A]">
-                SmartMess Dining
+                FoodFlow Dining
               </span>
               <span className="block text-[10px] font-semibold text-[#16A36A]">
                 ● North Dining Hall (Active)

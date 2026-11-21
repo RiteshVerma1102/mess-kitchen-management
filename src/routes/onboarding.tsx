@@ -17,6 +17,7 @@ import {
   Users,
   UtensilsCrossed,
 } from "lucide-react";
+import { BrandLogo } from "@/features/marketing/brand";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -111,17 +112,10 @@ export function OnboardingPage() {
       <header className="border-b border-[#E5EAF0] bg-white px-6 py-4">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="grid size-10 place-items-center rounded-2xl bg-[#087E8B] text-white shadow-md shadow-[#087E8B]/20">
-              <ForkKnife className="size-5" />
-            </div>
-            <div>
-              <span className="font-display text-lg font-extrabold tracking-tight text-[#172B3A]">
-                SmartMess FoodFlow
-              </span>
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-[#087E8B]">
-                Workspace Setup
-              </span>
-            </div>
+            <BrandLogo />
+            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+              Workspace Setup
+            </span>
           </div>
           <div className="flex items-center gap-2 text-xs font-semibold text-[#718096]">
             <ShieldCheck className="size-4 text-[#16A36A]" />

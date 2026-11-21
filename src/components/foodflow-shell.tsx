@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 
+import { BrandLogo } from "@/features/marketing/brand";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -91,21 +92,8 @@ function SidebarContents({
   return (
     <>
       {/* Brand Header */}
-      <div className="flex h-20 items-center gap-3 border-b border-sidebar-border px-5">
-        <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-primary text-white shadow-md shadow-primary/25">
-          <ForkKnife className="size-5" />
-        </div>
-        <div className="flex flex-col">
-          <span className="font-display text-lg font-extrabold tracking-tight text-sidebar-foreground">
-            SmartMess
-          </span>
-          <span className="text-[10px] font-bold tracking-wider uppercase text-primary">
-            FoodFlow Pro Max
-          </span>
-        </div>
-        <Badge className="ml-auto rounded-full bg-saffron px-2 py-0.5 text-[9px] font-bold text-forest">
-          v2.4
-        </Badge>
+      <div className="flex h-20 items-center justify-between border-b border-sidebar-border px-5">
+        <BrandLogo />
       </div>
 
       {/* Institution Switcher Card */}

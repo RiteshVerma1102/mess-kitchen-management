@@ -39,6 +39,7 @@ import { Route as SuppliersRouteImport } from './routes/suppliers'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as WasteRouteImport } from './routes/waste'
 import { Route as WeeklyMenuRouteImport } from './routes/weekly-menu'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as JoinCodeRouteImport } from './routes/join.$code'
 
 const IndexRoute = IndexRouteImport.update({
@@ -191,6 +192,11 @@ const WeeklyMenuRoute = WeeklyMenuRouteImport.update({
   path: '/weekly-menu',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/callback',
+  path: '/callback',
+  getParentRoute: () => AuthRoute,
+} as any)
 const JoinCodeRoute = JoinCodeRouteImport.update({
   id: '/join/$code',
   path: '/join/$code',
@@ -203,7 +209,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AnalyticsRoute
   '/attendance': typeof AttendanceRoute
   '/audit': typeof AuditRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/calendar': typeof CalendarRoute
   '/forecast': typeof ForecastRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -228,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/users': typeof UsersRoute
   '/waste': typeof WasteRoute
   '/weekly-menu': typeof WeeklyMenuRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/join/$code': typeof JoinCodeRoute
 }
 export interface FileRoutesByTo {
@@ -236,7 +243,7 @@ export interface FileRoutesByTo {
   '/analytics': typeof AnalyticsRoute
   '/attendance': typeof AttendanceRoute
   '/audit': typeof AuditRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/calendar': typeof CalendarRoute
   '/forecast': typeof ForecastRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -261,6 +268,7 @@ export interface FileRoutesByTo {
   '/users': typeof UsersRoute
   '/waste': typeof WasteRoute
   '/weekly-menu': typeof WeeklyMenuRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/join/$code': typeof JoinCodeRoute
 }
 export interface FileRoutesById {
@@ -270,7 +278,7 @@ export interface FileRoutesById {
   '/analytics': typeof AnalyticsRoute
   '/attendance': typeof AttendanceRoute
   '/audit': typeof AuditRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/calendar': typeof CalendarRoute
   '/forecast': typeof ForecastRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -295,6 +303,7 @@ export interface FileRoutesById {
   '/users': typeof UsersRoute
   '/waste': typeof WasteRoute
   '/weekly-menu': typeof WeeklyMenuRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/join/$code': typeof JoinCodeRoute
 }
 export interface FileRouteTypes {
@@ -330,6 +339,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/waste'
     | '/weekly-menu'
+    | '/auth/callback'
     | '/join/$code'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -363,6 +373,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/waste'
     | '/weekly-menu'
+    | '/auth/callback'
     | '/join/$code'
   id:
     | '__root__'
@@ -396,6 +407,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/waste'
     | '/weekly-menu'
+    | '/auth/callback'
     | '/join/$code'
   fileRoutesById: FileRoutesById
 }
@@ -405,7 +417,7 @@ export interface RootRouteChildren {
   AnalyticsRoute: typeof AnalyticsRoute
   AttendanceRoute: typeof AttendanceRoute
   AuditRoute: typeof AuditRoute
-  AuthRoute: typeof AuthRoute
+  AuthRoute: typeof AuthRouteWithChildren
   CalendarRoute: typeof CalendarRoute
   ForecastRoute: typeof ForecastRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -645,6 +657,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WeeklyMenuRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/join/$code': {
       id: '/join/$code'
       path: '/join/$code'
@@ -655,13 +674,23 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthRouteChildren {
+  AuthCallbackRoute: typeof AuthCallbackRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthCallbackRoute: AuthCallbackRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActualsRoute: ActualsRoute,
   AnalyticsRoute: AnalyticsRoute,
   AttendanceRoute: AttendanceRoute,
   AuditRoute: AuditRoute,
-  AuthRoute: AuthRoute,
+  AuthRoute: AuthRouteWithChildren,
   CalendarRoute: CalendarRoute,
   ForecastRoute: ForecastRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,

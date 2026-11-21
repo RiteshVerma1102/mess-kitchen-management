@@ -18,6 +18,8 @@ describe("App routing", () => {
     expect(router.matchRoutes("/login").at(-1)?.routeId).not.toBe(rootRouteId);
     expect(router.matchRoutes("/signup").at(-1)?.routeId).not.toBe(rootRouteId);
     expect(router.matchRoutes("/forgot-password").at(-1)?.routeId).not.toBe(rootRouteId);
+    expect(router.matchRoutes("/reset-password").at(-1)?.routeId).not.toBe(rootRouteId);
+    expect(router.matchRoutes("/auth/callback").at(-1)?.routeId).not.toBe(rootRouteId);
     expect(router.matchRoutes("/onboarding").at(-1)?.routeId).not.toBe(rootRouteId);
   });
 
