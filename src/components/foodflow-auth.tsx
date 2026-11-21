@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Activity,
@@ -44,9 +44,19 @@ const INSTITUTION_TYPES = [
   "Other",
 ] as const;
 
-export function AuthPage({ onExploreDemo }: { onExploreDemo?: () => void } = {}) {
+export function AuthPage({
+  onExploreDemo,
+  initialMode = "signin",
+  defaultPlan,
+  redirectTo,
+}: {
+  onExploreDemo?: () => void;
+  initialMode?: AuthMode;
+  defaultPlan?: string;
+  redirectTo?: string;
+} = {}) {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<AuthMode>("signin");
+  const [mode, setMode] = useState<AuthMode>(initialMode);
 
   // Sign-in / Sign-up state
   const [name, setName] = useState("");
@@ -64,8 +74,47 @@ export function AuthPage({ onExploreDemo }: { onExploreDemo?: () => void } = {})
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmationEmail, setConfirmationEmail] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
 
-  const goToApp = () => void navigate({ to: "/" });
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => setResendCooldown((c) => c - 1), 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  const passwordStrength = useMemo(() => {
+    if (!password) return { label: "", percent: 0, color: "bg-muted" };
+    let score = 0;
+    if (password.length >= 8) score += 1;
+    if (password.length >= 12) score += 1;
+    if (/[A-Z]/.test(password)) score += 1;
+    if (/[0-9]/.test(password)) score += 1;
+    if (/[^A-Za-z0-9]/.test(password)) score += 1;
+    if (score <= 2) return { label: "Weak", percent: 25, color: "bg-red-500" };
+    if (score === 3) return { label: "Fair", percent: 50, color: "bg-amber-500" };
+    if (score === 4) return { label: "Good", percent: 75, color: "bg-blue-500" };
+    return { label: "Strong", percent: 100, color: "bg-emerald-500" };
+  }, [password]);
+
+  const handleResend = async () => {
+    if (resendCooldown > 0 || !confirmationEmail) return;
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: confirmationEmail,
+      });
+      if (error) throw error;
+      setResendCooldown(60);
+      toast.success("Verification link resent. Please check your inbox.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not resend email.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const goToApp = () => void navigate({ to: (redirectTo as never) || "/" });
 
   // Handle Google OAuth via native Supabase
   const handleGoogleSignIn = async () => {
@@ -327,6 +376,16 @@ export function AuthPage({ onExploreDemo }: { onExploreDemo?: () => void } = {})
               </p>
 
               <div className="mt-6 space-y-3">
+                {mode === "signup" && (
+                  <Button
+                    variant="outline"
+                    disabled={resendCooldown > 0 || isLoading}
+                    onClick={handleResend}
+                    className="w-full border-[#E5EAF0] text-sm text-[#172B3A] hover:bg-[#F5F8FA]"
+                  >
+                    {resendCooldown > 0 ? `Resend email in ${resendCooldown}s` : "Resend verification email"}
+                  </Button>
+                )}
                 <Button
                   className="w-full bg-[#087E8B] font-medium text-white hover:bg-[#066873]"
                   onClick={() => {
@@ -373,6 +432,11 @@ export function AuthPage({ onExploreDemo }: { onExploreDemo?: () => void } = {})
                   </div>
                 )}
 
+                {defaultPlan && mode === "signup" && (
+                  <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#FFF1C7] px-3 py-1 text-xs font-bold text-[#0F3D3A]">
+                    Plan: <span className="capitalize">{defaultPlan}</span>
+                  </div>
+                )}
                 <h2 className="text-2xl font-bold tracking-tight text-[#172B3A]">
                   {mode === "signup"
                     ? "Set up your FoodFlow workspace"
@@ -542,6 +606,21 @@ export function AuthPage({ onExploreDemo }: { onExploreDemo?: () => void } = {})
                         {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                       </button>
                     </div>
+                    {/* Password Strength Meter (Signup Mode) */}
+                    {mode === "signup" && password && (
+                      <div className="space-y-1.5 pt-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-[#718096]">Strength:</span>
+                          <span className="font-semibold text-[#172B3A]">{passwordStrength.label}</span>
+                        </div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#E5EAF0]">
+                          <div
+                            className={`h-full transition-all duration-300 ${passwordStrength.color}`}
+                            style={{ width: `${passwordStrength.percent}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 

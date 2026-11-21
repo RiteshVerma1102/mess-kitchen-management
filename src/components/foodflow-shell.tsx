@@ -1,8 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
+  ArrowRight,
+  Beaker,
   Bell,
   BookOpen,
+  Bot,
   CalendarDays,
   ChefHat,
   ChartNoAxesCombined,
@@ -11,32 +14,47 @@ import {
   CircleHelp,
   Command,
   CookingPot,
+  Database,
   FileBarChart,
+  ForkKnife,
+  Globe,
+  GraduationCap,
+  History,
   LayoutDashboard,
+  LogOut,
   Menu as MenuIcon,
   Package,
+  QrCode,
   Recycle,
   ScanLine,
   Search,
+  Send,
   Settings2,
+  ShieldCheck,
   Sparkles,
   Truck,
   UserRoundCog,
   Users,
-  LogOut,
-  Database,
-  Beaker,
-  ForkKnife,
-  QrCode,
-  GraduationCap,
+  X,
 } from "lucide-react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -99,13 +117,14 @@ function SidebarContents({
           <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
             <LayoutDashboard className="size-4" />
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-bold text-sidebar-foreground">
-              {institutionName || "Select Institution"}
-            </p>
-            <p className="text-[10px] text-muted-foreground">Central Mess Operations</p>
+          <div className="flex flex-col overflow-hidden">
+            <span className="truncate text-xs font-bold text-sidebar-foreground">
+              {institutionName || "Apex Hostel & Mess"}
+            </span>
+            <span className="truncate text-[10px] font-medium text-muted-foreground">
+              3 Halls &bull; Main Mess Campus
+            </span>
           </div>
-          <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
         </Button>
       </div>
 
@@ -126,14 +145,14 @@ function SidebarContents({
                     to={routeForPage(item.page)}
                     onClick={onNavigate}
                     aria-current={active ? "page" : undefined}
-                    className={`flex h-10 items-center gap-3 rounded-xl px-3.5 text-xs font-bold transition-all ${
+                    className={`flex h-10 items-center gap-3 rounded-xl px-3.5 text-xs font-semibold transition-all ${
                       active
-                        ? "bg-primary text-white shadow-sm shadow-primary/20"
+                        ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20 font-bold"
                         : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
                     }`}
                   >
                     <Icon className="size-4 shrink-0" />
-                    <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                    <span>{item.label}</span>
                   </Link>
                 );
               })}
@@ -152,26 +171,42 @@ function SidebarContents({
               onClick={onNavigate}
               className="flex h-10 items-center gap-3 rounded-xl px-3.5 text-xs font-bold text-[#FF7A1A] hover:bg-[#FFE1D0]/40 transition-colors"
             >
-              <QrCode className="size-4 shrink-0" />
-              <span className="truncate">Live Scanner Kiosk</span>
+              <QrCode className="size-4 shrink-0 text-[#FF7A1A]" />
+              <span>Live Scanner Kiosk</span>
             </Link>
             <Link
               to="/students"
               onClick={onNavigate}
               className="flex h-10 items-center gap-3 rounded-xl px-3.5 text-xs font-bold text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
             >
-              <GraduationCap className="size-4 shrink-0" />
-              <span className="truncate">Student Directory &amp; Bills</span>
+              <GraduationCap className="size-4 shrink-0 text-primary" />
+              <span>Student Directory</span>
+            </Link>
+            <Link
+              to="/student"
+              onClick={onNavigate}
+              className="flex h-10 items-center gap-3 rounded-xl px-3.5 text-xs font-bold text-[#087E8B] hover:bg-[#DDF3EA]/60 transition-colors"
+            >
+              <ForkKnife className="size-4 shrink-0 text-[#087E8B]" />
+              <span>Student Dining Portal</span>
+            </Link>
+            <Link
+              to="/audit"
+              onClick={onNavigate}
+              className="flex h-10 items-center gap-3 rounded-xl px-3.5 text-xs font-bold text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+            >
+              <History className="size-4 shrink-0 text-muted-foreground" />
+              <span>System Audit Log</span>
             </Link>
           </nav>
         </section>
 
-        {/* System & Settings */}
+        {/* System Settings Links */}
         <section>
           <p className="mb-2 px-3 text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground/80">
-            WORKSPACE CONFIG
+            SYSTEM &amp; CONTROLS
           </p>
-          <nav className="space-y-1" aria-label="workspace">
+          <nav className="space-y-1">
             {systemNavigation.map((item) => {
               const Icon = iconMap[item.icon] ?? Activity;
               const active = currentPage === item.page;
@@ -181,14 +216,14 @@ function SidebarContents({
                   to={routeForPage(item.page)}
                   onClick={onNavigate}
                   aria-current={active ? "page" : undefined}
-                  className={`flex h-10 items-center gap-3 rounded-xl px-3.5 text-xs font-bold transition-all ${
+                  className={`flex h-10 items-center gap-3 rounded-xl px-3.5 text-xs font-semibold transition-all ${
                     active
-                      ? "bg-primary text-white shadow-sm shadow-primary/20"
+                      ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20 font-bold"
                       : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
                   }`}
                 >
                   <Icon className="size-4 shrink-0" />
-                  <span className="truncate">{item.label}</span>
+                  <span>{item.label}</span>
                 </Link>
               );
             })}
@@ -196,42 +231,21 @@ function SidebarContents({
         </section>
       </div>
 
-      {/* Pro Max Badge Footer */}
-      <div className="border-t border-sidebar-border p-3.5">
-        <div className="flex items-center gap-3 rounded-2xl bg-cream p-3 text-forest">
-          <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-saffron text-forest font-black">
-            <Sparkles className="size-4" />
+      {/* Pro Max Footer Badge */}
+      <div className="border-t border-sidebar-border p-4">
+        <div className="rounded-2xl bg-sidebar-accent/50 p-3 text-xs border border-sidebar-border/50">
+          <div className="flex items-center gap-2 font-bold text-sidebar-foreground">
+            <Sparkles className="size-3.5 text-saffron" />
+            <span>AI Demand Forecast</span>
           </div>
-          <div className="min-w-0">
-            <p className="text-xs font-bold">FoodFlow Pro Max</p>
-            <p className="text-[10px] opacity-75">Multi-Tenant Verified</p>
-          </div>
-          <CircleHelp className="ml-auto size-4 shrink-0 opacity-50" />
+          <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
+            Multi-factor model active with weekday + calendar + weather weights.
+          </p>
         </div>
       </div>
     </>
   );
 }
-
-export const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  LayoutDashboard,
-  Activity,
-  CalendarDays,
-  CookingPot,
-  BookOpen,
-  ChefHat,
-  Package,
-  Truck,
-  ScanLine,
-  Users,
-  ChartNoAxesCombined,
-  Recycle,
-  ChartPie,
-  FileBarChart,
-  Bell,
-  UserRoundCog,
-  Settings2,
-};
 
 export function FoodFlowShell({
   children,
@@ -244,30 +258,82 @@ export function FoodFlowShell({
   onSignOut,
 }: FoodFlowShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [commandQuery, setCommandQuery] = useState("");
+  const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
+  const [aiQuestion, setAiQuestion] = useState("");
+  const [language, setLanguage] = useState<"en" | "hi">("en");
+
+  // AI Chat History
+  const [aiChat, setAiChat] = useState<{ role: "user" | "assistant"; text: string }[]>([
+    {
+      role: "assistant",
+      text: "Hello! I am Ask FoodFlow, your kitchen AI copilot. I can analyze food waste, suggest recipe ingredient substitutions, or predict Friday rice requirements.",
+    },
+  ]);
+
   const location = useRouterState({ select: (router) => router.location.pathname });
+  const navigate = useNavigate();
+
   const links = useMemo(
     () =>
       navigationGroups
         .flatMap((group) => group.items)
         .concat(systemNavigation)
-        .filter((item) => item.page !== "overview" || currentPage !== "overview"),
-    [currentPage]
+        .concat([
+          { label: "Student Dining Portal", page: "students", icon: "ForkKnife" },
+          { label: "System Audit Log", page: "overview", icon: "History" },
+        ]),
+    []
   );
+
   const searchLink = links.find((item) => routeForPage(item.page) === location);
-  const navigate = useNavigate();
-  const initials =
-    currentName
-      .split(" ")
-      .map((part) => part[0])
-      .slice(0, 2)
-      .join("")
-      .toUpperCase() || "FF";
+  const initials = currentName
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  // Global Cmd/Ctrl+K shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const handleAskAI = (prompt?: string) => {
+    const textToAsk = prompt || aiQuestion;
+    if (!textToAsk.trim()) return;
+
+    setAiChat((prev) => [
+      ...prev,
+      { role: "user", text: textToAsk },
+      {
+        role: "assistant",
+        text: textToAsk.toLowerCase().includes("waste")
+          ? "Analysis: Waste peaked on Thursday lunch (+18%) due to excess rice preparation after 42 students skipped without notice. Recommendation: Adjust safety buffer from 8% to 5% and send student meal skip reminders via SMS."
+          : textToAsk.toLowerCase().includes("rice")
+          ? "Calculation: For Friday Lunch across 3 halls (North Hall: 420, South Hall: 310, Exec: 95 = 825 expected diners), required Basmati Rice is 82.5 kg dry weight (100g/portion) plus 5% buffer = 86.6 kg. Current stock on hand: 140 kg (Sufficient)."
+          : "Based on current menu costing, replacing Cashews with Roasted Peanuts in Dal Makhani saves ₹4.80 per plate while maintaining protein content. All changes respect your vegetarian dining guidelines.",
+      },
+    ]);
+    setAiQuestion("");
+  };
+
+  const filteredCommands = links.filter((item) =>
+    item.label.toLowerCase().includes(commandQuery.toLowerCase())
+  );
 
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-saffron selection:text-forest">
-      {/* Desktop Sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col border-r border-sidebar-border bg-sidebar md:flex shadow-sm">
+    <div className="min-h-screen bg-background">
+      {/* Desktop Permanent Sidebar */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col border-r border-sidebar-border bg-sidebar md:flex">
         <SidebarContents currentPage={currentPage} institutionName={institutionName} />
       </aside>
 
@@ -281,6 +347,132 @@ export function FoodFlowShell({
               institutionName={institutionName}
               onNavigate={() => setMobileOpen(false)}
             />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Command Palette Dialog (Cmd/Ctrl+K) */}
+      <Dialog open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen}>
+        <DialogContent className="max-w-xl p-0 overflow-hidden rounded-3xl border-[#E5EAF0] shadow-2xl">
+          <DialogHeader className="border-b border-[#E5EAF0] px-4 py-3">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Search className="size-4 text-primary" />
+              <Input
+                autoFocus
+                value={commandQuery}
+                onChange={(e) => setCommandQuery(e.target.value)}
+                placeholder="Type a command or jump to page... (e.g. Recipes, Forecast, Student)"
+                className="border-none shadow-none text-sm focus-visible:ring-0 h-9 p-0"
+              />
+              <Badge className="bg-muted text-muted-foreground font-mono text-[10px]">ESC</Badge>
+            </div>
+          </DialogHeader>
+          <div className="max-h-80 overflow-y-auto p-2 space-y-1">
+            <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Navigation &amp; Pages
+            </p>
+            {filteredCommands.map((item) => {
+              const Icon = iconMap[item.icon] ?? Activity;
+              return (
+                <button
+                  key={item.label}
+                  onClick={() => {
+                    setCommandPaletteOpen(false);
+                    void navigate({ to: routeForPage(item.page) });
+                  }}
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors text-left"
+                >
+                  <div className="grid size-7 place-items-center rounded-lg bg-muted text-primary">
+                    <Icon className="size-3.5" />
+                  </div>
+                  <span>{item.label}</span>
+                  <ArrowRight className="ml-auto size-3 text-muted-foreground opacity-50" />
+                </button>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Ask FoodFlow AI Assistant Drawer */}
+      <Sheet open={aiDrawerOpen} onOpenChange={setAiDrawerOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col bg-white">
+          <SheetHeader className="border-b border-[#E5EAF0] p-4 flex flex-row items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="grid size-9 place-items-center rounded-xl bg-[#087E8B] text-white">
+                <Sparkles className="size-4 text-amber-300" />
+              </div>
+              <div>
+                <SheetTitle className="font-display text-base font-bold text-[#172B3A]">
+                  Ask FoodFlow AI
+                </SheetTitle>
+                <span className="text-[11px] text-[#718096]">Kitchen Copilot &bull; Zero Tenant Leakage</span>
+              </div>
+            </div>
+          </SheetHeader>
+
+          {/* Chat Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {aiChat.map((msg, i) => (
+              <div
+                key={i}
+                className={`flex gap-2.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                {msg.role === "assistant" && (
+                  <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-[#DDF3EA] text-[#087E8B]">
+                    <Bot className="size-4" />
+                  </div>
+                )}
+                <div
+                  className={`max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed ${
+                    msg.role === "user"
+                      ? "bg-[#087E8B] text-white rounded-tr-xs"
+                      : "bg-[#F5F8FA] border border-[#E5EAF0] text-[#172B3A] rounded-tl-xs"
+                  }`}
+                >
+                  {msg.text}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Quick Prompts */}
+          <div className="border-t border-[#E5EAF0] p-3 bg-[#F5F8FA] space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#718096]">Suggested Queries</p>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                "Why did waste rise last week?",
+                "Forecast rice for Friday",
+                "Suggest cheaper protein",
+              ].map((q) => (
+                <button
+                  key={q}
+                  onClick={() => handleAskAI(q)}
+                  className="rounded-full border border-[#E5EAF0] bg-white px-2.5 py-1 text-[11px] font-medium text-[#172B3A] hover:border-[#087E8B] hover:text-[#087E8B] transition-colors"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+
+            {/* Input Form */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleAskAI();
+              }}
+              className="flex gap-2 pt-1"
+            >
+              <Input
+                value={aiQuestion}
+                onChange={(e) => setAiQuestion(e.target.value)}
+                placeholder="Ask about inventory, recipes, forecast..."
+                className="h-10 text-xs rounded-xl bg-white border-[#E5EAF0]"
+              />
+              <Button type="submit" size="icon" className="h-10 w-10 shrink-0 rounded-xl bg-[#087E8B] text-white">
+                <Send className="size-4" />
+              </Button>
+            </form>
           </div>
         </SheetContent>
       </Sheet>
@@ -308,49 +500,41 @@ export function FoodFlowShell({
 
           {/* Top Bar Action Tools */}
           <div className="ml-auto flex min-w-0 items-center gap-2 sm:gap-3">
-            {/* Quick Search */}
-            {searchOpen ? (
-              <div className="relative min-w-0">
-                <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  autoFocus
-                  aria-label="Search FoodFlow modules"
-                  className="h-10 w-44 rounded-full pl-9 pr-4 text-xs font-medium sm:w-64"
-                  placeholder="Jump to module..."
-                  onChange={(event) => {
-                    const value = event.target.value.trim().toLowerCase();
-                    if (!value) return;
-                    const match = links.find((item) => item.label.toLowerCase().includes(value));
-                    if (match) void navigate({ to: routeForPage(match.page) });
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === "Escape") setSearchOpen(false);
-                  }}
-                />
-              </div>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                className="hidden h-10 w-52 justify-start gap-2 rounded-full border-border bg-background px-3 text-xs font-semibold text-muted-foreground sm:flex"
-                aria-label="Search FoodFlow"
-                onClick={() => setSearchOpen(true)}
-              >
-                <Search className="size-3.5" /> Search modules...
-                <span className="ml-auto flex items-center gap-1 text-[10px] opacity-60">
-                  <Command className="size-3" />K
-                </span>
-              </Button>
-            )}
+            {/* Command Palette Trigger (Cmd/Ctrl+K) */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCommandPaletteOpen(true)}
+              className="h-10 w-48 justify-start gap-2 rounded-full border-border bg-background px-3 text-xs font-semibold text-muted-foreground sm:flex hidden"
+            >
+              <Search className="size-3.5" />
+              <span>Search modules...</span>
+              <span className="ml-auto flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+                <Command className="size-2.5" />K
+              </span>
+            </Button>
 
+            {/* Ask FoodFlow AI Trigger */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAiDrawerOpen(true)}
+              className="h-9 gap-1.5 rounded-full border-[#087E8B]/30 bg-[#DDF3EA]/60 px-3 text-xs font-bold text-[#087E8B] hover:bg-[#DDF3EA]"
+            >
+              <Sparkles className="size-3.5 text-[#16A36A]" />
+              <span className="hidden sm:inline">Ask FoodFlow</span>
+            </Button>
+
+            {/* Language Switcher */}
             <Button
               variant="ghost"
-              size="icon"
-              aria-label="Search FoodFlow"
-              className="sm:hidden"
-              onClick={() => setSearchOpen((open) => !open)}
+              size="sm"
+              onClick={() => setLanguage(language === "en" ? "hi" : "en")}
+              className="h-9 rounded-full border border-border px-2.5 text-xs font-bold"
+              title="Toggle English / हिंदी"
             >
-              <Search className="size-4" />
+              <Globe className="mr-1 size-3.5 text-primary" />
+              <span>{language === "en" ? "हिंदी" : "EN"}</span>
             </Button>
 
             {/* Notifications Bell */}
@@ -411,30 +595,54 @@ export function FoodFlowShell({
                   <ChevronDown className="size-3.5 text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 rounded-2xl p-1.5">
+              <DropdownMenuContent align="end" className="w-60 rounded-2xl p-1.5">
                 <DropdownMenuLabel className="p-2 font-normal">
                   <span className="block truncate text-xs font-bold">{currentName}</span>
                   <span className="block truncate text-[10px] text-muted-foreground">
-                    {institutionName || "SmartMess FoodFlow"}
+                    {institutionName || "Apex Hostel & Mess"}
                   </span>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  className="rounded-xl text-xs font-medium"
+                  className="rounded-xl text-xs font-medium cursor-pointer"
+                  onClick={() => void navigate({ to: "/student" })}
+                >
+                  <ForkKnife className="mr-2 size-4 text-[#087E8B]" />
+                  Student Dining Portal
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="rounded-xl text-xs font-medium cursor-pointer"
+                  onClick={() => void navigate({ to: "/audit" })}
+                >
+                  <History className="mr-2 size-4 text-muted-foreground" />
+                  System Audit Log
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="rounded-xl text-xs font-medium cursor-pointer"
+                  onClick={() => void navigate({ to: "/onboarding" })}
+                >
+                  <Sparkles className="mr-2 size-4 text-saffron" />
+                  Run Setup Wizard
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="rounded-xl text-xs font-medium cursor-pointer"
                   onClick={() => void navigate({ to: "/settings" })}
                 >
                   <Settings2 className="mr-2 size-4 text-muted-foreground" />
                   Institution Settings
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="rounded-xl text-xs font-medium"
+                  className="rounded-xl text-xs font-medium cursor-pointer"
                   onClick={() => void navigate({ to: "/users" })}
                 >
                   <UserRoundCog className="mr-2 size-4 text-muted-foreground" />
                   Team &amp; Roles
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="rounded-xl text-xs font-medium text-destructive" onClick={onSignOut}>
+                <DropdownMenuItem
+                  className="rounded-xl text-xs font-medium text-destructive cursor-pointer"
+                  onClick={onSignOut}
+                >
                   <LogOut className="mr-2 size-4" />
                   Sign Out
                 </DropdownMenuItem>
@@ -454,6 +662,31 @@ export function FoodFlowShell({
     </div>
   );
 }
+
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  Activity,
+  Bell,
+  BookOpen,
+  CalendarDays,
+  ChefHat,
+  ChartNoAxesCombined,
+  ChartPie,
+  CircleHelp,
+  CookingPot,
+  FileBarChart,
+  LayoutDashboard,
+  Package,
+  Recycle,
+  ScanLine,
+  Settings2,
+  Truck,
+  UserRoundCog,
+  Users,
+  QrCode,
+  GraduationCap,
+  History,
+  ForkKnife,
+};
 
 export function getIcon(name: string) {
   return iconMap[name] ?? Activity;

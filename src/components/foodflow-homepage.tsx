@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -194,6 +195,13 @@ const pricingPlans = [
 
 export function FoodFlowHomepage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data }) => {
+      setIsLoggedIn(Boolean(data.session?.user));
+    });
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#FFF6E5] text-[#0F3D3A] selection:bg-[#FF7A1A] selection:text-white">
@@ -227,17 +235,27 @@ export function FoodFlowHomepage() {
           </nav>
 
           <div className="flex items-center gap-3">
-            <Button asChild variant="ghost" className="font-semibold text-[#0F3D3A] hover:bg-black/5">
-              <Link to="/auth">Sign In</Link>
-            </Button>
-            <Button
-              asChild
-              className="rounded-full bg-[#FF7A1A] px-6 font-bold text-[#0F3D3A] shadow-md shadow-[#FF7A1A]/20 hover:bg-[#ff8933]"
-            >
-              <Link to="/overview">
-                Explore Demo <ArrowRight className="ml-1 size-4" />
-              </Link>
-            </Button>
+            {isLoggedIn ? (
+              <Button asChild className="rounded-full bg-[#087E8B] px-6 font-bold text-white shadow-md shadow-[#087E8B]/20 hover:bg-[#07545B]">
+                <Link to="/overview">
+                  Open App <ArrowRight className="ml-1 size-4" />
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <Button asChild variant="ghost" className="font-semibold text-[#0F3D3A] hover:bg-black/5">
+                  <Link to="/login">Sign In</Link>
+                </Button>
+                <Button
+                  asChild
+                  className="rounded-full bg-[#FF7A1A] px-6 font-bold text-[#0F3D3A] shadow-md shadow-[#FF7A1A]/20 hover:bg-[#ff8933]"
+                >
+                  <Link to="/signup">
+                    Start Free Trial <ArrowRight className="ml-1 size-4" />
+                  </Link>
+                </Button>
+              </>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -262,10 +280,21 @@ export function FoodFlowHomepage() {
                   {item.label}
                 </a>
               ))}
-              <div className="pt-2">
-                <Button asChild className="w-full rounded-full bg-[#FF7A1A] font-bold text-[#0F3D3A]">
-                  <Link to="/overview">Explore Demo</Link>
-                </Button>
+              <div className="pt-2 flex flex-col gap-2">
+                {isLoggedIn ? (
+                  <Button asChild className="w-full rounded-full bg-[#087E8B] font-bold text-white">
+                    <Link to="/overview">Open App</Link>
+                  </Button>
+                ) : (
+                  <>
+                    <Button asChild variant="outline" className="w-full rounded-full font-bold">
+                      <Link to="/login">Sign In</Link>
+                    </Button>
+                    <Button asChild className="w-full rounded-full bg-[#FF7A1A] font-bold text-[#0F3D3A]">
+                      <Link to="/signup">Start Free Trial</Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </nav>
           </div>
@@ -299,8 +328,8 @@ export function FoodFlowHomepage() {
                   size="lg"
                   className="h-14 rounded-full bg-[#FF7A1A] px-8 text-base font-extrabold text-[#0F3D3A] shadow-xl shadow-black/20 hover:scale-[1.02] hover:bg-[#ff8933] transition-transform"
                 >
-                  <Link to="/overview" className="flex items-center gap-2">
-                    Open Live Workspace <ArrowRight className="size-5" />
+                  <Link to="/signup" className="flex items-center gap-2">
+                    Start Free Trial <ArrowRight className="size-5" />
                   </Link>
                 </Button>
                 <Button
@@ -585,16 +614,32 @@ export function FoodFlowHomepage() {
                 </div>
 
                 <div className="mt-8 pt-6">
-                  <Button
-                    asChild
-                    className={`w-full rounded-full py-6 font-extrabold shadow-md ${
-                      plan.popular
-                        ? "bg-[#FF7A1A] text-[#0F3D3A] hover:bg-[#ff8933]"
-                        : "bg-[#0F3D3A] text-white hover:bg-[#1a4f4c]"
-                    }`}
-                  >
-                    <Link to="/auth">{plan.ctaText}</Link>
-                  </Button>
+                  {plan.name === "Enterprise Catering" ? (
+                    <Button
+                      asChild
+                      className="w-full rounded-full py-6 font-extrabold shadow-md bg-[#0F3D3A] text-white hover:bg-[#1a4f4c]"
+                    >
+                      <a href="mailto:sales@smartmess.edu?subject=FoodFlow%20Enterprise%20Plan%20Inquiry">
+                        Talk to us &rarr;
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button
+                      asChild
+                      className={`w-full rounded-full py-6 font-extrabold shadow-md ${
+                        plan.popular
+                          ? "bg-[#FF7A1A] text-[#0F3D3A] hover:bg-[#ff8933]"
+                          : "bg-[#0F3D3A] text-white hover:bg-[#1a4f4c]"
+                      }`}
+                    >
+                      <Link
+                        to="/signup"
+                        search={{ plan: plan.popular ? "pro" : "starter" }}
+                      >
+                        {plan.ctaText}
+                      </Link>
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
@@ -618,7 +663,7 @@ export function FoodFlowHomepage() {
               size="lg"
               className="h-14 rounded-full bg-[#0F3D3A] px-8 text-base font-extrabold text-white shadow-xl hover:bg-[#1a4f4c]"
             >
-              <Link to="/overview">Explore Sample Workspace</Link>
+              <Link to="/signup">Start Free 14-Day Trial</Link>
             </Button>
             <Button
               asChild
@@ -626,7 +671,7 @@ export function FoodFlowHomepage() {
               variant="outline"
               className="h-14 rounded-full border-2 border-[#0F3D3A] bg-white/40 px-8 text-base font-extrabold text-[#0F3D3A] hover:bg-white"
             >
-              <Link to="/auth">Create Institution Account</Link>
+              <Link to="/login">Sign In to Existing Workspace</Link>
             </Button>
           </div>
         </div>

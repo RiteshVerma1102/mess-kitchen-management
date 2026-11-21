@@ -13,26 +13,33 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ActualsRouteImport } from './routes/actuals'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AttendanceRouteImport } from './routes/attendance'
+import { Route as AuditRouteImport } from './routes/audit'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as ForecastRouteImport } from './routes/forecast'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as HallsRouteImport } from './routes/halls'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as KitchenRouteImport } from './routes/kitchen'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as MealPlanningRouteImport } from './routes/meal-planning'
 import { Route as MovementsRouteImport } from './routes/movements'
 import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as OverviewRouteImport } from './routes/overview'
 import { Route as PurchasingRouteImport } from './routes/purchasing'
 import { Route as RecipesRouteImport } from './routes/recipes'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as StudentRouteImport } from './routes/student'
 import { Route as StudentsRouteImport } from './routes/students'
 import { Route as SuppliersRouteImport } from './routes/suppliers'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as WasteRouteImport } from './routes/waste'
 import { Route as WeeklyMenuRouteImport } from './routes/weekly-menu'
+import { Route as JoinCodeRouteImport } from './routes/join.$code'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -54,6 +61,11 @@ const AttendanceRoute = AttendanceRouteImport.update({
   path: '/attendance',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuditRoute = AuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -67,6 +79,11 @@ const CalendarRoute = CalendarRouteImport.update({
 const ForecastRoute = ForecastRouteImport.update({
   id: '/forecast',
   path: '/forecast',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HallsRoute = HallsRouteImport.update({
@@ -84,6 +101,11 @@ const KitchenRoute = KitchenRouteImport.update({
   path: '/kitchen',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MealPlanningRoute = MealPlanningRouteImport.update({
   id: '/meal-planning',
   path: '/meal-planning',
@@ -97,6 +119,11 @@ const MovementsRoute = MovementsRouteImport.update({
 const NotificationsRoute = NotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OverviewRoute = OverviewRouteImport.update({
@@ -129,6 +156,16 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudentRoute = StudentRouteImport.update({
+  id: '/student',
+  path: '/student',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StudentsRoute = StudentsRouteImport.update({
   id: '/students',
   path: '/students',
@@ -154,58 +191,77 @@ const WeeklyMenuRoute = WeeklyMenuRouteImport.update({
   path: '/weekly-menu',
   getParentRoute: () => rootRouteImport,
 } as any)
+const JoinCodeRoute = JoinCodeRouteImport.update({
+  id: '/join/$code',
+  path: '/join/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/actuals': typeof ActualsRoute
   '/analytics': typeof AnalyticsRoute
   '/attendance': typeof AttendanceRoute
+  '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
   '/calendar': typeof CalendarRoute
   '/forecast': typeof ForecastRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/halls': typeof HallsRoute
   '/inventory': typeof InventoryRoute
   '/kitchen': typeof KitchenRoute
+  '/login': typeof LoginRoute
   '/meal-planning': typeof MealPlanningRoute
   '/movements': typeof MovementsRoute
   '/notifications': typeof NotificationsRoute
+  '/onboarding': typeof OnboardingRoute
   '/overview': typeof OverviewRoute
   '/purchasing': typeof PurchasingRoute
   '/recipes': typeof RecipesRoute
   '/reports': typeof ReportsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
+  '/student': typeof StudentRoute
   '/students': typeof StudentsRoute
   '/suppliers': typeof SuppliersRoute
   '/users': typeof UsersRoute
   '/waste': typeof WasteRoute
   '/weekly-menu': typeof WeeklyMenuRoute
+  '/join/$code': typeof JoinCodeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/actuals': typeof ActualsRoute
   '/analytics': typeof AnalyticsRoute
   '/attendance': typeof AttendanceRoute
+  '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
   '/calendar': typeof CalendarRoute
   '/forecast': typeof ForecastRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/halls': typeof HallsRoute
   '/inventory': typeof InventoryRoute
   '/kitchen': typeof KitchenRoute
+  '/login': typeof LoginRoute
   '/meal-planning': typeof MealPlanningRoute
   '/movements': typeof MovementsRoute
   '/notifications': typeof NotificationsRoute
+  '/onboarding': typeof OnboardingRoute
   '/overview': typeof OverviewRoute
   '/purchasing': typeof PurchasingRoute
   '/recipes': typeof RecipesRoute
   '/reports': typeof ReportsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
+  '/student': typeof StudentRoute
   '/students': typeof StudentsRoute
   '/suppliers': typeof SuppliersRoute
   '/users': typeof UsersRoute
   '/waste': typeof WasteRoute
   '/weekly-menu': typeof WeeklyMenuRoute
+  '/join/$code': typeof JoinCodeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -213,26 +269,33 @@ export interface FileRoutesById {
   '/actuals': typeof ActualsRoute
   '/analytics': typeof AnalyticsRoute
   '/attendance': typeof AttendanceRoute
+  '/audit': typeof AuditRoute
   '/auth': typeof AuthRoute
   '/calendar': typeof CalendarRoute
   '/forecast': typeof ForecastRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/halls': typeof HallsRoute
   '/inventory': typeof InventoryRoute
   '/kitchen': typeof KitchenRoute
+  '/login': typeof LoginRoute
   '/meal-planning': typeof MealPlanningRoute
   '/movements': typeof MovementsRoute
   '/notifications': typeof NotificationsRoute
+  '/onboarding': typeof OnboardingRoute
   '/overview': typeof OverviewRoute
   '/purchasing': typeof PurchasingRoute
   '/recipes': typeof RecipesRoute
   '/reports': typeof ReportsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
+  '/student': typeof StudentRoute
   '/students': typeof StudentsRoute
   '/suppliers': typeof SuppliersRoute
   '/users': typeof UsersRoute
   '/waste': typeof WasteRoute
   '/weekly-menu': typeof WeeklyMenuRoute
+  '/join/$code': typeof JoinCodeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -241,78 +304,99 @@ export interface FileRouteTypes {
     | '/actuals'
     | '/analytics'
     | '/attendance'
+    | '/audit'
     | '/auth'
     | '/calendar'
     | '/forecast'
+    | '/forgot-password'
     | '/halls'
     | '/inventory'
     | '/kitchen'
+    | '/login'
     | '/meal-planning'
     | '/movements'
     | '/notifications'
+    | '/onboarding'
     | '/overview'
     | '/purchasing'
     | '/recipes'
     | '/reports'
     | '/reset-password'
     | '/settings'
+    | '/signup'
+    | '/student'
     | '/students'
     | '/suppliers'
     | '/users'
     | '/waste'
     | '/weekly-menu'
+    | '/join/$code'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/actuals'
     | '/analytics'
     | '/attendance'
+    | '/audit'
     | '/auth'
     | '/calendar'
     | '/forecast'
+    | '/forgot-password'
     | '/halls'
     | '/inventory'
     | '/kitchen'
+    | '/login'
     | '/meal-planning'
     | '/movements'
     | '/notifications'
+    | '/onboarding'
     | '/overview'
     | '/purchasing'
     | '/recipes'
     | '/reports'
     | '/reset-password'
     | '/settings'
+    | '/signup'
+    | '/student'
     | '/students'
     | '/suppliers'
     | '/users'
     | '/waste'
     | '/weekly-menu'
+    | '/join/$code'
   id:
     | '__root__'
     | '/'
     | '/actuals'
     | '/analytics'
     | '/attendance'
+    | '/audit'
     | '/auth'
     | '/calendar'
     | '/forecast'
+    | '/forgot-password'
     | '/halls'
     | '/inventory'
     | '/kitchen'
+    | '/login'
     | '/meal-planning'
     | '/movements'
     | '/notifications'
+    | '/onboarding'
     | '/overview'
     | '/purchasing'
     | '/recipes'
     | '/reports'
     | '/reset-password'
     | '/settings'
+    | '/signup'
+    | '/student'
     | '/students'
     | '/suppliers'
     | '/users'
     | '/waste'
     | '/weekly-menu'
+    | '/join/$code'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -320,26 +404,33 @@ export interface RootRouteChildren {
   ActualsRoute: typeof ActualsRoute
   AnalyticsRoute: typeof AnalyticsRoute
   AttendanceRoute: typeof AttendanceRoute
+  AuditRoute: typeof AuditRoute
   AuthRoute: typeof AuthRoute
   CalendarRoute: typeof CalendarRoute
   ForecastRoute: typeof ForecastRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   HallsRoute: typeof HallsRoute
   InventoryRoute: typeof InventoryRoute
   KitchenRoute: typeof KitchenRoute
+  LoginRoute: typeof LoginRoute
   MealPlanningRoute: typeof MealPlanningRoute
   MovementsRoute: typeof MovementsRoute
   NotificationsRoute: typeof NotificationsRoute
+  OnboardingRoute: typeof OnboardingRoute
   OverviewRoute: typeof OverviewRoute
   PurchasingRoute: typeof PurchasingRoute
   RecipesRoute: typeof RecipesRoute
   ReportsRoute: typeof ReportsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
+  SignupRoute: typeof SignupRoute
+  StudentRoute: typeof StudentRoute
   StudentsRoute: typeof StudentsRoute
   SuppliersRoute: typeof SuppliersRoute
   UsersRoute: typeof UsersRoute
   WasteRoute: typeof WasteRoute
   WeeklyMenuRoute: typeof WeeklyMenuRoute
+  JoinCodeRoute: typeof JoinCodeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -372,6 +463,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AttendanceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/audit': {
+      id: '/audit'
+      path: '/audit'
+      fullPath: '/audit'
+      preLoaderRoute: typeof AuditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -391,6 +489,13 @@ declare module '@tanstack/react-router' {
       path: '/forecast'
       fullPath: '/forecast'
       preLoaderRoute: typeof ForecastRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/halls': {
@@ -414,6 +519,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KitchenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/meal-planning': {
       id: '/meal-planning'
       path: '/meal-planning'
@@ -433,6 +545,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/overview': {
@@ -477,6 +596,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/student': {
+      id: '/student'
+      path: '/student'
+      fullPath: '/student'
+      preLoaderRoute: typeof StudentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/students': {
       id: '/students'
       path: '/students'
@@ -512,6 +645,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WeeklyMenuRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/join/$code': {
+      id: '/join/$code'
+      path: '/join/$code'
+      fullPath: '/join/$code'
+      preLoaderRoute: typeof JoinCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -520,26 +660,33 @@ const rootRouteChildren: RootRouteChildren = {
   ActualsRoute: ActualsRoute,
   AnalyticsRoute: AnalyticsRoute,
   AttendanceRoute: AttendanceRoute,
+  AuditRoute: AuditRoute,
   AuthRoute: AuthRoute,
   CalendarRoute: CalendarRoute,
   ForecastRoute: ForecastRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   HallsRoute: HallsRoute,
   InventoryRoute: InventoryRoute,
   KitchenRoute: KitchenRoute,
+  LoginRoute: LoginRoute,
   MealPlanningRoute: MealPlanningRoute,
   MovementsRoute: MovementsRoute,
   NotificationsRoute: NotificationsRoute,
+  OnboardingRoute: OnboardingRoute,
   OverviewRoute: OverviewRoute,
   PurchasingRoute: PurchasingRoute,
   RecipesRoute: RecipesRoute,
   ReportsRoute: ReportsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
+  SignupRoute: SignupRoute,
+  StudentRoute: StudentRoute,
   StudentsRoute: StudentsRoute,
   SuppliersRoute: SuppliersRoute,
   UsersRoute: UsersRoute,
   WasteRoute: WasteRoute,
   WeeklyMenuRoute: WeeklyMenuRoute,
+  JoinCodeRoute: JoinCodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
