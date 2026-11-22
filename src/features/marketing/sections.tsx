@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { ArrowRight, Check, Menu, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 import { BrandLogo } from "./brand";
 import { ProductMockup } from "./product-mockup";
@@ -12,12 +14,20 @@ import { AUDIENCES, EXTRAS, FAQS, FEATURES, LOOP, NAV_LINKS, OUTCOMES, PLANS, ST
 
 export function SiteNav() {
   const [open, setOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data }) => {
+      setIsLoggedIn(Boolean(data.session?.user));
+    });
+  }, []);
+
   return (
     <header className="glass sticky top-0 z-50 border-b">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6" aria-label="Main">
-        <a href="#top" aria-label="FoodFlow home">
+        <Link to="/" aria-label="FoodFlow home">
           <BrandLogo />
-        </a>
+        </Link>
         <div className="hidden items-center gap-8 md:flex">
           {NAV_LINKS.map((l) => (
             <a key={l.href} href={l.href} className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
@@ -25,10 +35,23 @@ export function SiteNav() {
             </a>
           ))}
         </div>
-        <div className="hidden md:block">
-          <Button asChild variant="hero">
-            <a href="#contact">Book a demo</a>
-          </Button>
+        <div className="hidden items-center gap-3 md:flex">
+          {isLoggedIn ? (
+            <Button asChild variant="hero">
+              <Link to="/overview">
+                Open App <ArrowRight className="ml-1.5 size-4" />
+              </Link>
+            </Button>
+          ) : (
+            <>
+              <Button asChild variant="ghost">
+                <Link to="/login">Sign In</Link>
+              </Button>
+              <Button asChild variant="hero">
+                <Link to="/signup">Start Free Trial</Link>
+              </Button>
+            </>
+          )}
         </div>
         <Button
           variant="ghost"
@@ -48,9 +71,28 @@ export function SiteNav() {
               {l.label}
             </a>
           ))}
-          <Button asChild variant="hero" className="mt-2 w-full">
-            <a href="#contact" onClick={() => setOpen(false)}>Book a demo</a>
-          </Button>
+          <div className="mt-3 flex flex-col gap-2">
+            {isLoggedIn ? (
+              <Button asChild variant="hero" className="w-full">
+                <Link to="/overview" onClick={() => setOpen(false)}>
+                  Open App <ArrowRight className="ml-1.5 size-4" />
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <Button asChild variant="ghost" className="w-full justify-center">
+                  <Link to="/login" onClick={() => setOpen(false)}>
+                    Sign In
+                  </Link>
+                </Button>
+                <Button asChild variant="hero" className="w-full justify-center">
+                  <Link to="/signup" onClick={() => setOpen(false)}>
+                    Start Free Trial
+                  </Link>
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       )}
     </header>
@@ -77,9 +119,9 @@ export function Hero() {
           </p>
           <div className="mt-9 flex flex-wrap items-center gap-3">
             <Button asChild variant="saffron" size="xl">
-              <a href="#contact">
-                Book a free demo <ArrowRight />
-              </a>
+              <Link to="/signup">
+                Start Free Trial <ArrowRight />
+              </Link>
             </Button>
             <Button asChild variant="glass" size="xl">
               <a href="#how">See how it works</a>
@@ -161,27 +203,23 @@ const toneClass = {
 
 export function Features() {
   return (
-    <section id="features" className="bg-secondary/50 py-24">
+    <section id="features" className="bg-secondary/40 py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <SectionHead eyebrow="Features" title="Everything a mess manager juggles, in one calm screen." />
-        <div className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <SectionHead eyebrow="Built for real mess halls" title="Everything a mess manager touches, in one place." />
+        <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
-            <article key={f.title} className="rounded-2xl border bg-card p-7 shadow-xs transition-shadow duration-200 hover:shadow-md">
-              <span className={cn("grid size-12 place-items-center rounded-xl", toneClass[f.tone])}>
-                <f.icon className="size-6" />
-              </span>
-              <h3 className="mt-6 text-xl font-semibold">{f.title}</h3>
-              <p className="mt-2 leading-relaxed text-muted-foreground">{f.body}</p>
+            <article key={f.title} className="flex flex-col justify-between rounded-3xl border bg-card p-7 shadow-xs transition-all hover:shadow-md">
+              <div>
+                <span className={cn("inline-flex size-11 items-center justify-center rounded-2xl", toneClass[f.tone])}>
+                  <f.icon className="size-5" />
+                </span>
+                <h3 className="mt-5 text-xl font-semibold">{f.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
+              </div>
+              <p className="mt-6 font-mono text-xs text-muted-foreground">{f.stat}</p>
             </article>
           ))}
         </div>
-        <ul className="mt-8 flex flex-wrap gap-3">
-          {EXTRAS.map((e) => (
-            <li key={e.label} className="flex items-center gap-2 rounded-full border bg-card px-4 py-2 text-sm font-medium">
-              <e.icon className="size-4 text-primary" /> {e.label}
-            </li>
-          ))}
-        </ul>
       </div>
     </section>
   );
@@ -190,19 +228,15 @@ export function Features() {
 export function HowItWorks() {
   return (
     <section id="how" className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
-      <div className="grid gap-14 lg:grid-cols-[0.9fr_1.1fr]">
-        <SectionHead eyebrow="How it works" title="Live by your next meal service." body="No hardware, no long training. If your staff can use WhatsApp, they can run FoodFlow." />
-        <ol className="grid gap-5">
-          {STEPS.map((s) => (
-            <li key={s.n} className="flex gap-6 rounded-2xl border bg-card p-6 shadow-xs">
-              <span className="font-display text-4xl font-semibold text-saffron">{s.n}</span>
-              <div>
-                <h3 className="text-xl font-semibold">{s.title}</h3>
-                <p className="mt-1.5 text-muted-foreground">{s.body}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
+      <SectionHead eyebrow="How it works" title="Four steps from morning prep to lights-out." />
+      <div className="mt-14 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+        {STEPS.map((s) => (
+          <div key={s.num} className="relative rounded-3xl border bg-card p-7 shadow-xs">
+            <span className="font-display text-4xl font-semibold text-primary">{s.num}</span>
+            <h3 className="mt-4 text-xl font-semibold">{s.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.desc}</p>
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -210,21 +244,23 @@ export function HowItWorks() {
 
 export function Outcomes() {
   return (
-    <section className="bg-ink-gradient py-24 text-ink-foreground">
+    <section className="bg-ink py-24 text-ink-foreground">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="max-w-2xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-saffron">What you'll measure</p>
-          <h2 className="mt-3 text-balance text-4xl font-semibold leading-tight sm:text-5xl">Four numbers that decide whether a mess makes or loses money.</h2>
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-saffron">What changes</p>
+          <h2 className="mt-3 text-balance text-4xl font-semibold leading-tight sm:text-5xl">
+            Real outcomes from the first full cycle menu.
+          </h2>
         </div>
-        <dl className="mt-14 grid gap-px overflow-hidden rounded-2xl bg-ink-foreground/10 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {OUTCOMES.map((o) => (
-            <div key={o.k} className="bg-ink p-7">
-              <dt className="text-sm text-ink-foreground/70">{o.k}</dt>
-              <dd className="mt-3 font-display text-2xl font-semibold text-saffron">{o.v}</dd>
-              <dd className="mt-2 text-sm leading-relaxed text-ink-foreground/75">{o.d}</dd>
+            <div key={o.label} className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-xs">
+              <p className="font-display text-5xl font-semibold text-saffron sm:text-6xl">{o.big}</p>
+              <p className="mt-2 text-base font-semibold text-white">{o.label}</p>
+              <p className="mt-1 text-xs text-ink-foreground/70">{o.detail}</p>
             </div>
           ))}
-        </dl>
+        </div>
       </div>
     </section>
   );
@@ -235,37 +271,50 @@ export function Pricing() {
     <section id="pricing" className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
       <SectionHead center eyebrow="Pricing" title="Simple plans. Pays for itself in saved food." body="All prices exclude GST. Every plan starts with a 14-day free trial." />
       <div className="mt-14 grid gap-6 lg:grid-cols-3">
-        {PLANS.map((p) => (
-          <article
-            key={p.name}
-            className={cn(
-              "relative flex flex-col rounded-3xl border bg-card p-8 shadow-xs",
-              p.featured && "border-primary shadow-lg ring-1 ring-primary lg:-translate-y-3",
-            )}
-          >
-            {p.featured && (
-              <Badge variant="saffron" className="absolute -top-3 left-8 rounded-full px-3 py-1">
-                Most popular
-              </Badge>
-            )}
-            <h3 className="text-2xl font-semibold">{p.name}</h3>
-            <p className="mt-1 text-sm text-muted-foreground">{p.blurb}</p>
-            <p className="mt-6 flex items-baseline gap-1">
-              <span className="font-display text-5xl font-semibold tabular">{p.price}</span>
-              <span className="text-muted-foreground">{p.cadence}</span>
-            </p>
-            <ul className="mt-8 grid flex-1 gap-3 text-sm">
-              {p.features.map((f) => (
-                <li key={f} className="flex items-start gap-2.5">
-                  <Check className="mt-0.5 size-4 shrink-0 text-success" /> {f}
-                </li>
-              ))}
-            </ul>
-            <Button asChild variant={p.featured ? "saffron" : "outline"} size="lg" className="mt-8 w-full">
-              <a href="#contact">{p.price === "Custom" ? "Talk to us" : "Start free trial"}</a>
-            </Button>
-          </article>
-        ))}
+        {PLANS.map((p) => {
+          const isCustom = p.price === "Custom";
+          const planSlug = p.name.toLowerCase();
+
+          return (
+            <article
+              key={p.name}
+              className={cn(
+                "relative flex flex-col rounded-3xl border bg-card p-8 shadow-xs",
+                p.featured && "border-primary shadow-lg ring-1 ring-primary lg:-translate-y-3",
+              )}
+            >
+              {p.featured && (
+                <Badge variant="saffron" className="absolute -top-3 left-8 rounded-full px-3 py-1">
+                  Most popular
+                </Badge>
+              )}
+              <h3 className="text-2xl font-semibold">{p.name}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{p.blurb}</p>
+              <p className="mt-6 flex items-baseline gap-1">
+                <span className="font-display text-5xl font-semibold tabular">{p.price}</span>
+                <span className="text-muted-foreground">{p.cadence}</span>
+              </p>
+              <ul className="mt-8 grid flex-1 gap-3 text-sm">
+                {p.features.map((f) => (
+                  <li key={f} className="flex items-start gap-2.5">
+                    <Check className="mt-0.5 size-4 shrink-0 text-success" /> {f}
+                  </li>
+                ))}
+              </ul>
+              {isCustom ? (
+                <Button asChild variant="outline" size="lg" className="mt-8 w-full">
+                  <a href="mailto:hello@foodflow.in?subject=FoodFlow%20Enterprise%20Plan">Talk to us</a>
+                </Button>
+              ) : (
+                <Button asChild variant={p.featured ? "saffron" : "outline"} size="lg" className="mt-8 w-full">
+                  <Link to="/signup" search={{ plan: planSlug }}>
+                    Start free trial
+                  </Link>
+                </Button>
+              )}
+            </article>
+          );
+        })}
       </div>
     </section>
   );
@@ -302,8 +351,13 @@ export function FinalCta() {
         </p>
         <div className="relative mt-9 flex flex-wrap justify-center gap-3">
           <Button asChild variant="saffron" size="xl">
+            <Link to="/signup">
+              Start Free Trial <ArrowRight />
+            </Link>
+          </Button>
+          <Button asChild variant="glass" size="xl">
             <a href="mailto:hello@foodflow.in?subject=FoodFlow%20demo">
-              Book a demo <ArrowRight />
+              Book a demo
             </a>
           </Button>
         </div>
@@ -327,7 +381,7 @@ export function SiteFooter() {
           <a href="mailto:hello@foodflow.in" className="hover:text-foreground">hello@foodflow.in</a>
         </nav>
       </div>
-      <p className="border-t py-6 text-center text-xs text-muted-foreground">© {new Date().getFullYear()} FoodFlow. Made in India.</p>
+      <p className="border-t py-6 text-center text-xs text-muted-foreground">© 2026 FoodFlow. Made in India.</p>
     </footer>
   );
 }

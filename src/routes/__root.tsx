@@ -77,21 +77,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "FoodFlow | Kitchen Management" },
-      { name: "description", content: "Plan institutional meals, track kitchen operations, and manage food inventory with FoodFlow." },
+      { name: "theme-color", content: "#1f5f63" },
+      { title: "FoodFlow — Mess & canteen management" },
+      { name: "description", content: "FoodFlow runs mess kitchens for Indian colleges, hostels, schools and canteens." },
       { name: "author", content: "FoodFlow" },
-      { property: "og:title", content: "FoodFlow | Kitchen Management" },
-      { property: "og:description", content: "Plan institutional meals, track kitchen operations, and manage food inventory with FoodFlow." },
+      { property: "og:title", content: "FoodFlow — Mess & canteen management" },
+      { property: "og:description", content: "FoodFlow runs mess kitchens for Indian colleges, hostels, schools and canteens." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@FoodFlow" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Fraunces:ital,opsz,wght@1,9..144,400;1,9..144,600&family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Manrope:wght@400..800&display=swap",
       },
       {
         rel: "stylesheet",
@@ -110,7 +110,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en-IN">
       <head>
         <HeadContent />
       </head>
