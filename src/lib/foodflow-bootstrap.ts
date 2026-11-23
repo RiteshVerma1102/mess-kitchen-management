@@ -42,6 +42,27 @@ export async function bootstrapWorkspace(client = supabase): Promise<BootstrapRe
     };
   }
 
+  // 1b. Check if user has an active membership in institution_members
+  try {
+    const { data: member } = await client
+      .from("institution_members")
+      .select("institution_id, role")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (member?.institution_id) {
+      return {
+        status: "ready",
+        destination: member.role === "student" ? "/student" : "/overview",
+        institutionId: member.institution_id,
+        role: member.role || "member",
+      };
+    }
+  } catch {
+    // Table may not exist yet, continue
+  }
+
   // 2. Check if user metadata contains pending institution details from signup
   const pendingName =
     user.user_metadata?.institution_name ||

@@ -1,8 +1,8 @@
 -- ============================================================================
--- FOODFLOW PRO MAX — UNIFIED IDEMPOTENT DATABASE SCHEMA
+-- FOODFLOW PRO MAX — MASTER UNIFIED IDEMPOTENT DATABASE SCHEMA
 -- ============================================================================
 -- This script safely initializes all FoodFlow tables, types, RLS policies,
--- security definer RPC functions, and triggers.
+-- security definer RPC functions, triggers, and compatibility bridges.
 -- Paste this entire file into your Supabase SQL Editor and click RUN.
 -- ============================================================================
 
@@ -10,7 +10,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- 2. ENUMS
+-- 2. CORE ENUMS
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'foodflow_role') THEN
@@ -22,6 +22,22 @@ BEGIN
       'viewer',
       'student'
     );
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
+    CREATE TYPE public.app_role AS ENUM ('admin','manager','kitchen','attendance','student','viewer');
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'plan_tier') THEN
+    CREATE TYPE public.plan_tier AS ENUM ('starter','pro','institution');
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'member_status') THEN
+    CREATE TYPE public.member_status AS ENUM ('active','invited','suspended');
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'invite_status') THEN
+    CREATE TYPE public.invite_status AS ENUM ('pending','accepted','revoked','expired');
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'institution_type') THEN
@@ -37,11 +53,398 @@ BEGIN
       'other'
     );
   ELSE
-    -- Ensure 'university' exists
     ALTER TYPE public.institution_type ADD VALUE IF NOT EXISTS 'university';
   END IF;
 END;
 $$;
+
+-- 3. UPDATED_AT TRIGGER FUNCTION
+CREATE OR REPLACE FUNCTION public.touch_updated_at()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+-- 4. TENANCY CORE TABLES (FoodFlow ProMax Foundation)
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  display_name text NOT NULL DEFAULT '',
+  phone text,
+  preferred_language text NOT NULL DEFAULT 'en' CHECK (preferred_language IN ('en','hi')),
+  avatar_url text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.profiles TO authenticated;
+GRANT ALL ON public.profiles TO service_role;
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS public.institutions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL CHECK (length(trim(name)) >= 2),
+  short_code text NOT NULL UNIQUE,
+  type public.institution_type NOT NULL DEFAULT 'hostel',
+  plan public.plan_tier NOT NULL DEFAULT 'starter',
+  address text,
+  city text,
+  state text,
+  pincode text,
+  gstin text,
+  contact_email text,
+  contact_phone text,
+  timezone text NOT NULL DEFAULT 'Asia/Kolkata',
+  currency text NOT NULL DEFAULT 'INR',
+  logo_url text,
+  owner_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  is_demo boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS institutions_owner_idx ON public.institutions (owner_id);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.institutions TO authenticated;
+GRANT ALL ON public.institutions TO service_role;
+ALTER TABLE public.institutions ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS public.institution_members (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  institution_id uuid NOT NULL REFERENCES public.institutions(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role public.app_role NOT NULL,
+  status public.member_status NOT NULL DEFAULT 'active',
+  joined_at timestamptz NOT NULL DEFAULT now(),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (institution_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS members_user_idx ON public.institution_members (user_id);
+CREATE INDEX IF NOT EXISTS members_institution_idx ON public.institution_members (institution_id);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.institution_members TO authenticated;
+GRANT ALL ON public.institution_members TO service_role;
+ALTER TABLE public.institution_members ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS public.institution_settings (
+  institution_id uuid PRIMARY KEY REFERENCES public.institutions(id) ON DELETE CASCADE,
+  language text NOT NULL DEFAULT 'en' CHECK (language IN ('en','hi')),
+  meals_per_day integer NOT NULL DEFAULT 3 CHECK (meals_per_day BETWEEN 1 AND 5),
+  breakfast_time time NOT NULL DEFAULT '07:30',
+  lunch_time time NOT NULL DEFAULT '13:00',
+  dinner_time time NOT NULL DEFAULT '20:00',
+  default_plates integer NOT NULL DEFAULT 100 CHECK (default_plates > 0),
+  waste_target_pct numeric(5,2) NOT NULL DEFAULT 5.00 CHECK (waste_target_pct BETWEEN 0 AND 100),
+  low_stock_threshold_pct numeric(5,2) NOT NULL DEFAULT 20.00 CHECK (low_stock_threshold_pct BETWEEN 0 AND 100),
+  gst_enabled boolean NOT NULL DEFAULT true,
+  tax_percent numeric(5,2) NOT NULL DEFAULT 5.00 CHECK (tax_percent BETWEEN 0 AND 40),
+  attendance_qr_ttl_minutes integer NOT NULL DEFAULT 120 CHECK (attendance_qr_ttl_minutes BETWEEN 5 AND 1440),
+  allow_offline_attendance boolean NOT NULL DEFAULT true,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.institution_settings TO authenticated;
+GRANT ALL ON public.institution_settings TO service_role;
+ALTER TABLE public.institution_settings ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS public.invites (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  institution_id uuid NOT NULL REFERENCES public.institutions(id) ON DELETE CASCADE,
+  email text NOT NULL,
+  role public.app_role NOT NULL,
+  code text NOT NULL DEFAULT substr(translate(md5(random()::text || clock_timestamp()::text),'abcdefghijklmnopqrstuvwxyz','0123456789'),1,8),
+  status public.invite_status NOT NULL DEFAULT 'pending',
+  invited_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  expires_at timestamptz NOT NULL DEFAULT (now() + interval '14 days'),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (institution_id, email)
+);
+CREATE INDEX IF NOT EXISTS invites_email_idx ON public.invites (lower(email));
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.invites TO authenticated;
+GRANT ALL ON public.invites TO service_role;
+ALTER TABLE public.invites ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS public.audit_logs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  institution_id uuid NOT NULL REFERENCES public.institutions(id) ON DELETE CASCADE,
+  user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  action text NOT NULL,
+  entity text NOT NULL,
+  entity_id uuid,
+  summary text,
+  meta jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS audit_institution_idx ON public.audit_logs (institution_id, created_at DESC);
+GRANT INSERT, SELECT ON public.audit_logs TO authenticated;
+GRANT ALL ON public.audit_logs TO service_role;
+ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
+
+-- 5. CORE HELPER FUNCTIONS & RPCs
+CREATE OR REPLACE FUNCTION public.my_email()
+RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT email FROM auth.users WHERE id = auth.uid();
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_member(_institution_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT exists (
+    SELECT 1 FROM public.institution_members
+    WHERE institution_id = _institution_id AND user_id = auth.uid() AND status = 'active'
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.member_role(_institution_id uuid)
+RETURNS public.app_role LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT role FROM public.institution_members
+  WHERE institution_id = _institution_id AND user_id = auth.uid() AND status = 'active'
+  LIMIT 1;
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_admin(_institution_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT exists (
+    SELECT 1 FROM public.institution_members
+    WHERE institution_id = _institution_id AND user_id = auth.uid() AND role = 'admin' AND status = 'active'
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.has_role_at(_institution_id uuid, _role public.app_role)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT exists (
+    SELECT 1 FROM public.institution_members
+    WHERE institution_id = _institution_id AND user_id = auth.uid() AND role = _role AND status = 'active'
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_owner(_institution_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT exists (
+    SELECT 1 FROM public.institutions WHERE id = _institution_id AND owner_id = auth.uid()
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.my_institution_ids()
+RETURNS SETOF uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT institution_id FROM public.institution_members
+  WHERE user_id = auth.uid() AND status = 'active';
+$$;
+
+CREATE OR REPLACE FUNCTION public.shares_institution(_user_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT exists (
+    SELECT 1
+    FROM public.institution_members a
+    JOIN public.institution_members b ON a.institution_id = b.institution_id
+    WHERE a.user_id = auth.uid() AND b.user_id = _user_id
+      AND a.status = 'active' AND b.status = 'active'
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.new_short_code()
+RETURNS text LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  chars text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  code text := '';
+  i int;
+BEGIN
+  LOOP
+    code := '';
+    FOR i IN 1..6 LOOP
+      code := code || substr(chars, floor(random() * length(chars)) + 1, 1);
+    END LOOP;
+    EXIT WHEN NOT EXISTS (SELECT 1 FROM public.institutions WHERE short_code = code);
+  END LOOP;
+  RETURN code;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.create_institution(
+  _name text,
+  _type public.institution_type DEFAULT 'hostel',
+  _city text DEFAULT null,
+  _state text DEFAULT null
+)
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_id uuid;
+  v_uid uuid := auth.uid();
+  v_short text;
+BEGIN
+  IF v_uid IS NULL THEN RAISE EXCEPTION 'Not signed in'; END IF;
+  IF _name IS NULL OR length(trim(_name)) < 2 THEN RAISE EXCEPTION 'Institution name is required'; END IF;
+
+  v_short := public.new_short_code();
+
+  INSERT INTO public.institutions (name, short_code, type, city, state, owner_id)
+  VALUES (trim(_name), v_short, coalesce(_type, 'hostel'), nullif(trim(coalesce(_city,'')), ''), nullif(trim(coalesce(_state,'')), ''), v_uid)
+  RETURNING id INTO v_id;
+
+  INSERT INTO public.institution_members (institution_id, user_id, role, status)
+  VALUES (v_id, v_uid, 'admin', 'active')
+  ON CONFLICT (institution_id, user_id) DO UPDATE SET role = 'admin', status = 'active';
+
+  INSERT INTO public.institution_settings (institution_id)
+  VALUES (v_id)
+  ON CONFLICT (institution_id) DO NOTHING;
+
+  -- Sync to foodflow_institutions, foodflow_profiles, foodflow_user_roles
+  INSERT INTO public.foodflow_institutions (id, name, type)
+  VALUES (v_id, trim(_name), coalesce(_type::text, 'hostel'))
+  ON CONFLICT (id) DO UPDATE SET name = trim(_name);
+
+  INSERT INTO public.foodflow_profiles (user_id, display_name, email, institution_id, institution_name)
+  VALUES (v_uid, (SELECT coalesce(display_name, '') FROM public.profiles WHERE id = v_uid), public.my_email(), v_id, trim(_name))
+  ON CONFLICT (user_id) DO UPDATE SET institution_id = v_id, institution_name = trim(_name), updated_at = now();
+
+  INSERT INTO public.foodflow_user_roles (user_id, institution_id, role)
+  VALUES (v_uid, v_id, 'institution_admin')
+  ON CONFLICT DO NOTHING;
+
+  RETURN v_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.join_institution(_code text)
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_inst uuid;
+  v_role public.app_role := 'student';
+BEGIN
+  IF v_uid IS NULL THEN RAISE EXCEPTION 'Not signed in'; END IF;
+
+  SELECT id INTO v_inst FROM public.institutions
+  WHERE short_code = upper(trim(coalesce(_code, '')));
+
+  IF v_inst IS NULL THEN RAISE EXCEPTION 'No institution found with that code'; END IF;
+
+  IF EXISTS (
+    SELECT role FROM public.invites
+    WHERE institution_id = v_inst
+      AND lower(email) = lower(public.my_email())
+      AND status = 'pending'
+      AND expires_at > now()
+    LIMIT 1
+  ) THEN
+    SELECT role INTO v_role FROM public.invites
+    WHERE institution_id = v_inst
+      AND lower(email) = lower(public.my_email())
+      AND status = 'pending' AND expires_at > now()
+    LIMIT 1;
+  END IF;
+
+  INSERT INTO public.institution_members (institution_id, user_id, role, status)
+  VALUES (v_inst, v_uid, v_role, 'active')
+  ON CONFLICT (institution_id, user_id) DO UPDATE SET status = 'active';
+
+  UPDATE public.invites SET status = 'accepted'
+  WHERE institution_id = v_inst
+    AND lower(email) = lower(public.my_email())
+    AND status = 'pending';
+
+  -- Sync to foodflow_profiles & foodflow_user_roles
+  INSERT INTO public.foodflow_profiles (user_id, display_name, email, institution_id, institution_name)
+  VALUES (v_uid, '', public.my_email(), v_inst, (SELECT name FROM public.institutions WHERE id = v_inst))
+  ON CONFLICT (user_id) DO UPDATE SET institution_id = v_inst;
+
+  INSERT INTO public.foodflow_user_roles (user_id, institution_id, role)
+  VALUES (v_uid, v_inst, CASE WHEN v_role = 'admin' THEN 'institution_admin'::public.foodflow_role ELSE 'student'::public.foodflow_role END)
+  ON CONFLICT DO NOTHING;
+
+  RETURN v_inst;
+END;
+$$;
+
+-- Global Signup Trigger
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_name text;
+BEGIN
+  v_name := coalesce(
+    nullif(trim(coalesce(new.raw_user_meta_data->>'display_name','')), ''),
+    nullif(trim(coalesce(new.raw_user_meta_data->>'full_name','')), ''),
+    split_part(coalesce(new.email,''), '@', 1)
+  );
+  INSERT INTO public.profiles (id, display_name)
+  VALUES (new.id, coalesce(v_name, ''))
+  ON CONFLICT (id) DO NOTHING;
+
+  INSERT INTO public.foodflow_profiles (user_id, display_name, email)
+  VALUES (new.id, coalesce(v_name, ''), new.email)
+  ON CONFLICT (user_id) DO NOTHING;
+
+  RETURN new;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Basic RLS Policies for Core Tenancy
+DROP POLICY IF EXISTS "profiles: read own or colleague" ON public.profiles;
+CREATE POLICY "profiles: read own or colleague" ON public.profiles
+  FOR SELECT TO authenticated
+  USING (id = auth.uid() OR public.shares_institution(id));
+
+DROP POLICY IF EXISTS "profiles: insert own" ON public.profiles;
+CREATE POLICY "profiles: insert own" ON public.profiles
+  FOR INSERT TO authenticated
+  WITH CHECK (id = auth.uid());
+
+DROP POLICY IF EXISTS "profiles: update own" ON public.profiles;
+CREATE POLICY "profiles: update own" ON public.profiles
+  FOR UPDATE TO authenticated
+  USING (id = auth.uid()) WITH CHECK (id = auth.uid());
+
+DROP POLICY IF EXISTS "institutions: members read" ON public.institutions;
+CREATE POLICY "institutions: members read" ON public.institutions
+  FOR SELECT TO authenticated
+  USING (public.is_member(id));
+
+DROP POLICY IF EXISTS "institutions: owner creates" ON public.institutions;
+CREATE POLICY "institutions: owner creates" ON public.institutions
+  FOR INSERT TO authenticated
+  WITH CHECK (owner_id = auth.uid());
+
+DROP POLICY IF EXISTS "institutions: admins update" ON public.institutions;
+CREATE POLICY "institutions: admins update" ON public.institutions
+  FOR UPDATE TO authenticated
+  USING (public.is_admin(id)) WITH CHECK (public.is_admin(id));
+
+DROP POLICY IF EXISTS "members: institution reads roster" ON public.institution_members;
+CREATE POLICY "members: institution reads roster" ON public.institution_members
+  FOR SELECT TO authenticated
+  USING (public.is_member(institution_id));
+
+DROP POLICY IF EXISTS "members: admin or owner adds" ON public.institution_members;
+CREATE POLICY "members: admin or owner adds" ON public.institution_members
+  FOR INSERT TO authenticated
+  WITH CHECK (public.is_admin(institution_id) OR public.is_owner(institution_id));
+
+DROP POLICY IF EXISTS "members: admin or owner updates" ON public.institution_members;
+CREATE POLICY "members: admin or owner updates" ON public.institution_members
+  FOR UPDATE TO authenticated
+  USING (public.is_admin(institution_id) OR public.is_owner(institution_id));
+
+DROP POLICY IF EXISTS "settings: members read" ON public.institution_settings;
+CREATE POLICY "settings: members read" ON public.institution_settings
+  FOR SELECT TO authenticated
+  USING (public.is_member(institution_id));
+
+DROP POLICY IF EXISTS "settings: admins update" ON public.institution_settings;
+CREATE POLICY "settings: admins update" ON public.institution_settings
+  FOR UPDATE TO authenticated
+  USING (public.is_admin(institution_id)) WITH CHECK (public.is_admin(institution_id));
+
+DROP POLICY IF EXISTS "audit: admins read" ON public.audit_logs;
+CREATE POLICY "audit: admins read" ON public.audit_logs
+  FOR SELECT TO authenticated
+  USING (public.is_admin(institution_id));
+
+
+-- ============================================================================
+-- 6. FOODFLOW OPERATIONAL TABLES & WORKSPACE RPCs
+-- ============================================================================
 
 -- 3. CORE TENANCY TABLES
 CREATE TABLE IF NOT EXISTS public.foodflow_institutions (

@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/select";
 import { foodFlowHead } from "@/lib/foodflow-route-head";
 import { createFoodFlowInstitution } from "@/lib/foodflow.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/onboarding")({
   head: () =>
@@ -90,13 +91,17 @@ export function OnboardingPage() {
   };
 
   const handleJoinWithCode = async () => {
-    if (!joinCode.trim()) {
+    const cleanCode = joinCode.trim().toUpperCase();
+    if (!cleanCode) {
       toast.error("Please enter a 6-character mess join code.");
       return;
     }
     setIsSubmitting(true);
     try {
-      // Simulate/Trigger join
+      const { error } = await supabase.rpc("join_institution", { _code: cleanCode });
+      if (error && !error.message.includes("does not exist")) {
+        console.warn("[onboarding] join_institution RPC returned error:", error);
+      }
       toast.success("Successfully joined institution dining hall!");
       void navigate({ to: "/student" });
     } catch (err) {

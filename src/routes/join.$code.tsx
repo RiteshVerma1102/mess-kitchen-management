@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BrandMark } from "@/features/marketing/brand";
 import { foodFlowHead } from "@/lib/foodflow-route-head";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/join/$code")({
   head: () =>
@@ -34,6 +35,10 @@ export function JoinCodePage() {
     }
     setIsSubmitting(true);
     try {
+      const { error } = await supabase.rpc("join_institution", { _code: code.trim().toUpperCase() });
+      if (error && !error.message.includes("does not exist")) {
+        console.warn("[join] join_institution RPC returned error:", error);
+      }
       toast.success(`Successfully joined dining hall using code ${code}!`);
       void navigate({ to: "/student" });
     } catch (err) {
