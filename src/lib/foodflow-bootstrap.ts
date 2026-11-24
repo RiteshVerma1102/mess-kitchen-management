@@ -44,12 +44,12 @@ export async function bootstrapWorkspace(client = supabase): Promise<BootstrapRe
 
   // 1b. Check if user has an active membership in institution_members
   try {
-    const { data: member } = await client
+    const { data: member } = (await (client as any)
       .from("institution_members")
       .select("institution_id, role")
       .eq("user_id", user.id)
       .eq("status", "active")
-      .maybeSingle();
+      .maybeSingle()) as { data: { institution_id?: string; role?: string } | null };
 
     if (member?.institution_id) {
       return {
@@ -64,9 +64,10 @@ export async function bootstrapWorkspace(client = supabase): Promise<BootstrapRe
   }
 
   // 2. Check if user metadata contains pending institution details from signup
+  const meta = user.user_metadata as Record<string, unknown> | undefined;
   const pendingName =
-    user.user_metadata?.institution_name ||
-    user.user_metadata?.pending_institution_name;
+    meta?.["institution_name"] ||
+    meta?.["pending_institution_name"];
 
   if (pendingName && typeof pendingName === "string" && pendingName.trim().length >= 2) {
     try {

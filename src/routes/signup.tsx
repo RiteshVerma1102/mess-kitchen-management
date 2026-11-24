@@ -8,9 +8,11 @@ type SignupSearchParams = {
 
 export const Route = createFileRoute("/signup")({
   validateSearch: (search: Record<string, unknown>): SignupSearchParams => {
-    return {
-      plan: typeof search.plan === "string" ? search.plan : undefined,
-    };
+    const planVal = search["plan"];
+    if (typeof planVal === "string" && planVal.length > 0) {
+      return { plan: planVal };
+    }
+    return {};
   },
   head: () =>
     foodFlowHead(
@@ -22,5 +24,5 @@ export const Route = createFileRoute("/signup")({
 
 function SignupComponent() {
   const { plan } = Route.useSearch();
-  return <AuthPage initialMode="signup" defaultPlan={plan} />;
+  return <AuthPage initialMode="signup" {...(plan ? { defaultPlan: plan } : {})} />;
 }

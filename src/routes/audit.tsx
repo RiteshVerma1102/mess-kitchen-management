@@ -115,7 +115,19 @@ export function AuditLogPage() {
   });
 
   const handleExportCSV = () => {
-    exportToCSV("foodflow_audit_log", filtered);
+    exportToCSV<AuditEntry>(
+      "foodflow_audit_log",
+      [
+        { key: "timestamp", label: "Timestamp" },
+        { key: "actor", label: "Actor" },
+        { key: "role", label: "Role" },
+        { key: "action", label: "Action" },
+        { key: "table", label: "Target" },
+        { key: "summary", label: "Details" },
+        { key: "ip", label: "IP Address" },
+      ],
+      filtered
+    );
     toast.success("Audit log exported to CSV.");
   };
 
@@ -124,15 +136,8 @@ export function AuditLogPage() {
       title: "Immutable Security & Operational Audit Log",
       institutionName: "SmartMess FoodFlow",
       dateRange: "Last 30 Days",
-      columns: [
-        { header: "Timestamp", key: "timestamp" },
-        { header: "Actor", key: "actor" },
-        { header: "Role", key: "role" },
-        { header: "Action", key: "action" },
-        { header: "Target", key: "table" },
-        { header: "Details", key: "summary" },
-      ],
-      data: filtered,
+      headers: ["Timestamp", "Actor", "Role", "Action", "Target", "Details", "IP"],
+      rows: filtered.map((l) => [l.timestamp, l.actor, l.role, l.action, l.table, l.summary, l.ip]),
     });
     toast.success("Opening printable audit report...");
   };

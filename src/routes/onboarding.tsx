@@ -98,7 +98,7 @@ export function OnboardingPage() {
     }
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.rpc("join_institution", { _code: cleanCode });
+      const { error } = await (supabase as any).rpc("join_institution", { _code: cleanCode });
       if (error && !error.message.includes("does not exist")) {
         console.warn("[onboarding] join_institution RPC returned error:", error);
       }
@@ -281,8 +281,11 @@ export function OnboardingPage() {
                         value={h.name}
                         onChange={(e) => {
                           const updated = [...halls];
-                          updated[idx].name = e.target.value;
-                          setHalls(updated);
+                          const target = updated[idx];
+                          if (target) {
+                            target.name = e.target.value;
+                            setHalls(updated);
+                          }
                         }}
                         className="h-9 border-none bg-transparent font-medium"
                       />
@@ -293,8 +296,11 @@ export function OnboardingPage() {
                           value={h.capacity}
                           onChange={(e) => {
                             const updated = [...halls];
-                            updated[idx].capacity = Number(e.target.value);
-                            setHalls(updated);
+                            const target = updated[idx];
+                            if (target) {
+                              target.capacity = Number(e.target.value);
+                              setHalls(updated);
+                            }
                           }}
                           className="h-8 w-20 rounded-lg text-center"
                         />

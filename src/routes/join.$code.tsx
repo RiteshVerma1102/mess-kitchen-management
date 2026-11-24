@@ -35,7 +35,7 @@ export function JoinCodePage() {
     }
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.rpc("join_institution", { _code: code.trim().toUpperCase() });
+      const { error } = await (supabase as any).rpc("join_institution", { _code: code.trim().toUpperCase() });
       if (error && !error.message.includes("does not exist")) {
         console.warn("[join] join_institution RPC returned error:", error);
       }

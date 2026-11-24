@@ -214,9 +214,8 @@ export function Features() {
                   <f.icon className="size-5" />
                 </span>
                 <h3 className="mt-5 text-xl font-semibold">{f.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.body}</p>
               </div>
-              <p className="mt-6 font-mono text-xs text-muted-foreground">{f.stat}</p>
             </article>
           ))}
         </div>
@@ -229,12 +228,12 @@ export function HowItWorks() {
   return (
     <section id="how" className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
       <SectionHead eyebrow="How it works" title="Four steps from morning prep to lights-out." />
-      <div className="mt-14 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-14 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
         {STEPS.map((s) => (
-          <div key={s.num} className="relative rounded-3xl border bg-card p-7 shadow-xs">
-            <span className="font-display text-4xl font-semibold text-primary">{s.num}</span>
+          <div key={s.n} className="relative rounded-3xl border bg-card p-7 shadow-xs">
+            <span className="font-display text-4xl font-semibold text-primary">{s.n}</span>
             <h3 className="mt-4 text-xl font-semibold">{s.title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.desc}</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.body}</p>
           </div>
         ))}
       </div>
@@ -254,10 +253,10 @@ export function Outcomes() {
         </div>
         <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {OUTCOMES.map((o) => (
-            <div key={o.label} className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-xs">
-              <p className="font-display text-5xl font-semibold text-saffron sm:text-6xl">{o.big}</p>
-              <p className="mt-2 text-base font-semibold text-white">{o.label}</p>
-              <p className="mt-1 text-xs text-ink-foreground/70">{o.detail}</p>
+            <div key={o.k} className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-xs">
+              <p className="font-display text-5xl font-semibold text-saffron sm:text-6xl">{o.v}</p>
+              <p className="mt-2 text-base font-semibold text-white">{o.k}</p>
+              <p className="mt-1 text-xs text-ink-foreground/70">{o.d}</p>
             </div>
           ))}
         </div>

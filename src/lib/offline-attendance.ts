@@ -116,3 +116,50 @@ export async function removeSyncedAttendance(clientUuids: string[]): Promise<voi
     }
   }
 }
+
+export async function syncPendingAttendance(
+  syncRecord: (record: QueuedAttendance) => Promise<boolean>
+): Promise<SyncReport> {
+  const queue = await getPendingAttendanceQueue();
+  const report: SyncReport = {
+    success: true,
+    totalAttempted: queue.length,
+    syncedCount: 0,
+    duplicateCount: 0,
+    failedCount: 0,
+    errors: [],
+  };
+
+  if (!queue.length) return report;
+
+  const syncedIds: string[] = [];
+
+  for (const record of queue) {
+    try {
+      const ok = await syncRecord(record);
+      if (ok) {
+        syncedIds.push(record.clientUuid);
+        report.syncedCount++;
+      } else {
+        report.failedCount++;
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.toLowerCase().includes("duplicate") || msg.toLowerCase().includes("already")) {
+        syncedIds.push(record.clientUuid);
+        report.duplicateCount++;
+      } else {
+        report.failedCount++;
+        report.errors.push(msg);
+      }
+    }
+  }
+
+  if (syncedIds.length > 0) {
+    await removeSyncedAttendance(syncedIds);
+  }
+
+  report.success = report.failedCount === 0;
+  return report;
+}
+

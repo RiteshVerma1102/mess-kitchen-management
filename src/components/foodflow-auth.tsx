@@ -149,9 +149,17 @@ export function AuthPage({
     setMode(targetMode);
     setShowConfirmation(false);
     if (targetMode === "signin") {
-      void navigate({ to: "/login", search: redirectTo ? { redirect: redirectTo } : undefined });
+      if (redirectTo) {
+        void navigate({ to: "/login", search: { redirect: redirectTo } });
+      } else {
+        void navigate({ to: "/login" });
+      }
     } else if (targetMode === "signup") {
-      void navigate({ to: "/signup", search: defaultPlan ? { plan: defaultPlan } : undefined });
+      if (defaultPlan) {
+        void navigate({ to: "/signup", search: { plan: defaultPlan } });
+      } else {
+        void navigate({ to: "/signup" });
+      }
     } else if (targetMode === "forgot") {
       void navigate({ to: "/forgot-password" });
     }
@@ -173,7 +181,8 @@ export function AuthPage({
   };
 
   // Handle Google OAuth via native Supabase
-  const isGoogleAuthEnabled = import.meta.env.VITE_GOOGLE_AUTH_ENABLED !== "false";
+  const env = import.meta.env as Record<string, string | undefined>;
+  const isGoogleAuthEnabled = env["VITE_GOOGLE_AUTH_ENABLED"] !== "false";
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);

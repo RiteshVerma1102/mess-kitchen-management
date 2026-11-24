@@ -92,7 +92,7 @@ export function calculateMealForecast(params: {
     confidenceScore = Math.min(95, 70 + counts.length * 4);
     explanation = `Derived from ${counts.length} matching ${dayNames[targetDow]} services in recent weeks (mean: ${baseCount}, std dev: ±${stdDev}).`;
   } else if (counts.length === 1) {
-    baseCount = counts[0];
+    baseCount = counts[0] ?? 0;
     stdDev = Math.round(baseCount * 0.1);
     confidenceScore = 70;
     explanation = `Estimated from 1 previous ${dayNames[targetDow]} record (${baseCount} servings) with standard variance.`;

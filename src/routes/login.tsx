@@ -8,9 +8,11 @@ type LoginSearchParams = {
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>): LoginSearchParams => {
-    return {
-      redirect: typeof search.redirect === "string" ? search.redirect : undefined,
-    };
+    const redirectVal = search["redirect"];
+    if (typeof redirectVal === "string" && redirectVal.length > 0) {
+      return { redirect: redirectVal };
+    }
+    return {};
   },
   head: () =>
     foodFlowHead(
@@ -22,5 +24,5 @@ export const Route = createFileRoute("/login")({
 
 function LoginComponent() {
   const { redirect } = Route.useSearch();
-  return <AuthPage initialMode="signin" redirectTo={redirect} />;
+  return <AuthPage initialMode="signin" {...(redirect ? { redirectTo: redirect } : {})} />;
 }

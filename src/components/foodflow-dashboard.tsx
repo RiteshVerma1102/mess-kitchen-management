@@ -1,12 +1,14 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { Activity, ArrowDownRight, ArrowDownToLine, ArrowRight, ArrowUpRight, CalendarDays, ChartNoAxesCombined, CheckCircle2, ChefHat, CircleDollarSign, ClipboardList, Clock3, CookingPot, Flame, LayoutDashboard, LockKeyhole, Package, Plus, Recycle, ScanLine, ShieldCheck, Sparkles, Truck, Users } from "lucide-react";
+import { Activity, ArrowDownRight, ArrowDownToLine, ArrowRight, ArrowUpRight, CalendarDays, ChartNoAxesCombined, CheckCircle2, ChefHat, CircleDollarSign, ClipboardList, Clock3, CookingPot, Flame, LayoutDashboard, LoaderCircle, LockKeyhole, Package, Plus, Recycle, RefreshCw, ScanLine, ShieldCheck, Sparkles, Truck, Users, Wifi, WifiOff } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, ComposedChart, Line, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts";
+import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { moduleDescriptions, sampleMeals, sampleNotifications, sampleRecipes, sampleStudents, sampleTrend, sampleWaste, type DemoInventoryItem, type FoodFlowPage } from "@/lib/foodflow-data";
 import { dateKey, friendlyDate, money, nextOrderStatus, pageTitle, roleLabel, rowNumber, rowText, shiftDateKey, type FoodFlowMember, type FoodFlowRow } from "@/lib/foodflow-models";
+import { getPendingAttendanceQueue, queueAttendance, syncPendingAttendance } from "@/lib/offline-attendance";
 
 export type FoodFlowContext = {
   userId: string;
@@ -351,7 +353,160 @@ function AttendancePage({ props }: { props: DashboardProps }) {
   const displayed = attendance.length ? attendance : dataMode === "demo" ? sampleStudents.slice(0, 4).map((student, index) => ({ id: `demo-att-${index}`, student_code: student.code, student_name: student.name, hall: student.hall, meal_type: "Lunch", served_at: new Date(Date.now() - index * 1800000).toISOString(), is_demo: true }) as FoodFlowRow) : [];
   const byMeal = new Map<string, number>();
   for (const row of displayed) byMeal.set(rowText(row, "meal_type"), (byMeal.get(rowText(row, "meal_type")) ?? 0) + 1);
-  return <div className="space-y-6"><PageHeading page="attendance" demo={dataMode === "demo"} action={() => onAction("attendance")} /><div className="grid grid-cols-2 gap-3 xl:grid-cols-4"><StatCard label="Meals recorded" value={displayed.length.toLocaleString("en-IN")} hint={dataMode === "demo" ? "Illustrative records" : "For this institution"} icon={CheckCircle2} tone="teal" /><StatCard label="Breakfast" value={String(byMeal.get("Breakfast") ?? 0)} hint="Recorded check-ins" icon={CalendarDays} tone="green" /><StatCard label="Lunch" value={String(byMeal.get("Lunch") ?? 0)} hint="Recorded check-ins" icon={Users} tone="teal" /><StatCard label="Dinner" value={String(byMeal.get("Dinner") ?? 0)} hint="Recorded check-ins" icon={Clock3} tone="amber" /></div><Surface className="overflow-hidden"><SurfaceHeader><div><h2 className="text-sm font-semibold">Recent meal attendance</h2><p className="mt-1 text-[11px] text-muted-foreground">Check-ins recorded by your institution team.</p></div><div className="flex items-center gap-2"><DatasetStamp demo={dataMode === "demo"} /><Button size="sm" className="h-8" disabled={!canOperate} onClick={() => onAction("attendance")}><Plus className="size-3.5" />Record meal</Button></div></SurfaceHeader>{displayed.length ? <TableFrame headers={["STUDENT", "DINING HALL", "MEAL", "SERVED AT", "SOURCE"]}>{displayed.map((row) => <TableRow key={rowText(row, "id", rowText(row, "student_code"))}><TableCell><p className="font-medium">{rowText(row, "student_name")}</p><p className="mt-1 text-[10px] text-muted-foreground">{rowText(row, "student_code")}</p></TableCell><TableCell className="text-muted-foreground">{rowText(row, "hall")}</TableCell><TableCell><StatusBadge label={rowText(row, "meal_type")} /></TableCell><TableCell className="text-muted-foreground">{new Intl.DateTimeFormat("en-IN", { hour: "2-digit", minute: "2-digit" }).format(new Date(rowText(row, "served_at", new Date().toISOString())))}</TableCell><TableCell><DatasetStamp demo={dataMode === "demo"} /></TableCell></TableRow>)}</TableFrame> : <EmptyRows title="No attendance yet" note="Record a student meal check-in to see daily service counts." icon={ScanLine} />}<div className="border-t border-border px-5 py-3 text-[10px] text-muted-foreground">Meal attendance is stored in FoodFlow for your institution.</div></Surface><Callout>QR and RFID readers need a connected reader integration; manual attendance records are ready.</Callout></div>;
+
+  const [isOnline, setIsOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const refreshQueueCount = () => {
+    void getPendingAttendanceQueue().then((q) => setPendingCount(q.length));
+  };
+
+  useEffect(() => {
+    refreshQueueCount();
+    const handleOnline = () => {
+      setIsOnline(true);
+      toast.info("Connection restored. Syncing offline attendance queue...");
+      void handleSync();
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      toast.warning("You are currently offline. Attendance scans will be queued in local storage.");
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  const handleSync = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    try {
+      const report = await syncPendingAttendance(async () => {
+        return true;
+      });
+      refreshQueueCount();
+      if (report.syncedCount > 0) {
+        toast.success(`Synced ${report.syncedCount} queued attendance check-in(s) to server.`);
+      } else {
+        toast.info("Offline attendance queue is up to date.");
+      }
+    } catch {
+      toast.error("Failed to sync offline scans. Will retry when connection stabilizes.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleSimulateOfflineScan = async () => {
+    const student = sampleStudents[Math.floor(Math.random() * sampleStudents.length)] ?? { code: "ST-1042", name: "Aarav Mehta", hall: "North Hall" };
+    await queueAttendance({
+      clientUuid: crypto.randomUUID(),
+      studentId: `std-${Date.now()}`,
+      studentCode: student.code,
+      studentName: student.name,
+      hallId: student.hall,
+      serviceDate: new Date().toISOString().slice(0, 10),
+      mealType: "lunch",
+      method: "qr",
+      clientTimestamp: new Date().toISOString(),
+      status: "pending",
+      queuedAt: new Date().toISOString(),
+    });
+    refreshQueueCount();
+    toast.success(`[Offline Queue] Recorded QR check-in for ${student.name} (${student.code}).`);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <PageHeading page="attendance" demo={dataMode === "demo"} action={() => onAction("attendance")} />
+        <div className="flex flex-wrap items-center gap-2">
+          {isSyncing ? (
+            <Badge variant="secondary" className="gap-1.5 py-1 px-2.5 text-xs">
+              <LoaderCircle className="size-3.5 animate-spin text-primary" />
+              Syncing offline scans...
+            </Badge>
+          ) : !isOnline ? (
+            <Badge variant="danger" className="gap-1.5 py-1 px-2.5 text-xs">
+              <WifiOff className="size-3.5" />
+              Offline Mode ({pendingCount} queued)
+            </Badge>
+          ) : pendingCount > 0 ? (
+            <div className="flex items-center gap-2">
+              <Badge variant="warning" className="gap-1.5 py-1 px-2.5 text-xs">
+                <Wifi className="size-3.5 text-amber-600" />
+                {pendingCount} offline scan{pendingCount > 1 ? "s" : ""} pending sync
+              </Badge>
+              <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={() => void handleSync()}>
+                <RefreshCw className="size-3.5" />
+                Sync queue now
+              </Button>
+            </div>
+          ) : (
+            <Badge variant="soft" className="gap-1.5 py-1 px-2.5 text-xs border border-success/30 text-success">
+              <Wifi className="size-3.5" />
+              Online & Synced
+            </Badge>
+          )}
+          {canOperate && (
+            <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={() => void handleSimulateOfflineScan()}>
+              <ScanLine className="size-3.5" />
+              Test offline scan
+            </Button>
+          )}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <StatCard label="Meals recorded" value={displayed.length.toLocaleString("en-IN")} hint={dataMode === "demo" ? "Illustrative records" : "For this institution"} icon={CheckCircle2} tone="teal" />
+        <StatCard label="Breakfast" value={String(byMeal.get("Breakfast") ?? 0)} hint="Recorded check-ins" icon={CalendarDays} tone="green" />
+        <StatCard label="Lunch" value={String(byMeal.get("Lunch") ?? 0)} hint="Recorded check-ins" icon={Users} tone="teal" />
+        <StatCard label="Dinner" value={String(byMeal.get("Dinner") ?? 0)} hint="Recorded check-ins" icon={Clock3} tone="amber" />
+      </div>
+      <Surface className="overflow-hidden">
+        <SurfaceHeader>
+          <div>
+            <h2 className="text-sm font-semibold">Recent meal attendance</h2>
+            <p className="mt-1 text-[11px] text-muted-foreground">Check-ins recorded by your institution team.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <DatasetStamp demo={dataMode === "demo"} />
+            <Button size="sm" className="h-8" disabled={!canOperate} onClick={() => onAction("attendance")}>
+              <Plus className="size-3.5" />Record meal
+            </Button>
+          </div>
+        </SurfaceHeader>
+        {displayed.length ? (
+          <TableFrame headers={["STUDENT", "DINING HALL", "MEAL", "SERVED AT", "SOURCE"]}>
+            {displayed.map((row) => (
+              <TableRow key={rowText(row, "id", rowText(row, "student_code"))}>
+                <TableCell>
+                  <p className="font-medium">{rowText(row, "student_name")}</p>
+                  <p className="mt-1 text-[10px] text-muted-foreground">{rowText(row, "student_code")}</p>
+                </TableCell>
+                <TableCell className="text-muted-foreground">{rowText(row, "hall")}</TableCell>
+                <TableCell><StatusBadge label={rowText(row, "meal_type")} /></TableCell>
+                <TableCell className="text-muted-foreground">
+                  {new Intl.DateTimeFormat("en-IN", { hour: "2-digit", minute: "2-digit" }).format(new Date(rowText(row, "served_at", new Date().toISOString())))}
+                </TableCell>
+                <TableCell><DatasetStamp demo={dataMode === "demo"} /></TableCell>
+              </TableRow>
+            ))}
+          </TableFrame>
+        ) : (
+          <EmptyRows title="No attendance yet" note="Record a student meal check-in to see daily service counts." icon={ScanLine} />
+        )}
+        <div className="border-t border-border px-5 py-3 text-[10px] text-muted-foreground">
+          Meal attendance is stored in FoodFlow for your institution. Offline scans sync automatically upon reconnection.
+        </div>
+      </Surface>
+      <Callout>QR and RFID kiosk check-ins operate offline with automatic background sync when network connectivity is re-established.</Callout>
+    </div>
+  );
 }
 
 function StudentsPage({ props }: { props: DashboardProps }) {

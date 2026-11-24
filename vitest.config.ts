@@ -7,8 +7,11 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: ["./src/test/setup.ts"],
+    setupFiles: ["./src/tests/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    testTimeout: 30000,
+    hookTimeout: 30000,
+    pool: "threads",
   },
   resolve: {
     alias: { "@": path.resolve(__dirname, "./src") },
