@@ -7,15 +7,24 @@ const forecast = [64, 69, 68, 76, 75, 60, 50, 67, 74, 79, 78, 70, 56, 48];
 export function ProductMockup() {
   const max = 90;
   return (
-    <div className="relative mx-auto w-full max-w-[640px]" aria-label="FoodFlow dashboard preview" role="img">
-      <div className="absolute -inset-6 rounded-[2.5rem] bg-saffron-gradient opacity-25 blur-3xl" aria-hidden />
+    <div
+      className="relative mx-auto w-full max-w-[640px]"
+      aria-label="FoodFlow dashboard preview"
+      role="img"
+    >
+      <div
+        className="absolute -inset-6 rounded-[2.5rem] bg-saffron-gradient opacity-25 blur-3xl"
+        aria-hidden
+      />
       <div className="relative overflow-hidden rounded-3xl border bg-card shadow-lg">
         {/* window chrome */}
         <div className="flex items-center gap-2 border-b bg-muted/60 px-4 py-3">
           <span className="size-2.5 rounded-full bg-destructive/60" />
           <span className="size-2.5 rounded-full bg-warning/70" />
           <span className="size-2.5 rounded-full bg-success/60" />
-          <span className="ml-3 rounded-md bg-card px-3 py-1 text-[11px] text-muted-foreground">app.foodflow.in/dashboard</span>
+          <span className="ml-3 rounded-md bg-card px-3 py-1 text-[11px] text-muted-foreground">
+            app.foodflow.in/dashboard
+          </span>
         </div>
         <div className="grid gap-4 p-5">
           <div className="flex items-end justify-between">
@@ -35,7 +44,9 @@ export function ProductMockup() {
               { k: "Waste today", v: "4.1%", t: "−1.6 pts" },
             ].map((m) => (
               <div key={m.k} className="rounded-xl border bg-background p-3">
-                <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{m.k}</p>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  {m.k}
+                </p>
                 <p className="mt-1 font-display text-lg font-semibold tabular">{m.v}</p>
                 <p className="text-[11px] font-semibold text-success">{m.t}</p>
               </div>
@@ -46,14 +57,23 @@ export function ProductMockup() {
             <div className="mb-3 flex items-center justify-between text-xs">
               <span className="font-semibold">Served vs forecast · 14 days</span>
               <span className="flex items-center gap-3 text-muted-foreground">
-                <span className="flex items-center gap-1"><span className="size-2 rounded-sm bg-primary" />Served</span>
-                <span className="flex items-center gap-1"><span className="size-2 rounded-sm bg-saffron" />Forecast</span>
+                <span className="flex items-center gap-1">
+                  <span className="size-2 rounded-sm bg-primary" />
+                  Served
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="size-2 rounded-sm bg-saffron" />
+                  Forecast
+                </span>
               </span>
             </div>
             <div className="flex h-28 items-end gap-1.5">
               {bars.map((b, i) => (
                 <div key={i} className="relative flex h-full flex-1 items-end">
-                  <div className="w-full rounded-t-sm bg-primary/85" style={{ height: `${(b / max) * 100}%` }} />
+                  <div
+                    className="w-full rounded-t-sm bg-primary/85"
+                    style={{ height: `${(b / max) * 100}%` }}
+                  />
                   <div
                     className="absolute inset-x-0 h-0.5 rounded bg-saffron"
                     style={{ bottom: `${((forecast[i] ?? 0) / max) * 100}%` }}
@@ -90,7 +110,9 @@ export function ProductMockup() {
           </span>
           <div className="text-xs">
             <p className="font-semibold">Asha R. · Hall B</p>
-            <p className="flex items-center gap-1 text-success"><CheckCircle2 className="size-3" /> Lunch marked</p>
+            <p className="flex items-center gap-1 text-success">
+              <CheckCircle2 className="size-3" /> Lunch marked
+            </p>
           </div>
         </div>
       </div>
@@ -104,7 +126,9 @@ export function ProductMockup() {
           </span>
           <div className="text-xs">
             <p className="font-semibold">Tomorrow: 412 plates</p>
-            <p className="flex items-center gap-1 text-muted-foreground"><Leaf className="size-3 text-veg" /> 91% confidence</p>
+            <p className="flex items-center gap-1 text-muted-foreground">
+              <Leaf className="size-3 text-veg" /> 91% confidence
+            </p>
           </div>
         </div>
       </div>

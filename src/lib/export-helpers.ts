@@ -1,11 +1,10 @@
-/**
- * FoodFlow Pro Max - Real File Export Engine
- * Generates and triggers actual client downloads for CSV, Excel (.xlsx/.csv), and printable PDF reports.
- */
+import { toast } from "sonner";
 
 /**
- * Triggers a browser download of a text/binary blob
+ * FoodFlow Pro Max - Real File Export Engine
+ * Generates and triggers actual client downloads for CSV, Excel (.xls), and iframe-safe printable PDF/HTML receipts.
  */
+
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
@@ -17,9 +16,6 @@ function downloadBlob(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/**
- * Escapes CSV field value according to RFC 4180
- */
 function escapeCSV(val: unknown): string {
   if (val == null) return '""';
   const str = String(val);
@@ -29,38 +25,37 @@ function escapeCSV(val: unknown): string {
   return `"${str}"`;
 }
 
-/**
- * Export tabular data as real CSV file
- */
+function escapeHtml(val: unknown): string {
+  return String(val ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
 export function exportToCSV<T extends Record<string, unknown>>(
   filename: string,
   headers: Array<{ key: keyof T; label: string }>,
-  rows: T[]
+  rows: T[],
 ): void {
   const headerLine = headers.map((h) => escapeCSV(h.label)).join(",");
-  const rowLines = rows.map((row) =>
-    headers.map((h) => escapeCSV(row[h.key])).join(",")
-  );
+  const rowLines = rows.map((row) => headers.map((h) => escapeCSV(row[h.key])).join(","));
 
-  const csvContent = "\uFEFF" + [headerLine, ...rowLines].join("\r\n"); // Add UTF-8 BOM for Excel
+  const csvContent = "\uFEFF" + [headerLine, ...rowLines].join("\r\n");
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   downloadBlob(blob, filename.endsWith(".csv") ? filename : `${filename}.csv`);
 }
 
-/**
- * Export tabular data as Excel-compatible file
- */
 export function exportToExcel<T extends Record<string, unknown>>(
   filename: string,
   sheetName: string,
   headers: Array<{ key: keyof T; label: string }>,
-  rows: T[]
+  rows: T[],
 ): void {
-  // Generate HTML table spreadsheet format that Excel opens natively
   const tableRows = rows
     .map(
       (r) =>
-        `<tr>${headers.map((h) => `<td>${r[h.key] != null ? String(r[h.key]) : ""}</td>`).join("")}</tr>`
+        `<tr>${headers.map((h) => `<td>${r[h.key] != null ? escapeHtml(r[h.key]) : ""}</td>`).join("")}</tr>`,
     )
     .join("\n");
 
@@ -68,18 +63,6 @@ export function exportToExcel<T extends Record<string, unknown>>(
     <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
       <head>
         <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
-        <!--[if gte mso 9]>
-        <xml>
-          <x:ExcelWorkbook>
-            <x:ExcelWorksheets>
-              <x:ExcelWorksheet>
-                <x:Name>${sheetName}</x:Name>
-                <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
-              </x:ExcelWorksheet>
-            </x:ExcelWorksheets>
-          </x:ExcelWorkbook>
-        </xml>
-        <![endif]-->
         <style>
           th { background-color: #087E8B; color: #FFFFFF; font-weight: bold; padding: 6px; }
           td { border: 0.5pt solid #CCCCCC; padding: 4px; }
@@ -88,7 +71,7 @@ export function exportToExcel<T extends Record<string, unknown>>(
       <body>
         <table>
           <thead>
-            <tr>${headers.map((h) => `<th>${h.label}</th>`).join("")}</tr>
+            <tr>${headers.map((h) => `<th>${escapeHtml(h.label)}</th>`).join("")}</tr>
           </thead>
           <tbody>
             ${tableRows}
@@ -102,9 +85,51 @@ export function exportToExcel<T extends Record<string, unknown>>(
   downloadBlob(blob, filename.endsWith(".xls") ? filename : `${filename}.xls`);
 }
 
-/**
- * Generates and opens a printable institutional PDF report in a new window with print dialogue
- */
+function printHtmlInsideIframe(html: string, downloadFallbackFilename: string): void {
+  try {
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.setAttribute("aria-hidden", "true");
+    document.body.appendChild(iframe);
+
+    const frameDoc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!frameDoc) {
+      document.body.removeChild(iframe);
+      downloadBlob(new Blob([html], { type: "text/html;charset=utf-8" }), downloadFallbackFilename);
+      toast.info("Downloaded printable report HTML.");
+      return;
+    }
+
+    frameDoc.open();
+    frameDoc.write(html);
+    frameDoc.close();
+
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch {
+        downloadBlob(
+          new Blob([html], { type: "text/html;charset=utf-8" }),
+          downloadFallbackFilename,
+        );
+        toast.info("Downloaded printable report HTML.");
+      }
+      setTimeout(() => {
+        if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+      }, 1500);
+    }, 150);
+  } catch {
+    downloadBlob(new Blob([html], { type: "text/html;charset=utf-8" }), downloadFallbackFilename);
+    toast.info("Downloaded printable report HTML.");
+  }
+}
+
 export function exportToPrintablePDF(params: {
   title: string;
   institutionName: string;
@@ -116,21 +141,15 @@ export function exportToPrintablePDF(params: {
 }): void {
   const { title, institutionName, subtitle, dateRange, headers, rows, summary } = params;
 
-  const printWindow = window.open("", "_blank");
-  if (!printWindow) {
-    alert("Please allow popups to generate and print PDF reports.");
-    return;
-  }
-
   const html = `
     <!DOCTYPE html>
     <html>
       <head>
-        <title>${title} - ${institutionName}</title>
+        <title>${escapeHtml(title)} - ${escapeHtml(institutionName)}</title>
         <meta charset="utf-8" />
         <style>
           @page { size: A4; margin: 15mm; }
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #172B3A; margin: 0; padding: 10px; font-size: 12px; }
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #172B3A; margin: 0; padding: 14px; font-size: 12px; }
           .header { border-bottom: 2px solid #087E8B; padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end; }
           .logo { font-size: 20px; font-weight: 800; color: #087E8B; }
           .inst { font-size: 13px; color: #555; }
@@ -150,14 +169,14 @@ export function exportToPrintablePDF(params: {
       <body>
         <div class="header">
           <div>
-            <div class="logo">SmartMess FoodFlow</div>
-            <div class="inst">${institutionName}</div>
-            <div class="title">${title}</div>
-            ${subtitle ? `<div style="color: #666; font-size: 11px; margin-top: 2px;">${subtitle}</div>` : ""}
+            <div class="logo">FoodFlow Mess Records</div>
+            <div class="inst">${escapeHtml(institutionName)}</div>
+            <div class="title">${escapeHtml(title)}</div>
+            ${subtitle ? `<div style="color: #666; font-size: 11px; margin-top: 2px;">${escapeHtml(subtitle)}</div>` : ""}
           </div>
           <div class="meta">
-            ${dateRange ? `<div><strong>Period:</strong> ${dateRange}</div>` : ""}
-            <div><strong>Generated:</strong> ${new Date().toLocaleString("en-IN")}</div>
+            ${dateRange ? `<div><strong>Period:</strong> ${escapeHtml(dateRange)}</div>` : ""}
+            <div><strong>Generated:</strong> ${escapeHtml(new Date().toLocaleString("en-IN"))}</div>
           </div>
         </div>
 
@@ -167,7 +186,7 @@ export function exportToPrintablePDF(params: {
               ${summary
                 .map(
                   (s) =>
-                    `<div class="summary-card"><div class="summary-label">${s.label}</div><div class="summary-val">${s.value}</div></div>`
+                    `<div class="summary-card"><div class="summary-label">${escapeHtml(s.label)}</div><div class="summary-val">${escapeHtml(s.value)}</div></div>`,
                 )
                 .join("")}
             </div>`
@@ -176,29 +195,80 @@ export function exportToPrintablePDF(params: {
 
         <table>
           <thead>
-            <tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr>
+            <tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr>
           </thead>
           <tbody>
             ${rows
-              .map((r) => `<tr>${r.map((c) => `<td>${c != null ? String(c) : "—"}</td>`).join("")}</tr>`)
+              .map(
+                (r) =>
+                  `<tr>${r.map((c) => `<td>${c != null ? escapeHtml(c) : "—"}</td>`).join("")}</tr>`,
+              )
               .join("")}
           </tbody>
         </table>
 
         <div class="footer">
-          <div>Official SmartMess Kitchen Records &middot; Generated via FoodFlow Pro Max</div>
+          <div>Official Mess &amp; Hostel Records &middot; FoodFlow</div>
           <div>Page 1 of 1</div>
         </div>
-
-        <script>
-          window.onload = function() {
-            window.print();
-          };
-        </script>
       </body>
     </html>
   `;
 
-  printWindow.document.write(html);
-  printWindow.document.close();
+  const slug =
+    title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .slice(0, 40) || "report";
+  printHtmlInsideIframe(html, `foodflow-${slug}.html`);
+}
+
+export function exportPaymentReceiptHTML(params: {
+  receiptNumber: string;
+  institutionName: string;
+  studentName: string;
+  studentCode?: string;
+  monthKey?: string;
+  amountRupees: number;
+  method: string;
+  referenceNo: string;
+  paidAt: string;
+}): void {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Payment Receipt ${escapeHtml(params.receiptNumber)}</title>
+        <meta charset="utf-8" />
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #172B3A; margin: 0; padding: 24px; font-size: 13px; }
+          .card { max-width: 620px; margin: 0 auto; border: 1.5px solid #087E8B; border-radius: 10px; padding: 20px; }
+          .top { display: flex; justify-content: space-between; border-bottom: 1px solid #E5EAF0; padding-bottom: 12px; margin-bottom: 16px; }
+          .brand { font-size: 18px; font-weight: 800; color: #087E8B; }
+          .badge { background: #E9F7F1; color: #0D7A52; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+          .row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px dashed #E5EAF0; }
+          .total { font-size: 16px; font-weight: 800; color: #087E8B; padding-top: 12px; display: flex; justify-content: space-between; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="top">
+            <div>
+              <div class="brand">${escapeHtml(params.institutionName)}</div>
+              <div style="font-size:12px;color:#666;">Official Mess Fee Payment Receipt</div>
+            </div>
+            <div class="badge">PAID</div>
+          </div>
+          <div class="row"><span>Receipt No</span><strong>${escapeHtml(params.receiptNumber)}</strong></div>
+          <div class="row"><span>Student</span><strong>${escapeHtml(params.studentName)}${params.studentCode ? ` (${escapeHtml(params.studentCode)})` : ""}</strong></div>
+          ${params.monthKey ? `<div class="row"><span>Billing Cycle</span><strong>${escapeHtml(params.monthKey)}</strong></div>` : ""}
+          <div class="row"><span>Payment Mode</span><strong>${escapeHtml(params.method.toUpperCase())}</strong></div>
+          <div class="row"><span>Transaction / UPI Ref</span><strong>${escapeHtml(params.referenceNo)}</strong></div>
+          <div class="row"><span>Paid Timestamp</span><strong>${escapeHtml(new Date(params.paidAt).toLocaleString("en-IN"))}</strong></div>
+          <div class="total"><span>Amount Received</span><span>₹${params.amountRupees.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
+        </div>
+      </body>
+    </html>
+  `;
+  printHtmlInsideIframe(html, `receipt-${params.receiptNumber}.html`);
 }

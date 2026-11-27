@@ -3,7 +3,14 @@ import { z } from "zod";
 
 import { formatINR, formatINRCompact, formatNumber, formatPercent, toDateKey } from "./format";
 import { convert } from "./units";
-import { costPerPlate, monthlyBill, purchaseSuggestions, recipeCostPerServing, scaleRecipe, wasteRatio } from "./costing";
+import {
+  costPerPlate,
+  monthlyBill,
+  purchaseSuggestions,
+  recipeCostPerServing,
+  scaleRecipe,
+  wasteRatio,
+} from "./costing";
 import { forecastDemand, mape, type DayActual } from "./forecast";
 import { csvToObjects, parseCSV, toCSV, validateRows } from "./csv";
 import { accessFor, canRead, canWrite } from "./permissions";
@@ -25,7 +32,8 @@ describe("Indian formatting", () => {
   it("compacts crores", () => expect(formatINRCompact(12000000)).toBe("₹1.2Cr"));
   it("groups numbers en-IN", () => expect(formatNumber(1234567)).toBe("12,34,567"));
   it("formats percent", () => expect(formatPercent(0.062)).toBe("6.2%"));
-  it("uses Asia/Kolkata for date keys", () => expect(toDateKey(new Date("2026-11-18T20:00:00Z"))).toBe("2026-11-19"));
+  it("uses Asia/Kolkata for date keys", () =>
+    expect(toDateKey(new Date("2026-11-18T20:00:00Z"))).toBe("2026-11-19"));
 });
 
 describe("units", () => {
@@ -36,8 +44,20 @@ describe("units", () => {
 
 describe("costing", () => {
   const dal = [
-    { itemId: "toor", quantityPerServing: 60, unit: "g" as const, itemUnit: "kg" as const, unitCost: 140 },
-    { itemId: "ghee", quantityPerServing: 5, unit: "ml" as const, itemUnit: "l" as const, unitCost: 600 },
+    {
+      itemId: "toor",
+      quantityPerServing: 60,
+      unit: "g" as const,
+      itemUnit: "kg" as const,
+      unitCost: 140,
+    },
+    {
+      itemId: "ghee",
+      quantityPerServing: 5,
+      unit: "ml" as const,
+      itemUnit: "l" as const,
+      unitCost: 600,
+    },
   ];
   it("cost per serving converts units", () => expect(recipeCostPerServing(dal)).toBe(11.4));
   it("scales to headcount in stock units", () =>
@@ -46,9 +66,9 @@ describe("costing", () => {
   it("cost per plate is 0 with no plates", () => expect(costPerPlate(100, 0)).toBe(0));
   it("waste ratio", () => expect(wasteRatio(200, 12.4)).toBeCloseTo(0.062));
   it("purchase = need × 1.1 − stock, rounded up to pack", () =>
-    expect(purchaseSuggestions([{ itemId: "rice", required: 100, inStock: 30, packSize: 25 }], 0.1)).toEqual([
-      { itemId: "rice", toOrder: 100 },
-    ]));
+    expect(
+      purchaseSuggestions([{ itemId: "rice", required: 100, inStock: 30, packSize: 25 }], 0.1),
+    ).toEqual([{ itemId: "rice", toOrder: 100 }]));
   it("drops items already covered by stock", () =>
     expect(purchaseSuggestions([{ itemId: "salt", required: 10, inStock: 50 }])).toEqual([]));
   it("monthly bill with 5% GST", () =>
@@ -61,7 +81,10 @@ describe("costing", () => {
 
 describe("forecast", () => {
   it("steady history predicts the same headcount", () => {
-    const r = forecastDemand({ targetDate: "2026-11-20", history: days(28, "2026-11-20", () => 400) });
+    const r = forecastDemand({
+      targetDate: "2026-11-20",
+      history: days(28, "2026-11-20", () => 400),
+    });
     expect(r.predicted).toBe(400);
     expect(r.confidence).toBeGreaterThan(0.9);
   });
@@ -74,7 +97,11 @@ describe("forecast", () => {
     expect(r.predicted).toBe(320);
   });
   it("subtracts approved leaves", () => {
-    const r = forecastDemand({ targetDate: "2026-11-20", history: days(28, "2026-11-20", () => 400), approvedLeaves: 25 });
+    const r = forecastDemand({
+      targetDate: "2026-11-20",
+      history: days(28, "2026-11-20", () => 400),
+      approvedLeaves: 25,
+    });
     expect(r.predicted).toBe(375);
   });
   it("learns weekday seasonality (Sundays are quieter)", () => {
@@ -85,29 +112,51 @@ describe("forecast", () => {
     expect(monday.predicted).toBeGreaterThan(370);
   });
   it("never exceeds active students", () => {
-    const r = forecastDemand({ targetDate: "2026-11-20", history: days(28, "2026-11-20", () => 400), activeStudents: 350 });
+    const r = forecastDemand({
+      targetDate: "2026-11-20",
+      history: days(28, "2026-11-20", () => 400),
+      activeStudents: 350,
+    });
     expect(r.predicted).toBe(350);
   });
   it("falls back to active students with no history", () => {
     const r = forecastDemand({ targetDate: "2026-11-20", history: [], activeStudents: 300 });
     expect(r).toMatchObject({ predicted: 300, confidence: 0 });
   });
-  it("MAPE", () => expect(mape([{ actual: 100, predicted: 90 }, { actual: 200, predicted: 220 }])).toBeCloseTo(0.1));
+  it("MAPE", () =>
+    expect(
+      mape([
+        { actual: 100, predicted: 90 },
+        { actual: 200, predicted: 220 },
+      ]),
+    ).toBeCloseTo(0.1));
 });
 
 describe("csv", () => {
   it("handles quotes, commas and CRLF", () =>
-    expect(parseCSV('a,b\r\n"x, y","say ""hi"""\r\n')).toEqual([["a", "b"], ["x, y", 'say "hi"']]));
+    expect(parseCSV('a,b\r\n"x, y","say ""hi"""\r\n')).toEqual([
+      ["a", "b"],
+      ["x, y", 'say "hi"'],
+    ]));
   it("validates rows and reports errors with row numbers", () => {
     const rows = csvToObjects("Student Code,Full Name\nS1,Asha\n,Ravi\n");
-    const { valid, errors } = validateRows(rows, z.object({ student_code: z.string().min(1), full_name: z.string() }));
+    const { valid, errors } = validateRows(
+      rows,
+      z.object({ student_code: z.string().min(1), full_name: z.string() }),
+    );
     expect(valid).toHaveLength(1);
     expect(errors[0]?.row).toBe(2);
   });
   it("round-trips export", () =>
-    expect(toCSV([{ n: "Dal, tadka", q: 2 }], [{ key: "n", label: "Dish" }, { key: "q", label: "Qty" }])).toBe(
-      'Dish,Qty\r\n"Dal, tadka",2',
-    ));
+    expect(
+      toCSV(
+        [{ n: "Dal, tadka", q: 2 }],
+        [
+          { key: "n", label: "Dish" },
+          { key: "q", label: "Qty" },
+        ],
+      ),
+    ).toBe('Dish,Qty\r\n"Dal, tadka",2'));
 });
 
 describe("permission matrix", () => {
@@ -120,12 +169,15 @@ describe("permission matrix", () => {
     expect(canWrite(["kitchen"], "inventory")).toBe(true);
     expect(canWrite(["kitchen"], "purchasing")).toBe(false);
   });
-  it("attendance operator cannot see inventory", () => expect(canRead(["attendance"], "inventory")).toBe(false));
+  it("attendance operator cannot see inventory", () =>
+    expect(canRead(["attendance"], "inventory")).toBe(false));
   it("students see only published menu and own attendance", () => {
     expect(accessFor(["student"], "menu")).toBe("published");
     expect(accessFor(["student"], "attendance")).toBe("own");
     expect(canRead(["student"], "analytics")).toBe(false);
   });
-  it("viewer is read-only everywhere it can see", () => expect(canWrite(["viewer"], "kitchen")).toBe(false));
-  it("multiple roles take the highest access", () => expect(accessFor(["viewer", "kitchen"], "inventory")).toBe("write"));
+  it("viewer is read-only everywhere it can see", () =>
+    expect(canWrite(["viewer"], "kitchen")).toBe(false));
+  it("multiple roles take the highest access", () =>
+    expect(accessFor(["viewer", "kitchen"], "inventory")).toBe("write"));
 });

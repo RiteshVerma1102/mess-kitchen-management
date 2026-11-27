@@ -17,7 +17,7 @@ export const Route = createFileRoute("/signup")({
   head: () =>
     foodFlowHead(
       "Create Workspace | FoodFlow",
-      "Register your college mess, hostel, or institutional kitchen on FoodFlow Pro Max."
+      "Register your college mess, hostel, or institutional kitchen on FoodFlow Pro Max.",
     ),
   component: SignupComponent,
 });

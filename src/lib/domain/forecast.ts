@@ -65,11 +65,20 @@ export function forecastDemand(input: ForecastInput): ForecastResult {
   const calendar_ = calendarFactorFor(targetDate, calendar);
 
   if (history.length === 0) {
-    const fallback = activeStudents ? Math.max(0, Math.round(activeStudents * calendar_ - approvedLeaves)) : 0;
+    const fallback = activeStudents
+      ? Math.max(0, Math.round(activeStudents * calendar_ - approvedLeaves))
+      : 0;
     return {
       predicted: fallback,
       confidence: 0,
-      factors: { base: activeStudents ?? 0, weekday: 1, trend: 1, calendar: calendar_, leaves: approvedLeaves, samples: 0 },
+      factors: {
+        base: activeStudents ?? 0,
+        weekday: 1,
+        trend: 1,
+        calendar: calendar_,
+        leaves: approvedLeaves,
+        samples: 0,
+      },
       modelVersion: FORECAST_MODEL_VERSION,
     };
   }

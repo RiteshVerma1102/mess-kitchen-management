@@ -58,7 +58,9 @@ export function validateRows<T>(rows: Record<string, string>[], schema: z.ZodTyp
     else
       errors.push({
         row: i + 1,
-        message: res.error.issues.map((iss) => `${iss.path.join(".") || "row"}: ${iss.message}`).join("; "),
+        message: res.error.issues
+          .map((iss) => `${iss.path.join(".") || "row"}: ${iss.message}`)
+          .join("; "),
       });
   });
   return { valid, errors };
@@ -70,7 +72,10 @@ const escape = (v: unknown) => {
 };
 
 /** Serialise rows to CSV with a header from `columns`. */
-export function toCSV<T extends Record<string, unknown>>(rows: T[], columns: { key: keyof T; label: string }[]) {
+export function toCSV<T extends Record<string, unknown>>(
+  rows: T[],
+  columns: { key: keyof T; label: string }[],
+) {
   const head = columns.map((c) => escape(c.label)).join(",");
   const body = rows.map((r) => columns.map((c) => escape(r[c.key])).join(","));
   return [head, ...body].join("\r\n");

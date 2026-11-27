@@ -6,9 +6,6 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    env:
-      VITE_SUPABASE_URL: https://vqxzkirixwteljacfrfi.supabase.co
-      VITE_SUPABASE_PUBLISHABLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxeHpraXJpeHd0ZWxqYWNmcmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDAwMDAwMDAsImV4cCI6MjAwMDAwMDAwMH0.c29tZXNpZ25hdHVyZXRva2VuZm9yZGV2ZWxvcG1lbnR1c2U
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }

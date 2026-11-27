@@ -55,7 +55,8 @@ export function purchaseSuggestions(lines: NeedLine[], safetyBuffer = 0.1) {
     .map((l) => {
       const raw = l.required * (1 + safetyBuffer) - l.inStock;
       const pack = l.packSize && l.packSize > 0 ? l.packSize : 0;
-      const toOrder = raw <= 0 ? 0 : pack ? Math.ceil(raw / pack - 1e-9) * pack : Math.ceil(raw * 100) / 100;
+      const toOrder =
+        raw <= 0 ? 0 : pack ? Math.ceil(raw / pack - 1e-9) * pack : Math.ceil(raw * 100) / 100;
       return { itemId: l.itemId, toOrder };
     })
     .filter((l) => l.toOrder > 0);

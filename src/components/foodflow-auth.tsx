@@ -7,14 +7,16 @@ import {
   Check,
   CheckCircle2,
   ChevronLeft,
+  Copy,
   Eye,
   EyeOff,
-  Flame,
   KeyRound,
+  Languages,
   Layers,
   LoaderCircle,
   Lock,
   Mail,
+  RefreshCw,
   ShieldCheck,
   TrendingDown,
 } from "lucide-react";
@@ -24,33 +26,16 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { BrandLogo, BrandMark } from "@/features/marketing/brand";
-import { HealthCheckBanner, useFoodFlowHealth } from "@/components/foodflow-health";
-import { supabase } from "@/integrations/supabase/client";
-import { bootstrapWorkspace } from "@/lib/foodflow-bootstrap";
+import { useFirebaseAuth } from "@/components/firebase-provider";
+import { formatFirebaseAuthError, verifyAndConfirmPasswordReset } from "@/lib/firebase";
+import { TRANSLATIONS } from "@/lib/i18n";
 
 type AuthMode = "signin" | "signup" | "forgot";
 
-const INSTITUTION_TYPES = [
-  "College",
-  "University",
-  "Hostel",
-  "Institutional Kitchen",
-  "Food Service Contractor",
-  "School",
-  "Hospital",
-  "Other",
-] as const;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Helper to enforce a strict timeout on async auth requests
-async function withAuthTimeout<T>(promise: Promise<T>, timeoutMs = 20000): Promise<T> {
+async function withAuthTimeout<T>(promise: Promise<T>, timeoutMs = 25000): Promise<T> {
   let timer: ReturnType<typeof setTimeout>;
   const timeoutPromise = new Promise<never>((_, reject) => {
     timer = setTimeout(() => {
@@ -76,39 +61,75 @@ export function AuthPage({
   redirectTo?: string;
 } = {}) {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<AuthMode>(initialMode);
-  const health = useFoodFlowHealth();
-  const [dismissHealth, setDismissHealth] = useState(false);
+  const {
+    user,
+    loading: authLoading,
+    workspaceLoading,
+    memberships,
+    role,
+    language,
+    setLanguage,
+    signInWithGoogle,
+    signUpEmail,
+    signInEmail,
+    resendVerification,
+    reloadUserVerification,
+    sendPasswordReset,
+  } = useFirebaseAuth();
 
-  // Sign-in / Sign-up state
+  const t = TRANSLATIONS[language];
+  const [mode, setMode] = useState<AuthMode>(initialMode);
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [institution, setInstitution] = useState("");
-  const [institutionType, setInstitutionType] = useState<string>("College");
 
-  // UI state
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [agreedToTerms, setAgreedToTerms] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [showConfirmation, setShowConfirmation] = useState(false);
+
+  const [showConfirmation, setShowConfirmation] = useState<"verify" | "forgot" | null>(null);
   const [confirmationEmail, setConfirmationEmail] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [errorBanner, setErrorBanner] = useState<string | null>(null);
+  const [unauthorizedHost, setUnauthorizedHost] = useState<string | null>(null);
 
-  // Sync mode with props if route changes
   useEffect(() => {
     setMode(initialMode);
+    setErrorBanner(null);
+    setUnauthorizedHost(null);
   }, [initialMode]);
 
-  // Resend cooldown countdown
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const timer = setInterval(() => setResendCooldown((c) => c - 1), 1000);
     return () => clearInterval(timer);
   }, [resendCooldown]);
+
+  const [showInviteBox, setShowInviteBox] = useState(false);
+  const [inviteCodeInput, setInviteCodeInput] = useState("");
+  const [joiningInvite, setJoiningInvite] = useState(false);
+
+  // If user is signed in & verified and workspace check finished, redirect straight to dashboard
+  useEffect(() => {
+    if (authLoading || workspaceLoading) return;
+    if (!user) return;
+    if (!user.emailVerified) {
+      setConfirmationEmail(user.email || "");
+      setShowConfirmation("verify");
+      return;
+    }
+    if (redirectTo && redirectTo.startsWith("/")) {
+      void navigate({ to: redirectTo as never });
+      return;
+    }
+    if (memberships.length > 0) {
+      void navigate({ to: (role === "student" ? "/student" : "/overview") as never });
+    }
+  }, [authLoading, workspaceLoading, user, memberships.length, role, redirectTo, navigate]);
 
   const passwordStrength = useMemo(() => {
     if (!password) return { label: "", percent: 0, color: "bg-muted" };
@@ -124,30 +145,11 @@ export function AuthPage({
     return { label: "Strong", percent: 100, color: "bg-emerald-500" };
   }, [password]);
 
-  const handleResend = async () => {
-    if (resendCooldown > 0 || !confirmationEmail) return;
-    setIsLoading(true);
-    try {
-      const { error } = await withAuthTimeout(
-        supabase.auth.resend({
-          type: "signup",
-          email: confirmationEmail,
-        })
-      );
-      if (error) throw error;
-      setResendCooldown(60);
-      toast.success("Verification link resent. Please check your inbox.");
-    } catch (err) {
-      console.error("[auth] Resend error:", err);
-      toast.error(err instanceof Error ? err.message : "Could not resend email.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleNavigateMode = (targetMode: AuthMode) => {
     setMode(targetMode);
-    setShowConfirmation(false);
+    setShowConfirmation(null);
+    setErrorBanner(null);
+    setUnauthorizedHost(null);
     if (targetMode === "signin") {
       if (redirectTo) {
         void navigate({ to: "/login", search: { redirect: redirectTo } });
@@ -165,94 +167,88 @@ export function AuthPage({
     }
   };
 
-  const handlePostAuthRedirect = async () => {
-    if (redirectTo) {
-      void navigate({ to: redirectTo as never });
-      return;
+  const handleErrorDisplay = (err: unknown) => {
+    const friendly = formatFirebaseAuthError(err);
+    setErrorBanner(friendly);
+    if (friendly.includes("Authorized domains")) {
+      const host = typeof window !== "undefined" ? window.location.hostname : "";
+      if (host) setUnauthorizedHost(host);
     }
-    const bootstrap = await bootstrapWorkspace();
-    if (bootstrap.status === "ready") {
-      void navigate({ to: bootstrap.destination });
-    } else if (bootstrap.status === "needs_onboarding") {
-      void navigate({ to: "/onboarding" });
-    } else {
-      void navigate({ to: "/overview" });
-    }
+    toast.error(friendly);
   };
 
-  // Handle Google OAuth via native Supabase
-  const env = import.meta.env as Record<string, string | undefined>;
-  const isGoogleAuthEnabled = env["VITE_GOOGLE_AUTH_ENABLED"] !== "false";
-
-  const handleGoogleSignIn = async () => {
+  const handleResend = async () => {
+    if (resendCooldown > 0) return;
     setIsLoading(true);
+    setErrorBanner(null);
     try {
-      const { error } = await withAuthTimeout(
-        supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: `${window.location.origin}/auth/callback`,
-            queryParams: {
-              prompt: "select_account",
-            },
-          },
-        }),
-        10000
-      );
-      if (error) throw error;
-    } catch (error) {
-      console.error("[auth] Google OAuth error:", error);
-      const msg = error instanceof Error ? error.message : "";
-      if (
-        msg.includes("Unsupported provider") ||
-        msg.includes("missing OAuth secret") ||
-        msg.includes("validation_failed") ||
-        msg.includes("provider is not enabled")
-      ) {
-        toast.error("Google sign-in isn't set up for this workspace yet. Use email and password.");
-      } else {
-        toast.error(msg || "Could not connect to Google sign-in. Use email and password.");
-      }
+      await withAuthTimeout(resendVerification());
+      setResendCooldown(60);
+      toast.success("Verification email sent! Please check your inbox and spam folder.");
+    } catch (err) {
+      handleErrorDisplay(err);
+    } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle Email & Password submissions
+  const handleCheckVerified = async () => {
+    setIsLoading(true);
+    setErrorBanner(null);
+    try {
+      const ok = await withAuthTimeout(reloadUserVerification());
+      if (ok) {
+        toast.success("Email verified! Continuing to workspace setup...");
+      } else {
+        toast.info("Not verified yet. Click the link in your inbox, then tap again.");
+      }
+    } catch (err) {
+      handleErrorDisplay(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    setErrorBanner(null);
+    setUnauthorizedHost(null);
+    try {
+      const firebaseUser = await withAuthTimeout(signInWithGoogle(rememberMe), 30000);
+      toast.success(
+        `Signed in as ${firebaseUser.displayName || firebaseUser.email || "Google user"}`,
+      );
+    } catch (error) {
+      handleErrorDisplay(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
+    setErrorBanner(null);
+    setUnauthorizedHost(null);
 
     try {
+      const cleanEmail = email.trim().toLowerCase();
+      if (!EMAIL_REGEX.test(cleanEmail)) {
+        throw new Error("Please enter a valid email address.");
+      }
+
       if (mode === "forgot") {
-        const cleanEmail = email.trim().toLowerCase();
-        if (!cleanEmail || !cleanEmail.includes("@")) {
-          throw new Error("Please enter a valid email address.");
-        }
-        const { error } = await withAuthTimeout(
-          supabase.auth.resetPasswordForEmail(cleanEmail, {
-            redirectTo: `${window.location.origin}/reset-password`,
-          })
-        );
-        if (error) throw error;
+        await withAuthTimeout(sendPasswordReset(cleanEmail));
         setConfirmationEmail(cleanEmail);
-        setShowConfirmation(true);
-        toast.success("Password reset instructions sent.");
+        setShowConfirmation("forgot");
+        toast.success("Password reset email sent. Check your inbox.");
         return;
       }
 
       if (mode === "signup") {
         const cleanName = name.trim();
-        const cleanEmail = email.trim().toLowerCase();
-        const cleanInstitution = institution.trim();
-
         if (cleanName.length < 2 || cleanName.length > 80) {
           throw new Error("Full name must be between 2 and 80 characters.");
-        }
-        if (!cleanEmail.includes("@")) {
-          throw new Error("Please enter a valid institutional work email.");
-        }
-        if (cleanInstitution.length < 2 || cleanInstitution.length > 120) {
-          throw new Error("Institution name must be between 2 and 120 characters.");
         }
         if (password.length < 8) {
           throw new Error("Password must be at least 8 characters long.");
@@ -261,83 +257,35 @@ export function AuthPage({
           throw new Error("Passwords do not match.");
         }
         if (!agreedToTerms) {
-          throw new Error("Please accept the terms of service to create your workspace.");
+          throw new Error("Please accept the terms of service to create your account.");
         }
 
-        const { data, error } = await withAuthTimeout(
-          supabase.auth.signUp({
-            email: cleanEmail,
-            password,
-            options: {
-              data: {
-                full_name: cleanName,
-                institution_name: cleanInstitution,
-                pending_institution_name: cleanInstitution,
-                institution_type: institutionType.toLowerCase(),
-                pending_institution_type: institutionType.toLowerCase(),
-              },
-              emailRedirectTo: `${window.location.origin}/auth/callback`,
-            },
-          })
+        const createdUser = await withAuthTimeout(
+          signUpEmail({ name: cleanName, email: cleanEmail, password }),
         );
-
-        if (error) {
-          console.error("[auth] Sign up error:", error);
-          if (error.message.toLowerCase().includes("already registered") || error.message.toLowerCase().includes("user already exists")) {
-            toast.error("An account already exists with this email. Please sign in instead.");
-            setMode("signin");
-            return;
-          }
-          throw error;
-        }
-
-        if (data.session) {
-          toast.success("Welcome to FoodFlow! Setting up your workspace...");
-          await handlePostAuthRedirect();
-        } else {
-          setConfirmationEmail(cleanEmail);
-          setShowConfirmation(true);
-          toast.success("Verification link sent. Please check your inbox.");
-        }
+        setConfirmationEmail(createdUser.email || cleanEmail);
+        setShowConfirmation("verify");
+        setResendCooldown(60);
+        toast.success("Account created! Please verify your email address.");
         return;
       }
 
       // Mode: signin
-      const cleanEmail = email.trim().toLowerCase();
-      if (!cleanEmail || !password) {
-        throw new Error("Please enter both email and password.");
+      if (password.length < 8) {
+        throw new Error("Password must be at least 8 characters long.");
       }
-
-      const { data, error } = await withAuthTimeout(
-        supabase.auth.signInWithPassword({
-          email: cleanEmail,
-          password,
-        })
+      const signedIn = await withAuthTimeout(
+        signInEmail({ email: cleanEmail, password, rememberBrowser: rememberMe }),
       );
-
-      if (error) {
-        console.error("[auth] Sign in error:", error);
-        if (error.message.toLowerCase().includes("invalid login credentials")) {
-          throw new Error("Incorrect email or password. Please verify your details.");
-        }
-        if (error.message.toLowerCase().includes("email not confirmed")) {
-          setConfirmationEmail(cleanEmail);
-          setShowConfirmation(true);
-          throw new Error("Your email address has not been confirmed yet. Please verify your inbox.");
-        }
-        if (error.message.toLowerCase().includes("too many requests")) {
-          throw new Error("Too many sign in attempts. Please wait a moment and try again.");
-        }
-        throw error;
+      if (!signedIn.emailVerified) {
+        setConfirmationEmail(signedIn.email || cleanEmail);
+        setShowConfirmation("verify");
+        toast.info("Please verify your email address before entering your workspace.");
+        return;
       }
-
-      if (data.user) {
-        toast.success("Welcome back to FoodFlow.");
-        await handlePostAuthRedirect();
-      }
+      toast.success("Welcome back to FoodFlow.");
     } catch (error) {
-      console.error("[auth] Authentication exception:", error);
-      toast.error(error instanceof Error ? error.message : "Authentication failed. Please try again.");
+      handleErrorDisplay(error);
     } finally {
       setIsLoading(false);
     }
@@ -345,45 +293,35 @@ export function AuthPage({
 
   return (
     <div className="grid min-h-screen bg-[#F5F8FA] lg:grid-cols-[1.1fr_1fr] xl:grid-cols-[1.2fr_1fr]">
-      {/* Schema / Health Check Banner if database tables missing */}
-      {!dismissHealth && (
-        <HealthCheckBanner
-          status={health.status}
-          details={health.details}
-          onRetry={health.retry}
-          onDismiss={() => setDismissHealth(true)}
-        />
-      )}
-
-      {/* LEFT COLUMN: Premium Enterprise Brand & Value Showcase */}
+      {/* LEFT COLUMN */}
       <aside className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-[#07545B] via-[#087E8B] to-[#054349] p-10 text-white lg:flex xl:p-14">
-        {/* Subtle decorative mesh background accents */}
         <div className="pointer-events-none absolute -right-24 -top-24 size-96 rounded-full bg-white/5 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 -left-24 size-96 rounded-full bg-[#16A36A]/10 blur-3xl" />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px] opacity-10" />
 
-        {/* Top Header & Brand Identity */}
         <div className="relative z-10 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <BrandMark className="size-11 rounded-2xl shadow-md" />
             <div>
-              <span className="font-display text-2xl font-bold tracking-tight text-white">FoodFlow</span>
-              <span className="block text-xs font-medium text-white/70">Institutional Kitchen OS</span>
+              <span className="font-display text-2xl font-bold tracking-tight text-white">
+                {t.appName}
+              </span>
+              <span className="block text-xs font-medium text-white/70">{t.appTagline}</span>
             </div>
           </div>
           <div className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
-            <ShieldCheck className="size-3.5 text-[#34D399]" /> Multi-Tenant Architecture
+            <ShieldCheck className="size-3.5 text-[#34D399]" /> Multi-Tenant Firebase
           </div>
         </div>
 
-        {/* Value Pitch & Features Showcase */}
         <div className="relative z-10 my-auto py-8">
           <h1 className="font-display text-3xl font-extrabold leading-tight tracking-tight text-white xl:text-4xl">
             Better food operations <br className="hidden xl:inline" />
             start here.
           </h1>
           <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/80 xl:text-base">
-            Coordinate cycle menus, kitchen prep schedules, pantry inventory, and student dining attendance in one connected institutional platform.
+            Coordinate cycle menus, meal skips with cut-off locks, QR attendance, inventory expiry
+            alerts, and monthly hostel billing in one connected workspace.
           </p>
 
           <div className="mt-8 space-y-3.5 max-w-md">
@@ -392,9 +330,10 @@ export function AuthPage({
                 <Layers className="size-5 text-emerald-300" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-white">Cycle Menu Planning</h3>
+                <h3 className="text-sm font-semibold text-white">Cycle Menu & Student Skips</h3>
                 <p className="mt-0.5 text-xs leading-normal text-white/70">
-                  Plan balanced cycle menus, standardize recipes, and monitor cost per portion.
+                  Lock meal skip cut-offs automatically and feed accurate headcounts straight to the
+                  kitchen.
                 </p>
               </div>
             </div>
@@ -404,9 +343,10 @@ export function AuthPage({
                 <Activity className="size-5 text-emerald-300" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-white">Real-Time Stock & Supplier Orders</h3>
+                <h3 className="text-sm font-semibold text-white">FEFO Inventory & Auto-POs</h3>
                 <p className="mt-0.5 text-xs leading-normal text-white/70">
-                  Track pantry ledger movements, reorder thresholds, and vendor purchase orders.
+                  Track pantry stock, expiry dates, and raise low-stock vendor purchase orders in
+                  one click.
                 </p>
               </div>
             </div>
@@ -416,101 +356,145 @@ export function AuthPage({
                 <TrendingDown className="size-5 text-emerald-300" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-white">Demand Forecast & Waste Tracking</h3>
+                <h3 className="text-sm font-semibold text-white">
+                  Weather Forecast & Waste Control
+                </h3>
                 <p className="mt-0.5 text-xs leading-normal text-white/70">
-                  Forecast meal headcounts using attendance actuals and log post-service leftover waste.
+                  Combine Open-Meteo rain/heat forecasts with leftover logs and monthly student fee
+                  rebates.
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Bottom Verification Label */}
         <div className="relative z-10 flex items-center justify-between border-t border-white/15 pt-5 text-xs text-white/70">
-          <span>Enterprise Kitchen Management</span>
-          <span className="font-medium text-white/90">Production Platform</span>
+          <span>Indian Hostel & Mess Operations</span>
+          <span className="font-medium text-white/90">Role-Isolated Cloud Security</span>
         </div>
       </aside>
 
-      {/* RIGHT COLUMN: Modern High-Conversion Auth Card */}
+      {/* RIGHT COLUMN */}
       <main className="flex min-h-screen flex-col justify-between px-4 py-8 sm:px-8 md:px-12 lg:px-10 xl:px-16">
-        {/* Mobile / Compact Top Bar */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 lg:hidden">
             <BrandLogo />
           </div>
 
-          {mode !== "signin" ? (
+          <div className="ml-auto flex items-center gap-2">
             <Button
-              variant="ghost"
+              type="button"
+              variant="outline"
               size="sm"
-              className="ml-auto text-xs font-medium text-[#718096] hover:text-[#172B3A]"
-              onClick={() => handleNavigateMode("signin")}
+              className="h-8 gap-1.5 rounded-full border-[#E5EAF0] bg-white px-3 text-xs font-semibold text-[#172B3A]"
+              onClick={() => void setLanguage(language === "en" ? "hi" : "en")}
             >
-              <ChevronLeft className="mr-1 size-4" /> Back to sign in
+              <Languages className="size-3.5 text-[#087E8B]" />
+              {language === "en" ? "हिन्दी" : "English"}
             </Button>
-          ) : (
-            <div className="ml-auto flex items-center gap-2 text-xs text-[#718096]">
-              <span className="size-2 rounded-full bg-[#16A36A]" />
-              Secure Institutional Portal
-            </div>
-          )}
+
+            {mode !== "signin" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs font-medium text-[#718096] hover:text-[#172B3A]"
+                onClick={() => handleNavigateMode("signin")}
+              >
+                <ChevronLeft className="mr-1 size-4" /> Back
+              </Button>
+            )}
+          </div>
         </div>
 
-        {/* Center Container */}
         <div className="mx-auto my-auto w-full max-w-[440px] py-6">
-          {showConfirmation ? (
-            /* Email Confirmation / Reset Sent Card */
+          {authLoading ? (
+            <div className="rounded-2xl border border-[#E5EAF0] bg-white p-8 text-center shadow-xs">
+              <LoaderCircle className="mx-auto size-8 animate-spin text-[#087E8B]" />
+              <p className="mt-3 text-xs font-semibold text-[#718096]">
+                Checking authentication session...
+              </p>
+            </div>
+          ) : showConfirmation ? (
             <div className="rounded-2xl border border-[#E5EAF0] bg-white p-8 shadow-sm">
               <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-[#E5F5F4] text-[#087E8B]">
                 <Mail className="size-6" />
               </div>
               <h2 className="font-display text-2xl font-bold tracking-tight text-[#172B3A]">
-                {mode === "forgot" ? "Check your email" : "Confirm your email"}
+                {showConfirmation === "forgot" ? "Check your email" : t.auth.verifyEmailTitle}
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-[#718096]">
-                {mode === "forgot" ? (
+                {showConfirmation === "forgot" ? (
                   <>
-                    We sent a secure password reset link to{" "}
-                    <span className="font-semibold text-[#172B3A]">{confirmationEmail}</span>. Click the link to set a new password.
+                    We sent a password reset link to{" "}
+                    <span className="font-semibold text-[#172B3A]">{confirmationEmail}</span>.
+                    Follow the link to choose a new password.
                   </>
                 ) : (
                   <>
-                    We sent an activation link to{" "}
-                    <span className="font-semibold text-[#172B3A]">{confirmationEmail}</span>. Click the link to activate your institution workspace.
+                    We sent a verification link to{" "}
+                    <span className="font-semibold text-[#172B3A]">
+                      {confirmationEmail || user?.email}
+                    </span>
+                    . Click the link in your inbox, then tap below to enter your workspace.
                   </>
                 )}
               </p>
 
+              {errorBanner && (
+                <div className="mt-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                  <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                  <span>{errorBanner}</span>
+                </div>
+              )}
+
               <div className="mt-6 space-y-3">
-                {mode === "signup" && (
-                  <Button
-                    variant="outline"
-                    disabled={resendCooldown > 0 || isLoading}
-                    onClick={handleResend}
-                    className="w-full border-[#E5EAF0] text-sm text-[#172B3A] hover:bg-[#F5F8FA]"
-                  >
-                    {resendCooldown > 0 ? `Resend email in ${resendCooldown}s` : "Resend verification email"}
-                  </Button>
+                {showConfirmation === "verify" && (
+                  <>
+                    <Button
+                      type="button"
+                      disabled={isLoading}
+                      onClick={() => void handleCheckVerified()}
+                      className="w-full bg-[#087E8B] font-semibold text-white hover:bg-[#066873]"
+                    >
+                      {isLoading ? (
+                        <LoaderCircle className="mr-2 size-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="mr-2 size-4" />
+                      )}
+                      {t.auth.checkVerification}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={resendCooldown > 0 || isLoading}
+                      onClick={() => void handleResend()}
+                      className="w-full border-[#E5EAF0] text-sm text-[#172B3A] hover:bg-[#F5F8FA]"
+                    >
+                      {resendCooldown > 0
+                        ? `Resend in ${resendCooldown}s`
+                        : t.auth.resendVerification}
+                    </Button>
+                  </>
                 )}
                 <Button
-                  className="w-full bg-[#087E8B] font-medium text-white hover:bg-[#066873]"
+                  type="button"
+                  variant={showConfirmation === "forgot" ? "default" : "ghost"}
+                  className={
+                    showConfirmation === "forgot"
+                      ? "w-full bg-[#087E8B] font-medium text-white hover:bg-[#066873]"
+                      : "w-full text-xs text-[#718096]"
+                  }
                   onClick={() => handleNavigateMode("signin")}
                 >
                   <ArrowRight className="mr-2 size-4" /> Return to sign in
                 </Button>
-                <p className="text-center text-xs text-[#718096]">
-                  Didn’t receive it? Check your spam folder or try another email.
-                </p>
               </div>
             </div>
           ) : (
-            /* Main Authentication Card */
             <div className="rounded-2xl border border-[#E5EAF0] bg-white p-7 shadow-xs sm:p-9">
-              {/* Header & Segmented Tabs */}
               <div className="mb-6">
                 {mode !== "forgot" && (
-                  <div className="mb-5 flex rounded-lg bg-[#F5F8FA] p-1 border border-[#E5EAF0]">
+                  <div className="mb-5 flex rounded-lg border border-[#E5EAF0] bg-[#F5F8FA] p-1">
                     <button
                       type="button"
                       className={`flex-1 rounded-md py-1.5 text-xs font-semibold transition-all ${
@@ -520,7 +504,7 @@ export function AuthPage({
                       }`}
                       onClick={() => handleNavigateMode("signin")}
                     >
-                      Sign In
+                      {t.auth.signIn}
                     </button>
                     <button
                       type="button"
@@ -531,7 +515,7 @@ export function AuthPage({
                       }`}
                       onClick={() => handleNavigateMode("signup")}
                     >
-                      Create Workspace
+                      {t.auth.createWorkspace}
                     </button>
                   </div>
                 )}
@@ -543,22 +527,49 @@ export function AuthPage({
                 )}
                 <h2 className="font-display text-2xl font-bold tracking-tight text-[#172B3A]">
                   {mode === "signup"
-                    ? "Set up your FoodFlow workspace"
+                    ? t.auth.setupWorkspaceTitle
                     : mode === "forgot"
-                    ? "Reset your password"
-                    : "Welcome back"}
+                      ? t.auth.resetPassword
+                      : t.auth.welcomeBack}
                 </h2>
                 <p className="mt-1.5 text-sm text-[#718096]">
                   {mode === "signup"
-                    ? "Register your institution to begin managing kitchen ops."
+                    ? "Create your verified account, then configure your mess or join via invite code."
                     : mode === "forgot"
-                    ? "Enter your account email to receive reset instructions."
-                    : "Enter your credentials to access your mess dashboard."}
+                      ? "Enter your registered email to receive a Firebase reset link."
+                      : "Sign in with Google or your institutional email and password."}
                 </p>
               </div>
 
-              {/* Native Google OAuth Button */}
-              {mode !== "forgot" && isGoogleAuthEnabled && (
+              {errorBanner && (
+                <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                    <div className="space-y-2">
+                      <p className="leading-relaxed font-medium">{errorBanner}</p>
+                      {unauthorizedHost && (
+                        <div className="flex items-center gap-2 rounded-lg bg-white px-2.5 py-1.5 border border-red-200">
+                          <code className="flex-1 truncate font-mono text-[11px] text-[#172B3A]">
+                            {unauthorizedHost}
+                          </code>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void navigator.clipboard.writeText(unauthorizedHost);
+                              toast.success("Hostname copied for Firebase Console");
+                            }}
+                            className="inline-flex items-center gap-1 font-bold text-[#087E8B]"
+                          >
+                            <Copy className="size-3" /> Copy
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {mode !== "forgot" && (
                 <>
                   <Button
                     type="button"
@@ -585,7 +596,7 @@ export function AuthPage({
                         d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z"
                       />
                     </svg>
-                    Continue with Google
+                    {t.auth.continueWithGoogle}
                   </Button>
 
                   <div className="my-5 flex items-center gap-3 text-[11px] font-medium uppercase tracking-wider text-[#718096]">
@@ -596,9 +607,7 @@ export function AuthPage({
                 </>
               )}
 
-              {/* Form Body */}
-              <form className="space-y-4" onSubmit={(event) => void handleSubmit(event)}>
-                {/* SIGN UP: Full Name */}
+              <form className="space-y-4" onSubmit={(event) => void handleSubmit(event)} noValidate>
                 {mode === "signup" && (
                   <div className="space-y-1.5">
                     <Label htmlFor="signup-name" className="text-xs font-semibold text-[#172B3A]">
@@ -610,17 +619,16 @@ export function AuthPage({
                       maxLength={80}
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Dr. Rajesh Kumar"
+                      placeholder="e.g. Rajesh Kumar"
                       className="h-10 border-[#E5EAF0] focus-visible:ring-[#087E8B]"
                       required
                     />
                   </div>
                 )}
 
-                {/* EMAIL ADDRESS */}
                 <div className="space-y-1.5">
                   <Label htmlFor="email-address" className="text-xs font-semibold text-[#172B3A]">
-                    {mode === "signup" ? "Institutional Email" : "Email Address"}
+                    Email Address
                   </Label>
                   <Input
                     id="email-address"
@@ -634,49 +642,13 @@ export function AuthPage({
                   />
                 </div>
 
-                {/* SIGN UP: Institution Name & Institution Type */}
-                {mode === "signup" && (
-                  <>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="institution-name" className="text-xs font-semibold text-[#172B3A]">
-                        Institution Name
-                      </Label>
-                      <Input
-                        id="institution-name"
-                        maxLength={120}
-                        value={institution}
-                        onChange={(e) => setInstitution(e.target.value)}
-                        placeholder="e.g. Stanford University Dining or Apex Hostel"
-                        className="h-10 border-[#E5EAF0] focus-visible:ring-[#087E8B]"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="institution-type" className="text-xs font-semibold text-[#172B3A]">
-                        Institution Type
-                      </Label>
-                      <Select value={institutionType} onValueChange={setInstitutionType}>
-                        <SelectTrigger id="institution-type" className="h-10 border-[#E5EAF0] focus:ring-[#087E8B]">
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {INSTITUTION_TYPES.map((type) => (
-                            <SelectItem key={type} value={type}>
-                              {type}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </>
-                )}
-
-                {/* PASSWORD (Sign In & Sign Up) */}
                 {mode !== "forgot" && (
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="account-password" className="text-xs font-semibold text-[#172B3A]">
+                      <Label
+                        htmlFor="account-password"
+                        className="text-xs font-semibold text-[#172B3A]"
+                      >
                         Password
                       </Label>
                       {mode === "signin" && (
@@ -685,7 +657,7 @@ export function AuthPage({
                           className="text-xs font-medium text-[#087E8B] hover:underline"
                           onClick={() => handleNavigateMode("forgot")}
                         >
-                          Forgot password?
+                          {t.auth.forgotPassword}
                         </button>
                       )}
                     </div>
@@ -698,7 +670,7 @@ export function AuthPage({
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="At least 8 characters"
-                        className="h-10 pr-10 border-[#E5EAF0] focus-visible:ring-[#087E8B]"
+                        className="h-10 border-[#E5EAF0] pr-10 focus-visible:ring-[#087E8B]"
                         required
                       />
                       <button
@@ -711,12 +683,13 @@ export function AuthPage({
                       </button>
                     </div>
 
-                    {/* Password Strength Meter (Signup Mode) */}
                     {mode === "signup" && password && (
                       <div className="space-y-1.5 pt-1.5">
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-[#718096]">Strength:</span>
-                          <span className="font-semibold text-[#172B3A]">{passwordStrength.label}</span>
+                          <span className="font-semibold text-[#172B3A]">
+                            {passwordStrength.label}
+                          </span>
                         </div>
                         <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#E5EAF0]">
                           <div
@@ -729,10 +702,12 @@ export function AuthPage({
                   </div>
                 )}
 
-                {/* SIGN UP: Confirm Password */}
                 {mode === "signup" && (
                   <div className="space-y-1.5">
-                    <Label htmlFor="confirm-password" className="text-xs font-semibold text-[#172B3A]">
+                    <Label
+                      htmlFor="confirm-password"
+                      className="text-xs font-semibold text-[#172B3A]"
+                    >
                       Confirm Password
                     </Label>
                     <div className="relative">
@@ -744,22 +719,27 @@ export function AuthPage({
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Re-enter your password"
-                        className="h-10 pr-10 border-[#E5EAF0] focus-visible:ring-[#087E8B]"
+                        className="h-10 border-[#E5EAF0] pr-10 focus-visible:ring-[#087E8B]"
                         required
                       />
                       <button
                         type="button"
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-[#718096] hover:text-[#172B3A]"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                        aria-label={
+                          showConfirmPassword ? "Hide confirm password" : "Show confirm password"
+                        }
                       >
-                        {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                        {showConfirmPassword ? (
+                          <EyeOff className="size-4" />
+                        ) : (
+                          <Eye className="size-4" />
+                        )}
                       </button>
                     </div>
                   </div>
                 )}
 
-                {/* SIGN IN: Remember Me */}
                 {mode === "signin" && (
                   <div className="flex items-center space-x-2 pt-1">
                     <Checkbox
@@ -767,13 +747,12 @@ export function AuthPage({
                       checked={rememberMe}
                       onCheckedChange={(checked) => setRememberMe(Boolean(checked))}
                     />
-                    <label htmlFor="remember" className="text-xs text-[#718096] cursor-pointer">
-                      Remember this browser for 30 days
+                    <label htmlFor="remember" className="cursor-pointer text-xs text-[#718096]">
+                      {t.auth.rememberBrowser}
                     </label>
                   </div>
                 )}
 
-                {/* SIGN UP: Terms Agreement */}
                 {mode === "signup" && (
                   <div className="flex items-start space-x-2 pt-1">
                     <Checkbox
@@ -782,13 +761,16 @@ export function AuthPage({
                       onCheckedChange={(checked) => setAgreedToTerms(Boolean(checked))}
                       className="mt-0.5"
                     />
-                    <label htmlFor="terms" className="text-xs leading-normal text-[#718096] cursor-pointer">
-                      I agree to the Institutional Kitchen Service Terms and Data Privacy Policy.
+                    <label
+                      htmlFor="terms"
+                      className="cursor-pointer text-xs leading-normal text-[#718096]"
+                    >
+                      I agree to the Institutional Kitchen Terms and Multi-Tenant Data Privacy
+                      Policy.
                     </label>
                   </div>
                 )}
 
-                {/* Primary Action Button */}
                 <Button
                   type="submit"
                   className="h-11 w-full bg-[#087E8B] text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#066873]"
@@ -805,24 +787,23 @@ export function AuthPage({
                   )}
                   <span className="ml-2">
                     {mode === "forgot"
-                      ? "Send Reset Link"
+                      ? t.auth.sendResetLink
                       : mode === "signup"
-                      ? "Create FoodFlow Workspace"
-                      : "Sign In to FoodFlow"}
+                        ? "Create Account & Verify Email"
+                        : "Sign In to FoodFlow"}
                   </span>
                 </Button>
               </form>
 
-              {/* Mode switch helper link */}
               {mode !== "forgot" ? (
                 <div className="mt-5 text-center text-xs text-[#718096]">
-                  {mode === "signup" ? "Already have an account?" : "Need an institutional workspace?"}{" "}
+                  {mode === "signup" ? "Already have an account?" : "New to FoodFlow?"}{" "}
                   <button
                     type="button"
                     className="font-semibold text-[#087E8B] hover:underline"
                     onClick={() => handleNavigateMode(mode === "signup" ? "signin" : "signup")}
                   >
-                    {mode === "signup" ? "Sign in" : "Create one now"}
+                    {mode === "signup" ? "Sign in" : "Create account"}
                   </button>
                 </div>
               ) : (
@@ -838,16 +819,68 @@ export function AuthPage({
                 </div>
               )}
 
-              {/* Optional Demo explorer */}
-              {mode === "signin" && onExploreDemo && (
-                <div className="mt-4 border-t border-[#E5EAF0] pt-4">
+              {mode === "signin" && (
+                <div className="mt-4 space-y-2 border-t border-[#E5EAF0] pt-4">
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      className="text-xs font-semibold text-[#087E8B] hover:underline"
+                      onClick={() => setShowInviteBox((prev) => !prev)}
+                    >
+                      {language === "hi" ? "क्या आपके पास आमंत्रण कोड है?" : "Have an invite code?"}
+                    </button>
+                  </div>
+
+                  {showInviteBox && (
+                    <div className="flex gap-2 rounded-xl border border-[#E5EAF0] bg-[#F5F8FA] p-2.5">
+                      <Input
+                        value={inviteCodeInput}
+                        onChange={(e) => setInviteCodeInput(e.target.value.toUpperCase())}
+                        placeholder="FF-ABC123"
+                        className="h-9 bg-white text-xs font-mono uppercase"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={joiningInvite || !inviteCodeInput.trim()}
+                        className="h-9 bg-[#087E8B] text-xs font-semibold text-white"
+                        onClick={() => {
+                          const clean = inviteCodeInput.trim().toUpperCase();
+                          if (!clean) return;
+                          setJoiningInvite(true);
+                          try {
+                            window.sessionStorage.setItem("foodflow_pending_invite_code", clean);
+                          } catch {
+                            // ignore
+                          }
+                          void navigate({ to: "/join/$code", params: { code: clean } });
+                        }}
+                      >
+                        {language === "hi" ? "जुड़ें" : "Join"}
+                      </Button>
+                    </div>
+                  )}
+
                   <Button
                     type="button"
                     variant="ghost"
                     className="h-9 w-full text-xs font-medium text-[#718096] hover:bg-[#F5F8FA] hover:text-[#172B3A]"
-                    onClick={onExploreDemo}
+                    onClick={() => {
+                      if (onExploreDemo) {
+                        onExploreDemo();
+                      } else {
+                        try {
+                          window.sessionStorage.setItem("foodflow-demo-access", "1");
+                        } catch {
+                          // ignore
+                        }
+                        void navigate({ to: "/overview" });
+                      }
+                    }}
                   >
-                    Explore read-only sample mess workspace
+                    {language === "hi"
+                      ? "सैंपल मेस वर्कस्पेस देखें (रीड-ओनली)"
+                      : "Explore read-only sample mess workspace"}
                     <ArrowRight className="ml-1.5 size-3.5" />
                   </Button>
                 </div>
@@ -856,10 +889,7 @@ export function AuthPage({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="text-center text-xs text-[#718096]">
-          © 2026 FoodFlow
-        </div>
+        <div className="text-center text-xs text-[#718096]">© 2026 FoodFlow</div>
       </main>
     </div>
   );
@@ -872,24 +902,20 @@ export function ResetPasswordPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [recoveryReady, setRecoveryReady] = useState(false);
+  const [oobCode, setOobCode] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if recovery token exists in url hash or url params
-    const hasHashRecovery = window.location.hash.includes("type=recovery") || window.location.hash.includes("access_token");
-    const hasSearchRecovery = window.location.search.includes("recovery=true") || window.location.search.includes("type=recovery");
-
-    // Also check current supabase session
-    void supabase.auth.getSession().then(({ data }) => {
-      if (data.session || hasHashRecovery || hasSearchRecovery) {
-        setRecoveryReady(true);
-      }
-    });
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("oobCode");
+    if (code) setOobCode(code);
   }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
+    if (!oobCode) {
+      toast.error("Invalid or missing reset code.");
+      return;
+    }
     if (password.length < 8) {
       toast.error("Password must be at least 8 characters long.");
       return;
@@ -901,16 +927,11 @@ export function ResetPasswordPage() {
 
     setIsLoading(true);
     try {
-      const { error } = await withAuthTimeout(supabase.auth.updateUser({ password }));
-      if (error) throw error;
+      await withAuthTimeout(verifyAndConfirmPasswordReset(oobCode, password));
       setIsSuccess(true);
-      toast.success("Your password has been successfully reset.");
-      setTimeout(() => {
-        window.location.replace("/login");
-      }, 2000);
+      toast.success("Password updated! You can sign in now.");
     } catch (error) {
-      console.error("[auth] Reset password error:", error);
-      toast.error(error instanceof Error ? error.message : "Could not reset your password. Please request a new link.");
+      toast.error(formatFirebaseAuthError(error));
     } finally {
       setIsLoading(false);
     }
@@ -931,18 +952,20 @@ export function ResetPasswordPage() {
               </div>
               <h2 className="font-display text-2xl font-bold text-[#172B3A]">Password Updated</h2>
               <p className="text-sm text-[#718096]">
-                Your FoodFlow password has been reset successfully. Redirecting you to sign in...
+                Your FoodFlow password has been reset successfully.
               </p>
               <Button asChild className="w-full bg-[#087E8B] text-white hover:bg-[#066873]">
                 <Link to="/login">Sign In Now</Link>
               </Button>
             </div>
-          ) : recoveryReady ? (
+          ) : oobCode ? (
             <div>
               <div className="mb-6">
-                <h1 className="font-display text-2xl font-bold text-[#172B3A]">Set a new password</h1>
+                <h1 className="font-display text-2xl font-bold text-[#172B3A]">
+                  Set a new password
+                </h1>
                 <p className="mt-1 text-sm text-[#718096]">
-                  Enter a secure new password for your institutional FoodFlow account.
+                  Enter a new password of at least 8 characters for your FoodFlow account.
                 </p>
               </div>
 
@@ -960,7 +983,7 @@ export function ResetPasswordPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="At least 8 characters"
-                      className="h-10 pr-10 border-[#E5EAF0] focus-visible:ring-[#087E8B]"
+                      className="h-10 border-[#E5EAF0] pr-10 focus-visible:ring-[#087E8B]"
                       required
                     />
                     <button
@@ -975,7 +998,10 @@ export function ResetPasswordPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="confirm-new-password" className="text-xs font-semibold text-[#172B3A]">
+                  <Label
+                    htmlFor="confirm-new-password"
+                    className="text-xs font-semibold text-[#172B3A]"
+                  >
                     Confirm New Password
                   </Label>
                   <div className="relative">
@@ -987,7 +1013,7 @@ export function ResetPasswordPage() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Re-enter your new password"
-                      className="h-10 pr-10 border-[#E5EAF0] focus-visible:ring-[#087E8B]"
+                      className="h-10 border-[#E5EAF0] pr-10 focus-visible:ring-[#087E8B]"
                       required
                     />
                     <button
@@ -996,7 +1022,11 @@ export function ResetPasswordPage() {
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                     >
-                      {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      {showConfirmPassword ? (
+                        <EyeOff className="size-4" />
+                      ) : (
+                        <Eye className="size-4" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -1006,7 +1036,11 @@ export function ResetPasswordPage() {
                   className="h-11 w-full bg-[#087E8B] text-sm font-semibold text-white shadow-sm hover:bg-[#066873]"
                   disabled={isLoading}
                 >
-                  {isLoading ? <LoaderCircle className="size-4 animate-spin" /> : <Lock className="size-4" />}
+                  {isLoading ? (
+                    <LoaderCircle className="size-4 animate-spin" />
+                  ) : (
+                    <Lock className="size-4" />
+                  )}
                   <span className="ml-2">Update Password</span>
                 </Button>
               </form>
@@ -1016,13 +1050,15 @@ export function ResetPasswordPage() {
               <div className="flex size-11 items-center justify-center rounded-full bg-amber-100 text-[#E9A23B]">
                 <KeyRound className="size-5" />
               </div>
-              <h2 className="font-display text-xl font-bold text-[#172B3A]">Recovery Link Required</h2>
+              <h2 className="font-display text-xl font-bold text-[#172B3A]">
+                Recovery Link Required
+              </h2>
               <p className="text-sm leading-relaxed text-[#718096]">
-                This password reset page requires a valid, one-time recovery link sent to your institutional email.
+                Open the password reset link sent to your email address to reset your password.
               </p>
               <div className="pt-2">
                 <Button asChild variant="outline" className="w-full border-[#E5EAF0]">
-                  <Link to="/forgot-password">Request a new reset link</Link>
+                  <Link to="/forgot-password">Request a reset link</Link>
                 </Button>
               </div>
             </div>

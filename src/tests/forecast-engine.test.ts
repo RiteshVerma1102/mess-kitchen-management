@@ -41,9 +41,7 @@ describe("calculateMealForecast", () => {
       mealType: "lunch",
       enrolledStudentsCount: 500,
       historicalRecords: history,
-      eventsOnDate: [
-        { title: "Mid-Term Examination", type: "exam", impactFactor: 1.15 },
-      ],
+      eventsOnDate: [{ title: "Mid-Term Examination", type: "exam", impactFactor: 1.15 }],
       bufferPercent: 5,
     });
 
@@ -71,7 +69,7 @@ describe("calculateForecastAccuracy (MAPE)", () => {
     const pairs = [
       { predicted: 100, actual: 100 }, // 0%
       { predicted: 110, actual: 100 }, // 10%
-      { predicted: 90, actual: 100 },  // 10%
+      { predicted: 90, actual: 100 }, // 10%
     ];
 
     const { mape, accuracyRate } = calculateForecastAccuracy(pairs);

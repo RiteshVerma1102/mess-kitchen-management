@@ -1,0 +1,240 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated user document with default active workspace reference.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "email": { "type": "string", "minLength": 3, "maxLength": 160 },
+        "photo": { "type": "string", "maxLength": 500 },
+        "defaultWorkspaceId": { "type": "string", "maxLength": 128 },
+        "language": { "type": "string", "enum": ["en", "hi"], "maxLength": 4 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "email", "createdAt", "updatedAt"]
+    },
+    "Workspace": {
+      "title": "Workspace",
+      "description": "Multi-tenant hostel/institution mess workspace.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "institutionType": { "type": "string", "maxLength": 64 },
+        "cityState": { "type": "string", "maxLength": 120 },
+        "plan": { "type": "string", "maxLength": 32 },
+        "timezone": { "type": "string", "maxLength": 64 },
+        "language": { "type": "string", "enum": ["en", "hi"], "maxLength": 4 },
+        "monthlyFeePaise": { "type": "integer" },
+        "perDayRebatePaise": { "type": "integer" },
+        "guestMealUnitPaise": { "type": "integer" },
+        "wasteTargetPct": { "type": "number" },
+        "dailyPlatesEstimate": { "type": "integer" },
+        "minRebateDays": { "type": "integer" },
+        "setupChecklistDismissed": { "type": "boolean" },
+        "cycleMenuWeek": { "type": "string", "enum": ["A", "B"] },
+        "createdBy": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "ownerUid", "plan", "timezone", "language", "createdBy", "createdAt", "updatedAt"]
+    },
+    "WorkspaceMember": {
+      "title": "WorkspaceMember",
+      "description": "Authoritative RBAC membership inside a workspace.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "role": { "type": "string", "enum": ["admin", "kitchen_head", "store_keeper", "accountant", "warden", "student"], "maxLength": 32 },
+        "status": { "type": "string", "enum": ["active", "suspended"], "maxLength": 16 },
+        "invitedBy": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "email": { "type": "string", "minLength": 3, "maxLength": 160 },
+        "joinedAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "workspaceId", "role", "status", "invitedBy", "name", "email", "joinedAt", "createdAt", "updatedAt"]
+    },
+    "WorkspaceInvite": {
+      "title": "WorkspaceInvite",
+      "description": "Pending team or student invitation scoped to a workspace.",
+      "type": "object",
+      "properties": {
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "workspaceName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "email": { "type": "string", "maxLength": 160 },
+        "role": { "type": "string", "enum": ["admin", "kitchen_head", "store_keeper", "accountant", "warden", "student"], "maxLength": 32 },
+        "code": { "type": "string", "minLength": 4, "maxLength": 16, "pattern": "^[A-Z0-9_\\-]+$" },
+        "status": { "type": "string", "enum": ["pending", "claimed", "revoked"], "maxLength": 16 },
+        "expiresAt": { "type": "string", "maxLength": 40 },
+        "createdBy": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["workspaceId", "workspaceName", "email", "role", "code", "status", "expiresAt", "createdBy", "createdAt", "updatedAt"]
+    },
+    "WorkspaceSubDocument": {
+      "title": "WorkspaceSubDocument",
+      "description": "Generic multi-tenant operational record scoped strictly inside workspaces/{workspaceId}.",
+      "type": "object",
+      "properties": {
+        "workspaceId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdBy": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["workspaceId", "createdBy", "createdAt", "updatedAt"]
+    },
+    "MealSkipRecord": {
+      "title": "MealSkipRecord",
+      "description": "Legacy personal student meal skip record.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "studentCode": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "serviceDate": { "type": "string", "minLength": 10, "maxLength": 10 },
+        "mealType": { "type": "string", "enum": ["breakfast", "lunch", "snacks", "dinner"] },
+        "status": { "type": "string", "enum": ["booked", "skipped", "locked"] },
+        "guestCount": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "studentCode", "serviceDate", "mealType", "status", "guestCount", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Authenticated user profile and defaultWorkspaceId pointer."
+    },
+    "/userWorkspaces/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceMember" },
+      "description": "User-scoped workspace membership index allowing fast multi-workspace switcher queries."
+    },
+    "/inviteCodes/{code}": {
+      "schema": { "$ref": "#/entities/WorkspaceInvite" },
+      "description": "Direct single-doc code lookup for joining a workspace with an invite code."
+    },
+    "/emailInvites/{inviteId}": {
+      "schema": { "$ref": "#/entities/WorkspaceInvite" },
+      "description": "Email-addressed pending invite index checked automatically on login."
+    },
+    "/workspaces/{workspaceId}": {
+      "schema": { "$ref": "#/entities/Workspace" },
+      "description": "Top-level mess workspace metadata."
+    },
+    "/workspaces/{workspaceId}/members/{uid}": {
+      "schema": { "$ref": "#/entities/WorkspaceMember" },
+      "description": "Workspace member roles and activation status."
+    },
+    "/workspaces/{workspaceId}/invites/{inviteId}": {
+      "schema": { "$ref": "#/entities/WorkspaceInvite" },
+      "description": "Workspace invitations managed by admins."
+    },
+    "/workspaces/{workspaceId}/halls/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Dining halls and seating capacities."
+    },
+    "/workspaces/{workspaceId}/students/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Enrolled hostel students and meal plans."
+    },
+    "/workspaces/{workspaceId}/mealSlots/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Configured meal service windows and IST cut-off times."
+    },
+    "/workspaces/{workspaceId}/menus/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Weekly and daily planned menus."
+    },
+    "/workspaces/{workspaceId}/recipes/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Standardized recipes and per-serving paise costing."
+    },
+    "/workspaces/{workspaceId}/inventoryItems/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Pantry stock items, minimum thresholds, paise costs, and expiry dates."
+    },
+    "/workspaces/{workspaceId}/stockMovements/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Inbound/outbound stock movement ledger."
+    },
+    "/workspaces/{workspaceId}/vendors/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Approved food vendors and contact info."
+    },
+    "/workspaces/{workspaceId}/purchaseOrders/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Supplier purchase orders in whole paise."
+    },
+    "/workspaces/{workspaceId}/bookings/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Student meal skips, guest counts, and sick/late tiffin requests."
+    },
+    "/workspaces/{workspaceId}/attendance/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "QR and manual meal check-in records."
+    },
+    "/workspaces/{workspaceId}/wasteLogs/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Post-service food waste logs and paise loss."
+    },
+    "/workspaces/{workspaceId}/invoices/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Monthly mess bills in integer paise."
+    },
+    "/workspaces/{workspaceId}/payments/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Recorded invoice payments (UPI, cash, bank transfer)."
+    },
+    "/workspaces/{workspaceId}/feedback/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Meal ratings and chef suggestions."
+    },
+    "/workspaces/{workspaceId}/complaints/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Student complaints and hygiene SLA tickets."
+    },
+    "/workspaces/{workspaceId}/notifications/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Workspace operational alerts and read receipts."
+    },
+    "/workspaces/{workspaceId}/auditLogs/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Immutable append-only audit log of sensitive workspace mutations."
+    },
+    "/workspaces/{workspaceId}/kitchenTasks/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Kitchen prep tasks and station progress."
+    },
+    "/workspaces/{workspaceId}/forecasts/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Demand forecasts including Open-Meteo weather factors."
+    },
+    "/workspaces/{workspaceId}/calendarEvents/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Academic holidays and campus events affecting turnout."
+    },
+    "/workspaces/{workspaceId}/serviceActuals/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Prepared, served, leftover, and spoiled actuals."
+    },
+    "/workspaces/{workspaceId}/leaveRequests/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Student leave notices for mess rebate calculations."
+    },
+    "/workspaces/{workspaceId}/healthcheck/{docId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSubDocument" },
+      "description": "Data health test read/write diagnostic records."
+    },
+    "/meal_skips/{skipId}": {
+      "schema": { "$ref": "#/entities/MealSkipRecord" },
+      "description": "Top-level student meal skips."
+    }
+  }
+}

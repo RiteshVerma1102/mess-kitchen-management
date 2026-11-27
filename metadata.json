@@ -1,0 +1,6 @@
+{
+  "name": "FoodFlow — Smart Mess & Kitchen Management System",
+  "description": "Smart Mess & Institutional Kitchen Management OS with Firebase persistence, Gemini AI copilot & voice transcription, Google Search grounding, and interactive 3D kitchen digital twin.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

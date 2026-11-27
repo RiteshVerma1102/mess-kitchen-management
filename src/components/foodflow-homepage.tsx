@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
+import { useFirebaseAuth } from "@/components/firebase-provider";
 import { BrandLogo } from "@/features/marketing/brand";
 import {
   ArrowRight,
@@ -59,7 +59,8 @@ const bentoFeatures = [
   {
     title: "AI Headcount Forecasting",
     tag: "8-Week Empirical Model",
-    description: "Predicts turnout per meal & hall using day-of-week seasonality, campus exam schedules, and festival impacts. Cuts over-preparation by up to 22%.",
+    description:
+      "Predicts turnout per meal & hall using day-of-week seasonality, campus exam schedules, and festival impacts. Cuts over-preparation by up to 22%.",
     bgClass: "bg-mint",
     colSpan: "lg:col-span-2",
     badge: "92% Accuracy (MAPE < 8%)",
@@ -69,7 +70,8 @@ const bentoFeatures = [
   {
     title: "Instant QR Scanner & Offline Counter",
     tag: "Sub-Second Swipes",
-    description: "Scan student passes on any tablet or mobile browser. Continues logging scans even during internet drops and automatically syncs to cloud.",
+    description:
+      "Scan student passes on any tablet or mobile browser. Continues logging scans even during internet drops and automatically syncs to cloud.",
     bgClass: "bg-butter",
     colSpan: "lg:col-span-1",
     badge: "Zero Duplicate Scans",
@@ -79,7 +81,8 @@ const bentoFeatures = [
   {
     title: "FIFO Batch Inventory & Auto-Procurement",
     tag: "Never Run Short",
-    description: "Automatically computes grocery requirements by exploding weekly menus against forecasted headcounts minus stock on hand with safety margins.",
+    description:
+      "Automatically computes grocery requirements by exploding weekly menus against forecasted headcounts minus stock on hand with safety margins.",
     bgClass: "bg-peach",
     colSpan: "lg:col-span-1",
     badge: "Live Ledger",
@@ -89,7 +92,8 @@ const bentoFeatures = [
   {
     title: "Kitchen Station Kanban Board",
     tag: "Cook to Plan",
-    description: "Preparation queues for kitchen chefs: dish ingredient recipes, scaled portion quantities, timers, and automatic raw stock deduction upon cooking.",
+    description:
+      "Preparation queues for kitchen chefs: dish ingredient recipes, scaled portion quantities, timers, and automatic raw stock deduction upon cooking.",
     bgClass: "bg-lavender",
     colSpan: "lg:col-span-2",
     badge: "Live Sync",
@@ -195,13 +199,8 @@ const pricingPlans = [
 
 export function FoodFlowHomepage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
-    void supabase.auth.getSession().then(({ data }) => {
-      setIsLoggedIn(Boolean(data.session?.user));
-    });
-  }, []);
+  const { user } = useFirebaseAuth();
+  const isLoggedIn = Boolean(user && user.emailVerified);
 
   return (
     <div className="min-h-screen bg-[#FFF6E5] text-[#0F3D3A] selection:bg-[#FF7A1A] selection:text-white">
@@ -226,14 +225,21 @@ export function FoodFlowHomepage() {
 
           <div className="flex items-center gap-3">
             {isLoggedIn ? (
-              <Button asChild className="rounded-full bg-[#087E8B] px-6 font-bold text-white shadow-md shadow-[#087E8B]/20 hover:bg-[#07545B]">
+              <Button
+                asChild
+                className="rounded-full bg-[#087E8B] px-6 font-bold text-white shadow-md shadow-[#087E8B]/20 hover:bg-[#07545B]"
+              >
                 <Link to="/overview">
                   Open App <ArrowRight className="ml-1 size-4" />
                 </Link>
               </Button>
             ) : (
               <>
-                <Button asChild variant="ghost" className="font-semibold text-[#0F3D3A] hover:bg-black/5">
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="font-semibold text-[#0F3D3A] hover:bg-black/5"
+                >
                   <Link to="/login">Sign In</Link>
                 </Button>
                 <Button
@@ -280,7 +286,10 @@ export function FoodFlowHomepage() {
                     <Button asChild variant="outline" className="w-full rounded-full font-bold">
                       <Link to="/login">Sign In</Link>
                     </Button>
-                    <Button asChild className="w-full rounded-full bg-[#FF7A1A] font-bold text-[#0F3D3A]">
+                    <Button
+                      asChild
+                      className="w-full rounded-full bg-[#FF7A1A] font-bold text-[#0F3D3A]"
+                    >
                       <Link to="/signup">Start Free Trial</Link>
                     </Button>
                   </>
@@ -305,11 +314,14 @@ export function FoodFlowHomepage() {
               </div>
 
               <h1 className="font-display text-5xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
-                Run a <span className="font-serif-accent text-[#FFF1C7]">smarter</span> mess. Waste less food.
+                Run a <span className="font-serif-accent text-[#FFF1C7]">smarter</span> mess. Waste
+                less food.
               </h1>
 
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-white/90 sm:text-xl">
-                Empirical AI headcount forecasting, instant offline-first QR attendance, and automated recipe-to-purchase workflows designed specifically for university hostels and catering kitchens.
+                Empirical AI headcount forecasting, instant offline-first QR attendance, and
+                automated recipe-to-purchase workflows designed specifically for university hostels
+                and catering kitchens.
               </p>
 
               <div className="mt-10 flex flex-wrap items-center gap-4">
@@ -335,7 +347,7 @@ export function FoodFlowHomepage() {
               {/* Trust Badges */}
               <div className="mt-12 flex flex-wrap items-center gap-6 text-xs font-semibold text-white/80">
                 <span className="flex items-center gap-2">
-                  <ShieldCheck className="size-4 text-[#FFF1C7]" /> Production-Ready Supabase RLS
+                  <ShieldCheck className="size-4 text-[#FFF1C7]" /> Firestore Tenant Security
                 </span>
                 <span className="flex items-center gap-2">
                   <WifiOff className="size-4 text-[#FFF1C7]" /> Works Completely Offline
@@ -364,12 +376,16 @@ export function FoodFlowHomepage() {
                 {/* Dashboard Widget 1: AI Forecast */}
                 <div className="mt-4 rounded-2xl bg-[#DDF3EA] p-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-[#0F3D3A]/80">AI Demand Prediction</span>
+                    <span className="text-xs font-bold text-[#0F3D3A]/80">
+                      AI Demand Prediction
+                    </span>
                     <Badge className="bg-[#087E8B] text-white">94% Confidence</Badge>
                   </div>
                   <div className="mt-2 flex items-baseline gap-2">
                     <span className="font-display text-4xl font-extrabold text-[#0F3D3A]">412</span>
-                    <span className="text-xs font-semibold text-[#0F3D3A]/70">portions recommended</span>
+                    <span className="text-xs font-semibold text-[#0F3D3A]/70">
+                      portions recommended
+                    </span>
                   </div>
                   <p className="mt-1 text-[11px] text-[#0F3D3A]/70">
                     Includes +8% safety buffer &middot; Exam week factor active
@@ -421,8 +437,12 @@ export function FoodFlowHomepage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-between gap-4 border-b border-white/10 pb-8 sm:flex-row">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-[#FF7A1A]">Operational Impact</p>
-              <h2 className="font-display text-3xl font-extrabold">Proven savings across Indian campuses</h2>
+              <p className="text-xs font-bold uppercase tracking-wider text-[#FF7A1A]">
+                Operational Impact
+              </p>
+              <h2 className="font-display text-3xl font-extrabold">
+                Proven savings across Indian campuses
+              </h2>
             </div>
             <Badge variant="outline" className="border-white/20 text-xs text-white/80">
               Aggregated Operational Metrics
@@ -436,18 +456,26 @@ export function FoodFlowHomepage() {
               <p className="mt-1 text-xs text-white/60">Zero unrecorded guesswork</p>
             </div>
             <div className="border-l-2 border-[#DDF3EA] pl-5">
-              <p className="font-display text-4xl font-extrabold text-[#DDF3EA] sm:text-5xl">42 T</p>
+              <p className="font-display text-4xl font-extrabold text-[#DDF3EA] sm:text-5xl">
+                42 T
+              </p>
               <p className="mt-2 text-sm font-semibold text-white/80">Food Waste Prevented</p>
               <p className="mt-1 text-xs text-white/60">Logged via verified scale entries</p>
             </div>
             <div className="border-l-2 border-[#FFF1C7] pl-5">
-              <p className="font-display text-4xl font-extrabold text-[#FFF1C7] sm:text-5xl">₹1.4 Cr</p>
+              <p className="font-display text-4xl font-extrabold text-[#FFF1C7] sm:text-5xl">
+                ₹1.4 Cr
+              </p>
               <p className="mt-2 text-sm font-semibold text-white/80">Institutional Budget Saved</p>
               <p className="mt-1 text-xs text-white/60">Across raw ingredient indents</p>
             </div>
             <div className="border-l-2 border-[#FF7A1A] pl-5">
-              <p className="font-display text-4xl font-extrabold text-[#FF7A1A] sm:text-5xl">&lt; 0.3s</p>
-              <p className="mt-2 text-sm font-semibold text-white/80">Turnstile & QR Verification</p>
+              <p className="font-display text-4xl font-extrabold text-[#FF7A1A] sm:text-5xl">
+                &lt; 0.3s
+              </p>
+              <p className="mt-2 text-sm font-semibold text-white/80">
+                Turnstile & QR Verification
+              </p>
               <p className="mt-1 text-xs text-white/60">Stops duplicate plate collection</p>
             </div>
           </div>
@@ -458,7 +486,9 @@ export function FoodFlowHomepage() {
       <section id="features" className="py-20 lg:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#087E8B]">Everything Built-In</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-[#087E8B]">
+              Everything Built-In
+            </p>
             <h2 className="mt-2 font-display text-4xl font-extrabold text-[#0F3D3A] sm:text-5xl">
               Engineered for the chaos of high-volume dining.
             </h2>
@@ -475,12 +505,16 @@ export function FoodFlowHomepage() {
                     <Badge className="bg-[#0F3D3A] text-white">{f.tag}</Badge>
                     <span className="text-xs font-bold text-[#0F3D3A]">{f.badge}</span>
                   </div>
-                  <h3 className="mt-6 font-display text-2xl font-extrabold text-[#0F3D3A]">{f.title}</h3>
+                  <h3 className="mt-6 font-display text-2xl font-extrabold text-[#0F3D3A]">
+                    {f.title}
+                  </h3>
                   <p className="mt-3 text-sm leading-relaxed text-[#0F3D3A]/80">{f.description}</p>
                 </div>
 
                 <div className="mt-8 flex items-baseline gap-3 border-t border-[#0F3D3A]/10 pt-4">
-                  <span className="font-display text-3xl font-extrabold text-[#0F3D3A]">{f.stat}</span>
+                  <span className="font-display text-3xl font-extrabold text-[#0F3D3A]">
+                    {f.stat}
+                  </span>
                   <span className="text-xs font-semibold text-[#0F3D3A]/70">{f.statLabel}</span>
                 </div>
               </div>
@@ -493,7 +527,9 @@ export function FoodFlowHomepage() {
       <section id="how-it-works" className="border-t border-[#0F3D3A]/10 bg-white py-20 lg:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#087E8B]">From Plan to Plate</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-[#087E8B]">
+              From Plan to Plate
+            </p>
             <h2 className="mt-2 font-display text-4xl font-extrabold text-[#0F3D3A] sm:text-5xl">
               How FoodFlow keeps kitchen & dining in sync.
             </h2>
@@ -501,13 +537,34 @@ export function FoodFlowHomepage() {
 
           <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { num: "01", title: "Plan the Cycle", desc: "Build weekly meal grids for breakfast, lunch, snacks and dinner across all hostel dining halls." },
-              { num: "02", title: "Forecast Demand", desc: "Mathematical engine analyzes 8 weeks of turnout, calendar exams, and weather to predict portions." },
-              { num: "03", title: "Cook & Verify", desc: "Chefs work from scaled recipe stations. Counters scan student passes offline or online with zero duplicates." },
-              { num: "04", title: "Log & Save", desc: "Weigh leftover bins to isolate top-wasted recipes. Download real PDF and Excel audit reports in seconds." },
+              {
+                num: "01",
+                title: "Plan the Cycle",
+                desc: "Build weekly meal grids for breakfast, lunch, snacks and dinner across all hostel dining halls.",
+              },
+              {
+                num: "02",
+                title: "Forecast Demand",
+                desc: "Mathematical engine analyzes 8 weeks of turnout, calendar exams, and weather to predict portions.",
+              },
+              {
+                num: "03",
+                title: "Cook & Verify",
+                desc: "Chefs work from scaled recipe stations. Counters scan student passes offline or online with zero duplicates.",
+              },
+              {
+                num: "04",
+                title: "Log & Save",
+                desc: "Weigh leftover bins to isolate top-wasted recipes. Download real PDF and Excel audit reports in seconds.",
+              },
             ].map((step, idx) => (
-              <div key={step.num} className="relative rounded-[24px] border border-gray-100 bg-[#FFF6E5] p-6">
-                <span className="font-display text-4xl font-extrabold text-[#FF7A1A]">{step.num}</span>
+              <div
+                key={step.num}
+                className="relative rounded-[24px] border border-gray-100 bg-[#FFF6E5] p-6"
+              >
+                <span className="font-display text-4xl font-extrabold text-[#FF7A1A]">
+                  {step.num}
+                </span>
                 <h3 className="mt-4 font-display text-xl font-bold text-[#0F3D3A]">{step.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-[#0F3D3A]/80">{step.desc}</p>
               </div>
@@ -521,27 +578,41 @@ export function FoodFlowHomepage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-[#087E8B]">Smart Recipe Library</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-[#087E8B]">
+                Smart Recipe Library
+              </p>
               <h2 className="mt-2 font-display text-4xl font-extrabold text-[#0F3D3A]">
                 Costed Indian Recipes & Live Nutrition
               </h2>
             </div>
-            <Button asChild variant="outline" className="rounded-full border-2 border-[#0F3D3A] font-bold">
+            <Button
+              asChild
+              variant="outline"
+              className="rounded-full border-2 border-[#0F3D3A] font-bold"
+            >
               <Link to="/recipes">View All 40+ Recipes &rarr;</Link>
             </Button>
           </div>
 
           <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {sampleDishes.map((dish) => (
-              <div key={dish.name} className="card-lift rounded-[24px] border border-[#0F3D3A]/10 bg-white p-6 shadow-sm">
-                <div className={`h-28 w-full rounded-2xl bg-gradient-to-br ${dish.color} flex items-center justify-center`}>
+              <div
+                key={dish.name}
+                className="card-lift rounded-[24px] border border-[#0F3D3A]/10 bg-white p-6 shadow-sm"
+              >
+                <div
+                  className={`h-28 w-full rounded-2xl bg-gradient-to-br ${dish.color} flex items-center justify-center`}
+                >
                   <Utensils className="size-8 text-[#0F3D3A]/60" />
                 </div>
                 <div className="mt-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#087E8B]">{dish.category}</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#087E8B]">
+                      {dish.category}
+                    </span>
                     <span className="flex items-center text-xs font-bold text-amber-600">
-                      <Star className="mr-0.5 size-3.5 fill-amber-500 text-amber-500" /> {dish.rating}
+                      <Star className="mr-0.5 size-3.5 fill-amber-500 text-amber-500" />{" "}
+                      {dish.rating}
                     </span>
                   </div>
                   <h3 className="mt-1 text-base font-bold text-[#0F3D3A]">{dish.name}</h3>
@@ -562,7 +633,9 @@ export function FoodFlowHomepage() {
       <section id="pricing" className="border-t border-[#0F3D3A]/10 bg-white py-20 lg:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#087E8B]">Transparent Pricing</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-[#087E8B]">
+              Transparent Pricing
+            </p>
             <h2 className="mt-2 font-display text-4xl font-extrabold text-[#0F3D3A] sm:text-5xl">
               Plans that pay for themselves in reduced waste.
             </h2>
@@ -585,11 +658,15 @@ export function FoodFlowHomepage() {
                 )}
 
                 <div>
-                  <h3 className="font-display text-2xl font-extrabold text-[#0F3D3A]">{plan.name}</h3>
+                  <h3 className="font-display text-2xl font-extrabold text-[#0F3D3A]">
+                    {plan.name}
+                  </h3>
                   <p className="mt-1 text-xs text-gray-500">{plan.tagline}</p>
 
                   <div className="mt-6 flex items-baseline gap-2">
-                    <span className="font-display text-4xl font-extrabold text-[#0F3D3A]">{plan.price}</span>
+                    <span className="font-display text-4xl font-extrabold text-[#0F3D3A]">
+                      {plan.price}
+                    </span>
                     <span className="text-xs text-gray-500">{plan.period}</span>
                   </div>
 
@@ -622,10 +699,7 @@ export function FoodFlowHomepage() {
                           : "bg-[#0F3D3A] text-white hover:bg-[#1a4f4c]"
                       }`}
                     >
-                      <Link
-                        to="/signup"
-                        search={{ plan: plan.popular ? "pro" : "starter" }}
-                      >
+                      <Link to="/signup" search={{ plan: plan.popular ? "pro" : "starter" }}>
                         {plan.ctaText}
                       </Link>
                     </Button>
@@ -644,7 +718,8 @@ export function FoodFlowHomepage() {
             Ready to stop kitchen food waste?
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-base font-semibold text-[#0F3D3A]/90 sm:text-lg">
-            Join institutions cutting their food expenditure by 15–22% while providing faster meal service lines.
+            Join institutions cutting their food expenditure by 15–22% while providing faster meal
+            service lines.
           </p>
 
           <div className="mt-8 flex flex-wrap justify-center gap-4">
@@ -676,37 +751,82 @@ export function FoodFlowHomepage() {
                 <BrandLogo className="text-white [&_.text-ink]:text-white" />
               </div>
               <p className="mt-3 text-xs leading-relaxed text-white/70">
-                Operating system for institutional dining, university hostels, and corporate cafeterias.
+                Operating system for institutional dining, university hostels, and corporate
+                cafeterias.
               </p>
             </div>
 
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-[#FF7A1A]">Product</p>
               <ul className="mt-3 space-y-2 text-xs text-white/80">
-                <li><Link to="/forecast" className="hover:text-white">AI Forecasting</Link></li>
-                <li><Link to="/attendance" className="hover:text-white">QR Attendance</Link></li>
-                <li><Link to="/inventory" className="hover:text-white">FIFO Inventory</Link></li>
-                <li><Link to="/waste" className="hover:text-white">Waste Analytics</Link></li>
+                <li>
+                  <Link to="/forecast" className="hover:text-white">
+                    AI Forecasting
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/attendance" className="hover:text-white">
+                    QR Attendance
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/inventory" className="hover:text-white">
+                    FIFO Inventory
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/waste" className="hover:text-white">
+                    Waste Analytics
+                  </Link>
+                </li>
               </ul>
             </div>
 
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-[#FF7A1A]">Workspaces</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-[#FF7A1A]">
+                Workspaces
+              </p>
               <ul className="mt-3 space-y-2 text-xs text-white/80">
-                <li><Link to="/kitchen" className="hover:text-white">Kitchen Operations</Link></li>
-                <li><Link to="/meal-planning" className="hover:text-white">Menu Planning</Link></li>
-                <li><Link to="/students" className="hover:text-white">Student Directory</Link></li>
-                <li><Link to="/purchasing" className="hover:text-white">Purchase Orders</Link></li>
+                <li>
+                  <Link to="/kitchen" className="hover:text-white">
+                    Kitchen Operations
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/meal-planning" className="hover:text-white">
+                    Menu Planning
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/students" className="hover:text-white">
+                    Student Directory
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/purchasing" className="hover:text-white">
+                    Purchase Orders
+                  </Link>
+                </li>
               </ul>
             </div>
 
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-[#FF7A1A]">Security & Legal</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-[#FF7A1A]">
+                Security & Legal
+              </p>
               <ul className="mt-3 space-y-2 text-xs text-white/80">
-                <li><span className="text-white/60">Row Level Security (RLS)</span></li>
-                <li><span className="text-white/60">Cross-Tenant Isolation</span></li>
-                <li><span className="text-white/60">Immutable Stock Ledger</span></li>
-                <li><span className="text-white/60">GST Compliant Exports</span></li>
+                <li>
+                  <span className="text-white/60">Row Level Security (RLS)</span>
+                </li>
+                <li>
+                  <span className="text-white/60">Cross-Tenant Isolation</span>
+                </li>
+                <li>
+                  <span className="text-white/60">Immutable Stock Ledger</span>
+                </li>
+                <li>
+                  <span className="text-white/60">GST Compliant Exports</span>
+                </li>
               </ul>
             </div>
           </div>

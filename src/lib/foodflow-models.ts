@@ -1,4 +1,5 @@
 import type { AppRole, FoodFlowPage } from "@/lib/foodflow-data";
+import { formatWorkspaceRole } from "@/lib/domain/workspace-types";
 
 export type FoodFlowRow = Record<string, string | number | boolean | null | string[] | unknown> & {
   id?: unknown;
@@ -61,26 +62,59 @@ export type FoodFlowRow = Record<string, string | number | boolean | null | stri
   ingredients?: unknown;
   wasted_quantity?: unknown;
 };
-export type FoodFlowMember = { userId: string; name: string; email?: string | null; roles: AppRole[] };
-export type Metric = { label: string; value: string; hint: string; icon: string; tone: "teal" | "green" | "amber" | "red" };
-export type ChartPoint = { label: string; meals: number; forecast: number; cost: number; waste: number };
+
+export type FoodFlowMember = {
+  userId: string;
+  name: string;
+  email?: string | null;
+  roles: AppRole[];
+  status?: "active" | "suspended";
+  joinedAt?: string;
+};
+
+export type Metric = {
+  label: string;
+  value: string;
+  hint: string;
+  icon: string;
+  tone: "teal" | "green" | "amber" | "red";
+};
+
+export type ChartPoint = {
+  label: string;
+  meals: number;
+  forecast: number;
+  cost: number;
+  waste: number;
+};
 
 export const rowText = (row: FoodFlowRow | undefined, key: string, fallback = "—") => {
   const value = row?.[key];
-  return typeof value === "string" && value.length > 0 ? value : typeof value === "number" ? String(value) : fallback;
+  return typeof value === "string" && value.length > 0
+    ? value
+    : typeof value === "number"
+      ? String(value)
+      : fallback;
 };
 
 export const rowNumber = (row: FoodFlowRow | undefined, key: string, fallback = 0) => {
   const value = row?.[key];
-  return typeof value === "number" && Number.isFinite(value) ? value : typeof value === "string" && Number.isFinite(Number(value)) ? Number(value) : fallback;
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : typeof value === "string" && Number.isFinite(Number(value))
+      ? Number(value)
+      : fallback;
 };
 
 export const rowStringArray = (row: FoodFlowRow | undefined, key: string) => {
   const value = row?.[key];
-  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
 };
 
-export const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+export const dateKey = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
 export const shiftDateKey = (offset: number) => {
   const day = new Date();
@@ -91,47 +125,61 @@ export const shiftDateKey = (offset: number) => {
 export const friendlyDate = (value: string, options?: Intl.DateTimeFormatOptions) => {
   const parsed = new Date(`${value}T12:00:00`);
   if (Number.isNaN(parsed.getTime())) return value;
-  return new Intl.DateTimeFormat("en-IN", options ?? { day: "numeric", month: "short" }).format(parsed);
+  return new Intl.DateTimeFormat("en-IN", options ?? { day: "numeric", month: "short" }).format(
+    parsed,
+  );
 };
 
-export const money = (amount: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount);
+export const money = (amount: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(amount);
 
-export const roleLabel = (role: AppRole) => ({
-  institution_admin: "Institution admin",
-  mess_manager: "Mess manager",
-  kitchen_staff: "Kitchen staff",
-  attendance_operator: "Attendance operator",
-  viewer: "Read-only access",
-})[role];
+export const moneyFromPaise = (paise: number, decimals = 0) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format((paise || 0) / 100);
 
-export const nextOrderStatus = (status: string) => ({
-  Pending: "Approved",
-  Approved: "Ordered",
-  Ordered: "Received",
-  Received: "Received",
-  Cancelled: "Pending",
-})[status] ?? "Approved";
+export const roleLabel = (role: AppRole | string) => formatWorkspaceRole(role, "en");
 
-export const pageTitle = (page: FoodFlowPage) => ({
-  overview: "Today’s overview",
-  "meal-planning": "Meal planning",
-  "weekly-menu": "Weekly menu",
-  recipes: "Recipes & ingredients",
-  kitchen: "Kitchen operations",
-  inventory: "Inventory",
-  purchasing: "Suppliers & purchasing",
-  attendance: "Student attendance",
-  students: "Student records",
-  forecast: "Demand forecast",
-  waste: "Food waste",
-  analytics: "Cost analytics",
-  reports: "Reports",
-  settings: "Settings",
-  notifications: "Notifications",
-  users: "User management",
-  calendar: "Academic calendar",
-  suppliers: "Supplier directory",
-  halls: "Dining halls",
-  movements: "Stock movements",
-  actuals: "Service actuals",
-})[page];
+export const nextOrderStatus = (status: string) =>
+  ({
+    Pending: "Approved",
+    Approved: "Ordered",
+    Ordered: "Received",
+    Received: "Received",
+    Cancelled: "Pending",
+  })[status] ?? "Approved";
+
+export const pageTitle = (page: FoodFlowPage) =>
+  ({
+    overview: "Today’s overview",
+    "meal-planning": "Meal planning",
+    "weekly-menu": "Weekly menu",
+    recipes: "Recipes & costing",
+    kitchen: "Kitchen operations",
+    inventory: "Inventory & expiry",
+    purchasing: "Vendors & purchase orders",
+    attendance: "QR attendance",
+    students: "Student records",
+    forecast: "Demand & weather forecast",
+    waste: "Food waste log",
+    billing: "Monthly billing & payments",
+    feedback: "Feedback & complaints",
+    analytics: "Cost analytics",
+    reports: "Reports & charts",
+    settings: "Settings & Data Health",
+    notifications: "Notifications",
+    users: "User management",
+    audit: "Audit logs",
+    calendar: "Academic calendar",
+    suppliers: "Vendor directory",
+    halls: "Dining halls",
+    movements: "Stock movements",
+    actuals: "Service actuals",
+  })[page];

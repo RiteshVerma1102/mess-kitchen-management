@@ -118,7 +118,7 @@ export async function removeSyncedAttendance(clientUuids: string[]): Promise<voi
 }
 
 export async function syncPendingAttendance(
-  syncRecord: (record: QueuedAttendance) => Promise<boolean>
+  syncRecord: (record: QueuedAttendance) => Promise<boolean>,
 ): Promise<SyncReport> {
   const queue = await getPendingAttendanceQueue();
   const report: SyncReport = {
@@ -162,4 +162,3 @@ export async function syncPendingAttendance(
   report.success = report.failedCount === 0;
   return report;
 }
-

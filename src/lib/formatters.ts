@@ -45,7 +45,10 @@ export function formatINRCompact(amount: number): string {
  */
 export function formatDateIN(dateInput: string | Date | null | undefined): string {
   if (!dateInput) return "—";
-  const date = typeof dateInput === "string" ? new Date(dateInput.includes("T") ? dateInput : `${dateInput}T12:00:00`) : dateInput;
+  const date =
+    typeof dateInput === "string"
+      ? new Date(dateInput.includes("T") ? dateInput : `${dateInput}T12:00:00`)
+      : dateInput;
   if (isNaN(date.getTime())) return "—";
 
   return new Intl.DateTimeFormat("en-IN", {
@@ -60,7 +63,10 @@ export function formatDateIN(dateInput: string | Date | null | undefined): strin
  */
 export function formatFullDateIN(dateInput: string | Date | null | undefined): string {
   if (!dateInput) return "—";
-  const date = typeof dateInput === "string" ? new Date(dateInput.includes("T") ? dateInput : `${dateInput}T12:00:00`) : dateInput;
+  const date =
+    typeof dateInput === "string"
+      ? new Date(dateInput.includes("T") ? dateInput : `${dateInput}T12:00:00`)
+      : dateInput;
   if (isNaN(date.getTime())) return "—";
 
   return new Intl.DateTimeFormat("en-IN", {

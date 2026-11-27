@@ -17,7 +17,7 @@ export const Route = createFileRoute("/login")({
   head: () =>
     foodFlowHead(
       "Sign In | FoodFlow",
-      "Sign in to your FoodFlow institutional mess and kitchen management workspace."
+      "Sign in to your FoodFlow institutional mess and kitchen management workspace.",
     ),
   component: LoginComponent,
 });

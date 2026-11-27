@@ -1,0 +1,1065 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 1: Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isGlobalAdmin() {
+      return isVerifiedUser() && (
+        request.auth.token.email == 'vermaritesh24106867@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidDateKey(val) {
+      return val is string && val.size() == 10 && val.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+
+    // Workspace Master Gate Helpers
+    function workspaceDocPath(wsId) {
+      return /databases/$(database)/documents/workspaces/$(wsId);
+    }
+
+    function memberDocPath(wsId, uid) {
+      return /databases/$(database)/documents/workspaces/$(wsId)/members/$(uid);
+    }
+
+    function isWorkspaceMember(wsId) {
+      return isVerifiedUser() &&
+        exists(memberDocPath(wsId, request.auth.uid)) &&
+        get(memberDocPath(wsId, request.auth.uid)).data.status == 'active';
+    }
+
+    function workspaceRole(wsId) {
+      return get(memberDocPath(wsId, request.auth.uid)).data.role;
+    }
+
+    function isWsAdmin(wsId) {
+      return isWorkspaceMember(wsId) && workspaceRole(wsId) == 'admin';
+    }
+
+    function isWsStaff(wsId) {
+      return isWorkspaceMember(wsId) && workspaceRole(wsId) in ['admin', 'kitchen_head', 'store_keeper', 'accountant', 'warden'];
+    }
+
+    function canManageKitchen(wsId) {
+      return isWorkspaceMember(wsId) && workspaceRole(wsId) in ['admin', 'kitchen_head'];
+    }
+
+    function canManageInventory(wsId) {
+      return isWorkspaceMember(wsId) && workspaceRole(wsId) in ['admin', 'store_keeper', 'kitchen_head'];
+    }
+
+    function canManageFinance(wsId) {
+      return isWorkspaceMember(wsId) && workspaceRole(wsId) in ['admin', 'accountant'];
+    }
+
+    function canModerateFeedbackOrComplaints(wsId) {
+      return isWorkspaceMember(wsId) && workspaceRole(wsId) in ['admin', 'kitchen_head', 'warden'];
+    }
+
+    function canManageLeaveRequests(wsId) {
+      return isWorkspaceMember(wsId) && workspaceRole(wsId) in ['admin', 'accountant', 'warden'];
+    }
+
+    function canManageStudents(wsId) {
+      return isWorkspaceMember(wsId) && workspaceRole(wsId) in ['admin', 'kitchen_head', 'warden'];
+    }
+
+    function isValidRole(role) {
+      return role in ['admin', 'kitchen_head', 'store_keeper', 'accountant', 'warden', 'student'];
+    }
+
+    // Validation Blueprints
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'name', 'email', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'name', 'email', 'photo', 'defaultWorkspaceId', 'language', 'createdAt', 'updatedAt']) &&
+        isValidId(data.uid) && data.uid == userId &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 160 &&
+        (!data.keys().hasAny(['photo']) || (data.photo is string && data.photo.size() <= 500)) &&
+        (!data.keys().hasAny(['defaultWorkspaceId']) || data.defaultWorkspaceId == null || isValidId(data.defaultWorkspaceId)) &&
+        (!data.keys().hasAny(['language']) || data.language in ['en', 'hi']) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidUserWorkspaceIndex(data) {
+      return data.keys().hasAll(['uid', 'workspaceId', 'workspaceName', 'role', 'status', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'workspaceId', 'workspaceName', 'role', 'status', 'createdAt', 'updatedAt']) &&
+        isValidId(data.uid) &&
+        isValidId(data.workspaceId) &&
+        data.workspaceName is string && data.workspaceName.size() >= 1 && data.workspaceName.size() <= 120 &&
+        isValidRole(data.role) &&
+        data.status in ['active', 'suspended'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidWorkspace(data) {
+      return data.keys().hasAll(['name', 'ownerUid', 'plan', 'timezone', 'language', 'createdBy', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly([
+          'name', 'ownerUid', 'institutionType', 'cityState', 'plan', 'timezone', 'language',
+          'monthlyFeePaise', 'perDayRebatePaise', 'guestMealUnitPaise', 'wasteTargetPct', 'dailyPlatesEstimate',
+          'minRebateDays', 'setupChecklistDismissed', 'cycleMenuWeek',
+          'createdBy', 'createdAt', 'updatedAt'
+        ]) &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 120 &&
+        isValidId(data.ownerUid) &&
+        isValidId(data.createdBy) &&
+        (!data.keys().hasAny(['institutionType']) || (data.institutionType is string && data.institutionType.size() <= 64)) &&
+        (!data.keys().hasAny(['cityState']) || (data.cityState is string && data.cityState.size() <= 120)) &&
+        data.plan is string && data.plan.size() >= 1 && data.plan.size() <= 32 &&
+        data.timezone is string && data.timezone.size() >= 2 && data.timezone.size() <= 64 &&
+        data.language in ['en', 'hi'] &&
+        (!data.keys().hasAny(['monthlyFeePaise']) || (data.monthlyFeePaise is int && data.monthlyFeePaise >= 0)) &&
+        (!data.keys().hasAny(['perDayRebatePaise']) || (data.perDayRebatePaise is int && data.perDayRebatePaise >= 0)) &&
+        (!data.keys().hasAny(['guestMealUnitPaise']) || (data.guestMealUnitPaise is int && data.guestMealUnitPaise >= 0)) &&
+        (!data.keys().hasAny(['wasteTargetPct']) || (data.wasteTargetPct is number && data.wasteTargetPct >= 0 && data.wasteTargetPct <= 100)) &&
+        (!data.keys().hasAny(['dailyPlatesEstimate']) || (data.dailyPlatesEstimate is int && data.dailyPlatesEstimate >= 0)) &&
+        (!data.keys().hasAny(['minRebateDays']) || (data.minRebateDays is int && data.minRebateDays >= 1 && data.minRebateDays <= 30)) &&
+        (!data.keys().hasAny(['setupChecklistDismissed']) || data.setupChecklistDismissed is bool) &&
+        (!data.keys().hasAny(['cycleMenuWeek']) || data.cycleMenuWeek in ['A', 'B']) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidWorkspaceMember(data, wsId, memberUid) {
+      return data.keys().hasAll(['uid', 'workspaceId', 'role', 'status', 'invitedBy', 'joinedAt', 'name', 'email', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'workspaceId', 'role', 'status', 'invitedBy', 'joinedAt', 'name', 'email', 'hallId', 'studentCode', 'inviteCode', 'createdAt', 'updatedAt']) &&
+        isValidId(data.uid) && data.uid == memberUid &&
+        isValidId(data.workspaceId) && data.workspaceId == wsId &&
+        isValidRole(data.role) &&
+        data.status in ['active', 'suspended'] &&
+        data.invitedBy is string && data.invitedBy.size() >= 1 && data.invitedBy.size() <= 128 &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 160 &&
+        (!data.keys().hasAny(['hallId']) || (data.hallId is string && data.hallId.size() <= 128)) &&
+        (!data.keys().hasAny(['studentCode']) || (data.studentCode is string && data.studentCode.size() <= 32)) &&
+        (!data.keys().hasAny(['inviteCode']) || (data.inviteCode is string && data.inviteCode.size() <= 32)) &&
+        data.joinedAt is timestamp &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidInviteDoc(data) {
+      return data.keys().hasAll(['workspaceId', 'workspaceName', 'email', 'role', 'code', 'status', 'expiresAt', 'createdBy', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['inviteId', 'workspaceId', 'workspaceName', 'email', 'role', 'code', 'status', 'expiresAt', 'claimedBy', 'createdBy', 'createdAt', 'updatedAt']) &&
+        (!data.keys().hasAny(['inviteId']) || isValidId(data.inviteId)) &&
+        isValidId(data.workspaceId) &&
+        data.workspaceName is string && data.workspaceName.size() >= 1 && data.workspaceName.size() <= 120 &&
+        data.email is string && data.email.size() <= 160 &&
+        isValidRole(data.role) &&
+        data.code is string && data.code.size() >= 4 && data.code.size() <= 24 && data.code.matches('^[A-Z0-9_\\-]+$') &&
+        data.status in ['pending', 'claimed', 'revoked'] &&
+        data.expiresAt is string && data.expiresAt.size() <= 40 &&
+        (!data.keys().hasAny(['claimedBy']) || isValidId(data.claimedBy)) &&
+        isValidId(data.createdBy) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidSubDocBase(data, wsId) {
+      return data.keys().hasAll(['workspaceId', 'createdBy', 'createdAt', 'updatedAt']) &&
+        isValidId(data.workspaceId) && data.workspaceId == wsId &&
+        isValidId(data.createdBy) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidHall(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['name', 'capacity', 'active']) &&
+        data.keys().hasOnly(['workspaceId', 'name', 'capacity', 'active', 'createdBy', 'createdAt', 'updatedAt']) &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+        data.capacity is int && data.capacity >= 0 && data.capacity <= 50000 &&
+        data.active is bool;
+    }
+
+    function isValidStudentRecord(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['studentCode', 'name', 'hallName', 'mealPlan', 'status']) &&
+        data.keys().hasOnly(['workspaceId', 'studentCode', 'name', 'email', 'hallId', 'hallName', 'mealPlan', 'dietaryNotes', 'status', 'uid', 'createdBy', 'createdAt', 'updatedAt']) &&
+        data.studentCode is string && data.studentCode.size() >= 1 && data.studentCode.size() <= 40 &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+        (!data.keys().hasAny(['email']) || (data.email is string && data.email.size() <= 160)) &&
+        (!data.keys().hasAny(['hallId']) || (data.hallId is string && data.hallId.size() <= 128)) &&
+        data.hallName is string && data.hallName.size() >= 1 && data.hallName.size() <= 100 &&
+        data.mealPlan is string && data.mealPlan.size() >= 1 && data.mealPlan.size() <= 60 &&
+        (!data.keys().hasAny(['dietaryNotes']) || (data.dietaryNotes is string && data.dietaryNotes.size() <= 300)) &&
+        data.status in ['Active', 'On leave', 'Suspended'] &&
+        (!data.keys().hasAny(['uid']) || isValidId(data.uid));
+    }
+
+    function isValidMealSlot(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['slot', 'label', 'timing', 'cutoffIst', 'enabled']) &&
+        data.keys().hasOnly(['workspaceId', 'slot', 'label', 'timing', 'cutoffIst', 'enabled', 'createdBy', 'createdAt', 'updatedAt']) &&
+        data.slot in ['breakfast', 'lunch', 'snacks', 'dinner'] &&
+        data.label is string && data.label.size() >= 1 && data.label.size() <= 60 &&
+        data.timing is string && data.timing.size() >= 3 && data.timing.size() <= 60 &&
+        data.cutoffIst is string && data.cutoffIst.size() >= 3 && data.cutoffIst.size() <= 40 &&
+        data.enabled is bool;
+    }
+
+    function isValidMenuPlan(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['serviceDate', 'mealType', 'title', 'dishes', 'expectedServings', 'status']) &&
+        data.keys().hasOnly(['workspaceId', 'serviceDate', 'mealType', 'title', 'dishes', 'expectedServings', 'status', 'calories', 'allergens', 'plateCostPaise', 'cycleWeek', 'createdBy', 'createdAt', 'updatedAt']) &&
+        isValidDateKey(data.serviceDate) &&
+        data.mealType in ['Breakfast', 'Lunch', 'Snacks', 'Dinner'] &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 140 &&
+        data.dishes is list && data.dishes.size() <= 30 &&
+        (data.dishes.size() == 0 || data.dishes[0] is string) &&
+        data.expectedServings is int && data.expectedServings >= 0 && data.expectedServings <= 100000 &&
+        data.status in ['Draft', 'Published', 'Completed'] &&
+        (!data.keys().hasAny(['calories']) || (data.calories is string && data.calories.size() <= 40)) &&
+        (!data.keys().hasAny(['allergens']) || (data.allergens is list && data.allergens.size() <= 12 && (data.allergens.size() == 0 || data.allergens[0] is string))) &&
+        (!data.keys().hasAny(['plateCostPaise']) || (data.plateCostPaise is int && data.plateCostPaise >= 0 && data.plateCostPaise <= 1000000)) &&
+        (!data.keys().hasAny(['cycleWeek']) || data.cycleWeek in ['A', 'B']);
+    }
+
+    function isValidRecipe(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['name', 'category', 'servings', 'costPerServingPaise', 'ingredients', 'instructions']) &&
+        data.keys().hasOnly(['workspaceId', 'name', 'category', 'servings', 'costPerServingPaise', 'ingredients', 'instructions', 'createdBy', 'createdAt', 'updatedAt']) &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 140 &&
+        data.category is string && data.category.size() >= 1 && data.category.size() <= 60 &&
+        data.servings is int && data.servings >= 1 && data.servings <= 100000 &&
+        data.costPerServingPaise is int && data.costPerServingPaise >= 0 &&
+        data.ingredients is list && data.ingredients.size() <= 60 &&
+        data.instructions is string && data.instructions.size() <= 4000;
+    }
+
+    function isValidInventoryItem(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['name', 'category', 'quantity', 'unit', 'minimumQuantity', 'unitCostPaise', 'supplierName']) &&
+        data.keys().hasOnly(['workspaceId', 'name', 'category', 'quantity', 'unit', 'minimumQuantity', 'unitCostPaise', 'supplierName', 'expiryDate', 'batchCode', 'createdBy', 'createdAt', 'updatedAt']) &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+        data.category is string && data.category.size() >= 1 && data.category.size() <= 60 &&
+        data.quantity is number && data.quantity >= 0 &&
+        data.unit is string && data.unit.size() >= 1 && data.unit.size() <= 24 &&
+        data.minimumQuantity is number && data.minimumQuantity >= 0 &&
+        data.unitCostPaise is int && data.unitCostPaise >= 0 &&
+        data.supplierName is string && data.supplierName.size() <= 120 &&
+        (!data.keys().hasAny(['expiryDate']) || data.expiryDate == null || isValidDateKey(data.expiryDate)) &&
+        (!data.keys().hasAny(['batchCode']) || (data.batchCode is string && data.batchCode.size() <= 60));
+    }
+
+    function isValidStockMovement(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['itemId', 'itemName', 'quantityDelta', 'unit', 'reason', 'movedAt']) &&
+        data.keys().hasOnly(['workspaceId', 'itemId', 'itemName', 'quantityDelta', 'unit', 'reason', 'movedAt', 'createdBy', 'createdAt', 'updatedAt']) &&
+        isValidId(data.itemId) &&
+        data.itemName is string && data.itemName.size() >= 1 && data.itemName.size() <= 120 &&
+        data.quantityDelta is number &&
+        data.unit is string && data.unit.size() >= 1 && data.unit.size() <= 24 &&
+        data.reason is string && data.reason.size() >= 1 && data.reason.size() <= 160 &&
+        data.movedAt is string && data.movedAt.size() <= 40;
+    }
+
+    function isValidVendor(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['name', 'category', 'status']) &&
+        data.keys().hasOnly(['workspaceId', 'name', 'category', 'contactName', 'email', 'phone', 'gstin', 'status', 'createdBy', 'createdAt', 'updatedAt']) &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+        data.category is string && data.category.size() >= 1 && data.category.size() <= 60 &&
+        (!data.keys().hasAny(['contactName']) || (data.contactName is string && data.contactName.size() <= 100)) &&
+        (!data.keys().hasAny(['email']) || (data.email is string && data.email.size() <= 160)) &&
+        (!data.keys().hasAny(['phone']) || (data.phone is string && data.phone.size() <= 30)) &&
+        (!data.keys().hasAny(['gstin']) || (data.gstin is string && data.gstin.size() <= 24)) &&
+        data.status in ['Active', 'Inactive'];
+    }
+
+    function isValidPurchaseOrder(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['orderNumber', 'supplierName', 'itemSummary', 'totalPaise', 'status', 'expectedDate']) &&
+        data.keys().hasOnly(['workspaceId', 'orderNumber', 'supplierName', 'itemSummary', 'totalPaise', 'status', 'expectedDate', 'createdBy', 'createdAt', 'updatedAt']) &&
+        data.orderNumber is string && data.orderNumber.size() >= 2 && data.orderNumber.size() <= 40 &&
+        data.supplierName is string && data.supplierName.size() >= 1 && data.supplierName.size() <= 120 &&
+        data.itemSummary is string && data.itemSummary.size() >= 1 && data.itemSummary.size() <= 500 &&
+        data.totalPaise is int && data.totalPaise >= 0 &&
+        data.status in ['Pending', 'Approved', 'Ordered', 'Received', 'Cancelled'] &&
+        data.expectedDate is string && data.expectedDate.size() <= 20;
+    }
+
+    function isValidBooking(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['userId', 'studentCode', 'serviceDate', 'mealType', 'status', 'guestCount']) &&
+        data.keys().hasOnly(['workspaceId', 'userId', 'studentCode', 'serviceDate', 'mealType', 'status', 'guestCount', 'tiffinRequested', 'note', 'createdBy', 'createdAt', 'updatedAt']) &&
+        isValidId(data.userId) &&
+        data.studentCode is string && data.studentCode.size() >= 1 && data.studentCode.size() <= 40 &&
+        isValidDateKey(data.serviceDate) &&
+        data.mealType in ['breakfast', 'lunch', 'snacks', 'dinner'] &&
+        data.status in ['booked', 'skipped', 'locked'] &&
+        data.guestCount is int && data.guestCount >= 0 && data.guestCount <= 5 &&
+        (!data.keys().hasAny(['tiffinRequested']) || data.tiffinRequested is bool) &&
+        (!data.keys().hasAny(['note']) || (data.note is string && data.note.size() <= 300));
+    }
+
+    function isValidAttendance(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['studentCode', 'studentName', 'hallName', 'mealType', 'serviceDate', 'method', 'servedAt']) &&
+        data.keys().hasOnly(['workspaceId', 'studentCode', 'studentName', 'hallName', 'mealType', 'serviceDate', 'method', 'servedAt', 'createdBy', 'createdAt', 'updatedAt']) &&
+        data.studentCode is string && data.studentCode.size() >= 1 && data.studentCode.size() <= 40 &&
+        data.studentName is string && data.studentName.size() >= 1 && data.studentName.size() <= 120 &&
+        data.hallName is string && data.hallName.size() >= 1 && data.hallName.size() <= 100 &&
+        data.mealType is string && data.mealType.size() >= 1 && data.mealType.size() <= 30 &&
+        isValidDateKey(data.serviceDate) &&
+        data.method in ['qr', 'manual', 'rfid'] &&
+        data.servedAt is string && data.servedAt.size() <= 40;
+    }
+
+    function isValidWasteLog(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['recordDate', 'mealType', 'dishName', 'preparedQuantity', 'servedQuantity', 'wastedQuantity', 'unit', 'wasteCostPaise']) &&
+        data.keys().hasOnly(['workspaceId', 'recordDate', 'mealType', 'dishName', 'preparedQuantity', 'servedQuantity', 'wastedQuantity', 'unit', 'wasteCostPaise', 'wasteStage', 'reason', 'createdBy', 'createdAt', 'updatedAt']) &&
+        isValidDateKey(data.recordDate) &&
+        data.mealType is string && data.mealType.size() >= 1 && data.mealType.size() <= 30 &&
+        data.dishName is string && data.dishName.size() >= 1 && data.dishName.size() <= 140 &&
+        data.preparedQuantity is number && data.preparedQuantity >= 0 &&
+        data.servedQuantity is number && data.servedQuantity >= 0 &&
+        data.wastedQuantity is number && data.wastedQuantity >= 0 &&
+        data.unit is string && data.unit.size() >= 1 && data.unit.size() <= 24 &&
+        data.wasteCostPaise is int && data.wasteCostPaise >= 0 &&
+        (!data.keys().hasAny(['wasteStage']) || data.wasteStage in ['prep', 'plate']) &&
+        (!data.keys().hasAny(['reason']) || (data.reason is string && data.reason.size() <= 300));
+    }
+
+    function isValidInvoice(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['studentCode', 'studentName', 'monthKey', 'baseProratedPaise', 'leaveRebatePaise', 'guestChargesPaise', 'gstPaise', 'totalPayablePaise', 'paidPaise', 'status']) &&
+        data.keys().hasOnly(['workspaceId', 'studentCode', 'studentName', 'studentUid', 'monthKey', 'baseProratedPaise', 'leaveRebatePaise', 'guestChargesPaise', 'gstPaise', 'totalPayablePaise', 'paidPaise', 'status', 'createdBy', 'createdAt', 'updatedAt']) &&
+        data.studentCode is string && data.studentCode.size() >= 1 && data.studentCode.size() <= 40 &&
+        data.studentName is string && data.studentName.size() >= 1 && data.studentName.size() <= 120 &&
+        (!data.keys().hasAny(['studentUid']) || data.studentUid == null || isValidId(data.studentUid)) &&
+        data.monthKey is string && data.monthKey.size() == 7 && data.monthKey.matches('^[0-9]{4}-[0-9]{2}$') &&
+        data.baseProratedPaise is int && data.baseProratedPaise >= 0 &&
+        data.leaveRebatePaise is int && data.leaveRebatePaise >= 0 &&
+        data.guestChargesPaise is int && data.guestChargesPaise >= 0 &&
+        data.gstPaise is int && data.gstPaise >= 0 &&
+        data.totalPayablePaise is int && data.totalPayablePaise >= 0 &&
+        data.paidPaise is int && data.paidPaise >= 0 &&
+        data.status in ['unpaid', 'partial', 'paid'];
+    }
+
+    function isValidPayment(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['invoiceId', 'studentName', 'amountPaise', 'method', 'referenceNo', 'paidAt']) &&
+        data.keys().hasOnly(['workspaceId', 'invoiceId', 'studentName', 'studentUid', 'amountPaise', 'method', 'referenceNo', 'paidAt', 'createdBy', 'createdAt', 'updatedAt']) &&
+        isValidId(data.invoiceId) &&
+        data.studentName is string && data.studentName.size() >= 1 && data.studentName.size() <= 120 &&
+        (!data.keys().hasAny(['studentUid']) || data.studentUid == null || isValidId(data.studentUid)) &&
+        data.amountPaise is int && data.amountPaise > 0 &&
+        data.method in ['upi', 'cash', 'bank_transfer', 'card'] &&
+        data.referenceNo is string && data.referenceNo.size() >= 1 && data.referenceNo.size() <= 80 &&
+        data.paidAt is string && data.paidAt.size() <= 40;
+    }
+
+    function isValidFeedback(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['userId', 'studentName', 'mealType', 'serviceDate', 'rating', 'category', 'comment', 'status']) &&
+        data.keys().hasOnly([
+          'workspaceId', 'userId', 'studentName', 'mealType', 'serviceDate', 'rating', 'category',
+          'tags', 'dishRatings', 'isAnonymous', 'moderationStatus', 'comment', 'status',
+          'createdBy', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.userId) &&
+        data.studentName is string && data.studentName.size() >= 1 && data.studentName.size() <= 120 &&
+        data.mealType is string && data.mealType.size() >= 1 && data.mealType.size() <= 30 &&
+        isValidDateKey(data.serviceDate) &&
+        data.rating is int && data.rating >= 1 && data.rating <= 5 &&
+        data.category in ['taste', 'hygiene', 'portion', 'timing', 'other'] &&
+        (!data.keys().hasAny(['tags']) || (data.tags is list && data.tags.size() <= 8 && (data.tags.size() == 0 || data.tags[0] is string))) &&
+        (!data.keys().hasAny(['dishRatings']) || (data.dishRatings is list && data.dishRatings.size() <= 20)) &&
+        (!data.keys().hasAny(['isAnonymous']) || data.isAnonymous is bool) &&
+        (!data.keys().hasAny(['moderationStatus']) || data.moderationStatus in ['approved', 'flagged', 'hidden']) &&
+        data.comment is string && data.comment.size() <= 600 &&
+        data.status in ['open', 'acknowledged', 'resolved'];
+    }
+
+    function isValidComplaint(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['userId', 'studentName', 'category', 'subject', 'description', 'priority', 'status']) &&
+        data.keys().hasOnly([
+          'workspaceId', 'userId', 'studentName', 'category', 'subject', 'description', 'priority', 'status',
+          'photoDataUrl', 'assignedTo', 'slaDeadlineAt', 'escalatedToRoles', 'resolutionNote',
+          'createdBy', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.userId) &&
+        data.studentName is string && data.studentName.size() >= 1 && data.studentName.size() <= 120 &&
+        data.category is string && data.category.size() >= 1 && data.category.size() <= 40 &&
+        data.subject is string && data.subject.size() >= 1 && data.subject.size() <= 140 &&
+        data.description is string && data.description.size() >= 1 && data.description.size() <= 1200 &&
+        data.priority in ['low', 'medium', 'high'] &&
+        data.status in ['open', 'in_progress', 'resolved'] &&
+        (!data.keys().hasAny(['photoDataUrl']) || (data.photoDataUrl is string && data.photoDataUrl.size() <= 120000)) &&
+        (!data.keys().hasAny(['assignedTo']) || (data.assignedTo is string && data.assignedTo.size() <= 120)) &&
+        (!data.keys().hasAny(['slaDeadlineAt']) || (data.slaDeadlineAt is string && data.slaDeadlineAt.size() <= 40)) &&
+        (!data.keys().hasAny(['escalatedToRoles']) || (data.escalatedToRoles is list && data.escalatedToRoles.size() <= 6 && (data.escalatedToRoles.size() == 0 || data.escalatedToRoles[0] is string))) &&
+        (!data.keys().hasAny(['resolutionNote']) || (data.resolutionNote is string && data.resolutionNote.size() <= 500));
+    }
+
+    function isValidNotification(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['title', 'detail', 'priority', 'page', 'readBy']) &&
+        data.keys().hasOnly(['workspaceId', 'title', 'detail', 'priority', 'noticeType', 'page', 'readBy', 'createdBy', 'createdAt', 'updatedAt']) &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 140 &&
+        data.detail is string && data.detail.size() >= 1 && data.detail.size() <= 500 &&
+        data.priority in ['High', 'Medium', 'Low'] &&
+        (!data.keys().hasAny(['noticeType']) || data.noticeType in ['alert', 'broadcast']) &&
+        data.page is string && data.page.size() >= 1 && data.page.size() <= 40 &&
+        data.readBy is list && data.readBy.size() <= 200;
+    }
+
+    function isValidAuditLog(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['actorUid', 'actorName', 'actorEmail', 'actorRole', 'action', 'targetCollection', 'targetId', 'summary']) &&
+        data.keys().hasOnly(['workspaceId', 'actorUid', 'actorName', 'actorEmail', 'actorRole', 'action', 'targetCollection', 'targetId', 'summary', 'createdBy', 'createdAt', 'updatedAt']) &&
+        isValidId(data.actorUid) &&
+        data.actorName is string && data.actorName.size() >= 1 && data.actorName.size() <= 120 &&
+        data.actorEmail is string && data.actorEmail.size() <= 160 &&
+        data.actorRole is string && data.actorRole.size() >= 1 && data.actorRole.size() <= 40 &&
+        data.action in ['CREATE', 'UPDATE', 'DELETE', 'ROLE', 'INVITE', 'PAYMENT'] &&
+        data.targetCollection is string && data.targetCollection.size() >= 1 && data.targetCollection.size() <= 60 &&
+        data.targetId is string && data.targetId.size() >= 1 && data.targetId.size() <= 128 &&
+        data.summary is string && data.summary.size() >= 1 && data.summary.size() <= 500;
+    }
+
+    function isValidKitchenTask(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['taskDate', 'mealType', 'dishName', 'plannedQuantity', 'completedQuantity', 'assignedTo', 'status']) &&
+        data.keys().hasOnly(['workspaceId', 'taskDate', 'mealType', 'dishName', 'plannedQuantity', 'completedQuantity', 'assignedTo', 'status', 'createdBy', 'createdAt', 'updatedAt']) &&
+        isValidDateKey(data.taskDate) &&
+        data.mealType is string && data.mealType.size() >= 1 && data.mealType.size() <= 30 &&
+        data.dishName is string && data.dishName.size() >= 1 && data.dishName.size() <= 140 &&
+        data.plannedQuantity is int && data.plannedQuantity >= 0 &&
+        data.completedQuantity is int && data.completedQuantity >= 0 &&
+        data.assignedTo is string && data.assignedTo.size() <= 120 &&
+        data.status in ['Not started', 'In progress', 'Ready', 'Completed'];
+    }
+
+    function isValidForecast(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['forecastDate', 'mealType', 'expectedStudents', 'confidence', 'method']) &&
+        data.keys().hasOnly(['workspaceId', 'forecastDate', 'mealType', 'expectedStudents', 'confidence', 'method', 'weatherNote', 'createdBy', 'createdAt', 'updatedAt']) &&
+        isValidDateKey(data.forecastDate) &&
+        data.mealType is string && data.mealType.size() >= 1 && data.mealType.size() <= 30 &&
+        data.expectedStudents is int && data.expectedStudents >= 0 &&
+        data.confidence is int && data.confidence >= 0 && data.confidence <= 100 &&
+        data.method is string && data.method.size() >= 1 && data.method.size() <= 60 &&
+        (!data.keys().hasAny(['weatherNote']) || (data.weatherNote is string && data.weatherNote.size() <= 240));
+    }
+
+    function isValidCalendarEvent(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['eventDate', 'title', 'description', 'attendanceFactor']) &&
+        data.keys().hasOnly(['workspaceId', 'eventDate', 'title', 'description', 'attendanceFactor', 'rsvpStudentCodes', 'guestTokenQuota', 'createdBy', 'createdAt', 'updatedAt']) &&
+        isValidDateKey(data.eventDate) &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 140 &&
+        data.description is string && data.description.size() <= 600 &&
+        data.attendanceFactor is number && data.attendanceFactor >= 0 && data.attendanceFactor <= 3 &&
+        (!data.keys().hasAny(['rsvpStudentCodes']) || (data.rsvpStudentCodes is list && data.rsvpStudentCodes.size() <= 1000 && (data.rsvpStudentCodes.size() == 0 || data.rsvpStudentCodes[0] is string))) &&
+        (!data.keys().hasAny(['guestTokenQuota']) || (data.guestTokenQuota is int && data.guestTokenQuota >= 0 && data.guestTokenQuota <= 5000));
+    }
+
+    function isValidServiceActual(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['serviceDate', 'mealType', 'dishName', 'preparedQuantity', 'servedQuantity', 'leftoverQuantity', 'spoiledQuantity', 'costPerServingPaise']) &&
+        data.keys().hasOnly(['workspaceId', 'serviceDate', 'mealType', 'dishName', 'preparedQuantity', 'servedQuantity', 'leftoverQuantity', 'spoiledQuantity', 'costPerServingPaise', 'createdBy', 'createdAt', 'updatedAt']) &&
+        isValidDateKey(data.serviceDate) &&
+        data.mealType is string && data.mealType.size() >= 1 && data.mealType.size() <= 30 &&
+        data.dishName is string && data.dishName.size() >= 1 && data.dishName.size() <= 140 &&
+        data.preparedQuantity is number && data.preparedQuantity >= 0 &&
+        data.servedQuantity is number && data.servedQuantity >= 0 &&
+        data.leftoverQuantity is number && data.leftoverQuantity >= 0 &&
+        data.spoiledQuantity is number && data.spoiledQuantity >= 0 &&
+        data.costPerServingPaise is int && data.costPerServingPaise >= 0;
+    }
+
+    function isValidLeaveRequest(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['userId', 'studentCode', 'studentName', 'startDate', 'endDate', 'days', 'reason', 'status', 'rebatePaise']) &&
+        data.keys().hasOnly(['workspaceId', 'userId', 'studentCode', 'studentName', 'startDate', 'endDate', 'days', 'reason', 'status', 'rebatePaise', 'createdBy', 'createdAt', 'updatedAt']) &&
+        isValidId(data.userId) &&
+        data.studentCode is string && data.studentCode.size() >= 1 && data.studentCode.size() <= 40 &&
+        data.studentName is string && data.studentName.size() >= 1 && data.studentName.size() <= 120 &&
+        isValidDateKey(data.startDate) &&
+        isValidDateKey(data.endDate) &&
+        data.days is int && data.days >= 1 && data.days <= 90 &&
+        data.reason is string && data.reason.size() >= 1 && data.reason.size() <= 400 &&
+        data.status in ['pending', 'approved', 'rejected'] &&
+        data.rebatePaise is int && data.rebatePaise >= 0;
+    }
+
+    function isValidHealthcheck(data, wsId) {
+      return isValidSubDocBase(data, wsId) &&
+        data.keys().hasAll(['status', 'checkedBy', 'note']) &&
+        data.keys().hasOnly(['workspaceId', 'status', 'checkedBy', 'note', 'createdBy', 'createdAt', 'updatedAt']) &&
+        data.status == 'ok' &&
+        isValidId(data.checkedBy) &&
+        data.note is string && data.note.size() <= 200;
+    }
+
+    // Legacy Validators (kept for compatibility with existing collections)
+    function isValidMealSkip(data) {
+      return data.keys().hasAll(['userId', 'studentCode', 'serviceDate', 'mealType', 'status', 'guestCount', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['userId', 'studentCode', 'serviceDate', 'mealType', 'status', 'guestCount', 'note', 'createdAt', 'updatedAt']) &&
+        isValidId(data.userId) &&
+        data.studentCode is string && data.studentCode.size() >= 1 && data.studentCode.size() <= 32 &&
+        isValidDateKey(data.serviceDate) &&
+        data.mealType in ['breakfast', 'lunch', 'snacks', 'dinner'] &&
+        data.status in ['booked', 'skipped', 'locked'] &&
+        data.guestCount is int && data.guestCount >= 0 && data.guestCount <= 5 &&
+        (!data.keys().hasAny(['note']) || (data.note is string && data.note.size() <= 240)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidMealFeedback(data) {
+      return data.keys().hasAll(['userId', 'mealType', 'serviceDate', 'rating', 'category', 'comment', 'status', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['userId', 'mealType', 'serviceDate', 'rating', 'category', 'comment', 'status', 'createdAt', 'updatedAt']) &&
+        isValidId(data.userId) &&
+        data.mealType in ['breakfast', 'lunch', 'snacks', 'dinner'] &&
+        isValidDateKey(data.serviceDate) &&
+        data.rating is int && data.rating >= 1 && data.rating <= 5 &&
+        data.category in ['taste', 'hygiene', 'portion', 'timing', 'other'] &&
+        data.comment is string && data.comment.size() <= 500 &&
+        data.status in ['open', 'acknowledged', 'resolved'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidVoiceLog(data) {
+      return data.keys().hasAll(['userId', 'category', 'transcript', 'createdAt']) &&
+        data.keys().hasOnly(['userId', 'category', 'transcript', 'summary', 'createdAt']) &&
+        isValidId(data.userId) &&
+        data.category in ['waste', 'inventory', 'feedback', 'general'] &&
+        data.transcript is string && data.transcript.size() >= 1 && data.transcript.size() <= 1500 &&
+        (!data.keys().hasAny(['summary']) || (data.summary is string && data.summary.size() <= 400)) &&
+        data.createdAt is timestamp;
+    }
+
+    // System Collections
+    match /admins/{adminId} {
+      allow get: if isValidId(adminId) && (isOwner(adminId) || isGlobalAdmin());
+      allow list: if false;
+      allow create, update, delete: if isValidId(adminId) && isGlobalAdmin();
+    }
+
+    match /test/{docId} {
+      allow get: if isValidId(docId) && docId == 'connection';
+      allow list, create, update, delete: if false;
+    }
+
+    // Users Collection (strict owner-only PII)
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isGlobalAdmin());
+      allow list: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isValidUserProfile(incoming(), userId) &&
+        isOwner(userId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isValidUserProfile(incoming(), userId) &&
+        isOwner(userId) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'photo', 'defaultWorkspaceId', 'language', 'updatedAt']);
+      allow delete: if isValidId(userId) && isGlobalAdmin();
+    }
+
+    // User-scoped Workspace Switcher Index
+    match /userWorkspaces/{indexId} {
+      allow get: if isValidId(indexId) && isSignedIn() && (existing().uid == request.auth.uid || isGlobalAdmin());
+      allow list: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isVerifiedUser() &&
+        isValidId(indexId) &&
+        isValidUserWorkspaceIndex(incoming()) &&
+        indexId == incoming().uid + '_' + incoming().workspaceId &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        (
+          (incoming().uid == request.auth.uid && existsAfter(memberDocPath(incoming().workspaceId, request.auth.uid))) ||
+          isWsAdmin(incoming().workspaceId)
+        );
+      allow update: if isVerifiedUser() &&
+        isValidId(indexId) &&
+        isValidUserWorkspaceIndex(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().workspaceId == existing().workspaceId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        isWsAdmin(existing().workspaceId) &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['role', 'status', 'workspaceName', 'updatedAt']);
+      allow delete: if isValidId(indexId) && isVerifiedUser() && (existing().uid == request.auth.uid || isWsAdmin(existing().workspaceId));
+    }
+
+    // Invite Code Lookup (single-doc get only; no list scraping)
+    match /inviteCodes/{code} {
+      allow get: if isValidId(code) && isVerifiedUser();
+      allow list: if false;
+      allow create: if isVerifiedUser() &&
+        isValidId(code) &&
+        isValidInviteDoc(incoming()) &&
+        incoming().code == code &&
+        incoming().status == 'pending' &&
+        incoming().createdBy == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        isWsAdmin(incoming().workspaceId);
+      allow update: if isVerifiedUser() &&
+        isValidId(code) &&
+        isValidInviteDoc(incoming()) &&
+        incoming().workspaceId == existing().workspaceId &&
+        incoming().code == existing().code &&
+        incoming().role == existing().role &&
+        incoming().createdBy == existing().createdBy &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          (
+            isWsAdmin(existing().workspaceId) &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+          ) ||
+          (
+            existing().status == 'pending' &&
+            incoming().status == 'claimed' &&
+            incoming().claimedBy == request.auth.uid &&
+            (existing().email == '' || existing().email == request.auth.token.email) &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'claimedBy', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(code) && isWsAdmin(existing().workspaceId);
+    }
+
+    // Email-addressed pending invite lookup (strictly filtered to caller's verified email)
+    match /emailInvites/{inviteId} {
+      allow get: if isValidId(inviteId) && isVerifiedUser() && (existing().email == request.auth.token.email || isWsAdmin(existing().workspaceId));
+      allow list: if isVerifiedUser() && resource.data.email == request.auth.token.email;
+      allow create: if isVerifiedUser() &&
+        isValidId(inviteId) &&
+        isValidInviteDoc(incoming()) &&
+        incoming().status == 'pending' &&
+        incoming().createdBy == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        isWsAdmin(incoming().workspaceId);
+      allow update: if isVerifiedUser() &&
+        isValidId(inviteId) &&
+        isValidInviteDoc(incoming()) &&
+        incoming().workspaceId == existing().workspaceId &&
+        incoming().code == existing().code &&
+        incoming().role == existing().role &&
+        incoming().createdBy == existing().createdBy &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          (
+            isWsAdmin(existing().workspaceId) &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+          ) ||
+          (
+            existing().status == 'pending' &&
+            existing().email == request.auth.token.email &&
+            incoming().status == 'claimed' &&
+            incoming().claimedBy == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'claimedBy', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(inviteId) && isWsAdmin(existing().workspaceId);
+    }
+
+    // Multi-Tenant Workspaces & Subcollections
+    match /workspaces/{workspaceId} {
+      allow get: if isValidId(workspaceId) && isWorkspaceMember(workspaceId);
+      allow list: if false;
+      allow create: if isVerifiedUser() &&
+        isValidId(workspaceId) &&
+        isValidWorkspace(incoming()) &&
+        incoming().ownerUid == request.auth.uid &&
+        incoming().createdBy == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        existsAfter(memberDocPath(workspaceId, request.auth.uid));
+      allow update: if isVerifiedUser() &&
+        isValidId(workspaceId) &&
+        isValidWorkspace(incoming()) &&
+        isWsAdmin(workspaceId) &&
+        incoming().ownerUid == existing().ownerUid &&
+        incoming().createdBy == existing().createdBy &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'institutionType', 'cityState', 'plan', 'timezone', 'language',
+          'monthlyFeePaise', 'perDayRebatePaise', 'guestMealUnitPaise', 'wasteTargetPct', 'dailyPlatesEstimate',
+          'minRebateDays', 'setupChecklistDismissed', 'cycleMenuWeek', 'updatedAt'
+        ]);
+      allow delete: if isValidId(workspaceId) && isWsAdmin(workspaceId) && existing().ownerUid == request.auth.uid;
+
+      // Members Subcollection (Master Gate)
+      match /members/{memberUid} {
+        allow get: if isValidId(workspaceId) && isValidId(memberUid) && (
+          (isVerifiedUser() && request.auth.uid == memberUid) ||
+          isWorkspaceMember(workspaceId)
+        );
+        allow list: if isWorkspaceMember(workspaceId) && resource.data.workspaceId == workspaceId;
+        allow create: if isVerifiedUser() &&
+          isValidId(workspaceId) &&
+          isValidId(memberUid) &&
+          isValidWorkspaceMember(incoming(), workspaceId, memberUid) &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          incoming().joinedAt == request.time &&
+          (
+            (
+              memberUid == request.auth.uid &&
+              incoming().role == 'admin' &&
+              incoming().status == 'active' &&
+              getAfter(workspaceDocPath(workspaceId)).data.ownerUid == request.auth.uid
+            ) ||
+            isWsAdmin(workspaceId) ||
+            (
+              memberUid == request.auth.uid &&
+              incoming().status == 'active' &&
+              incoming().keys().hasAny(['inviteCode']) &&
+              exists(/databases/$(database)/documents/inviteCodes/$(incoming().inviteCode)) &&
+              get(/databases/$(database)/documents/inviteCodes/$(incoming().inviteCode)).data.status == 'pending' &&
+              get(/databases/$(database)/documents/inviteCodes/$(incoming().inviteCode)).data.workspaceId == workspaceId &&
+              get(/databases/$(database)/documents/inviteCodes/$(incoming().inviteCode)).data.role == incoming().role &&
+              (
+                get(/databases/$(database)/documents/inviteCodes/$(incoming().inviteCode)).data.email == '' ||
+                get(/databases/$(database)/documents/inviteCodes/$(incoming().inviteCode)).data.email == request.auth.token.email
+              )
+            )
+          );
+        allow update: if isVerifiedUser() &&
+          isValidId(workspaceId) &&
+          isValidId(memberUid) &&
+          isValidWorkspaceMember(incoming(), workspaceId, memberUid) &&
+          isWsAdmin(workspaceId) &&
+          incoming().uid == existing().uid &&
+          incoming().workspaceId == existing().workspaceId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().joinedAt == existing().joinedAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['role', 'status', 'name', 'hallId', 'studentCode', 'updatedAt']);
+        allow delete: if isValidId(workspaceId) && isValidId(memberUid) && isWsAdmin(workspaceId) && memberUid != get(workspaceDocPath(workspaceId)).data.ownerUid && memberUid != request.auth.uid;
+      }
+
+      // Invites Subcollection
+      match /invites/{inviteId} {
+        allow get: if isValidId(workspaceId) && isValidId(inviteId) && isWsAdmin(workspaceId);
+        allow list: if isWsAdmin(workspaceId) && resource.data.workspaceId == workspaceId;
+        allow create: if isVerifiedUser() &&
+          isValidId(workspaceId) &&
+          isValidId(inviteId) &&
+          isValidInviteDoc(incoming()) &&
+          incoming().workspaceId == workspaceId &&
+          incoming().status == 'pending' &&
+          incoming().createdBy == request.auth.uid &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          isWsAdmin(workspaceId);
+        allow update: if isVerifiedUser() &&
+          isValidId(workspaceId) &&
+          isValidId(inviteId) &&
+          isValidInviteDoc(incoming()) &&
+          incoming().workspaceId == existing().workspaceId &&
+          incoming().code == existing().code &&
+          incoming().role == existing().role &&
+          incoming().createdBy == existing().createdBy &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          (
+            (isWsAdmin(workspaceId) && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])) ||
+            (
+              existing().status == 'pending' &&
+              incoming().status == 'claimed' &&
+              incoming().claimedBy == request.auth.uid &&
+              (existing().email == '' || existing().email == request.auth.token.email) &&
+              incoming().diff(existing()).affectedKeys().hasOnly(['status', 'claimedBy', 'updatedAt'])
+            )
+          );
+        allow delete: if isValidId(workspaceId) && isValidId(inviteId) && isWsAdmin(workspaceId);
+      }
+
+      // Halls
+      match /halls/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && isWorkspaceMember(workspaceId);
+        allow list: if isWorkspaceMember(workspaceId) && resource.data.workspaceId == workspaceId;
+        allow create: if isValidId(workspaceId) && isValidId(docId) && canManageKitchen(workspaceId) && isValidHall(incoming(), workspaceId) && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if isValidId(workspaceId) && isValidId(docId) && canManageKitchen(workspaceId) && isValidHall(incoming(), workspaceId) && incoming().createdBy == existing().createdBy && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'capacity', 'active', 'updatedAt']);
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && isWsAdmin(workspaceId);
+      }
+
+      // Students
+      match /students/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && (isWsStaff(workspaceId) || (isWorkspaceMember(workspaceId) && existing().uid == request.auth.uid));
+        allow list: if (isWsStaff(workspaceId) && resource.data.workspaceId == workspaceId) || (isWorkspaceMember(workspaceId) && resource.data.workspaceId == workspaceId && resource.data.uid == request.auth.uid);
+        allow create: if isValidId(workspaceId) && isValidId(docId) && canManageStudents(workspaceId) && isValidStudentRecord(incoming(), workspaceId) && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if isValidId(workspaceId) && isValidId(docId) && canManageStudents(workspaceId) && isValidStudentRecord(incoming(), workspaceId) && incoming().createdBy == existing().createdBy && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time && incoming().diff(existing()).affectedKeys().hasOnly(['studentCode', 'name', 'email', 'hallId', 'hallName', 'mealPlan', 'dietaryNotes', 'status', 'uid', 'updatedAt']);
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && isWsAdmin(workspaceId);
+      }
+
+      // Meal Slots
+      match /mealSlots/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && isWorkspaceMember(workspaceId);
+        allow list: if isWorkspaceMember(workspaceId) && resource.data.workspaceId == workspaceId;
+        allow create: if isValidId(workspaceId) && isValidId(docId) && canManageKitchen(workspaceId) && isValidMealSlot(incoming(), workspaceId) && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if isValidId(workspaceId) && isValidId(docId) && canManageKitchen(workspaceId) && isValidMealSlot(incoming(), workspaceId) && incoming().createdBy == existing().createdBy && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time && incoming().diff(existing()).affectedKeys().hasOnly(['label', 'timing', 'cutoffIst', 'enabled', 'updatedAt']);
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && isWsAdmin(workspaceId);
+      }
+
+      // Menus
+      match /menus/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && isWorkspaceMember(workspaceId);
+        allow list: if isWorkspaceMember(workspaceId) && resource.data.workspaceId == workspaceId;
+        allow create: if isValidId(workspaceId) && isValidId(docId) && canManageKitchen(workspaceId) && isValidMenuPlan(incoming(), workspaceId) && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if isValidId(workspaceId) && isValidId(docId) && canManageKitchen(workspaceId) && isValidMenuPlan(incoming(), workspaceId) && incoming().createdBy == existing().createdBy && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time && incoming().diff(existing()).affectedKeys().hasOnly(['serviceDate', 'mealType', 'title', 'dishes', 'expectedServings', 'status', 'calories', 'allergens', 'plateCostPaise', 'cycleWeek', 'updatedAt']);
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && canManageKitchen(workspaceId);
+      }
+
+      // Recipes
+      match /recipes/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && isWorkspaceMember(workspaceId);
+        allow list: if isWorkspaceMember(workspaceId) && resource.data.workspaceId == workspaceId;
+        allow create: if isValidId(workspaceId) && isValidId(docId) && canManageKitchen(workspaceId) && isValidRecipe(incoming(), workspaceId) && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if isValidId(workspaceId) && isValidId(docId) && canManageKitchen(workspaceId) && isValidRecipe(incoming(), workspaceId) && incoming().createdBy == existing().createdBy && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'category', 'servings', 'costPerServingPaise', 'ingredients', 'instructions', 'updatedAt']);
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && canManageKitchen(workspaceId);
+      }
+
+      // Inventory Items
+      match /inventoryItems/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && isWsStaff(workspaceId);
+        allow list: if isWsStaff(workspaceId) && resource.data.workspaceId == workspaceId;
+        allow create: if isValidId(workspaceId) && isValidId(docId) && canManageInventory(workspaceId) && isValidInventoryItem(incoming(), workspaceId) && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if isValidId(workspaceId) && isValidId(docId) && canManageInventory(workspaceId) && isValidInventoryItem(incoming(), workspaceId) && incoming().createdBy == existing().createdBy && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'category', 'quantity', 'unit', 'minimumQuantity', 'unitCostPaise', 'supplierName', 'expiryDate', 'batchCode', 'updatedAt']);
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && canManageInventory(workspaceId);
+      }
+
+      // Stock Movements
+      match /stockMovements/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && isWsStaff(workspaceId);
+        allow list: if isWsStaff(workspaceId) && resource.data.workspaceId == workspaceId;
+        allow create: if isValidId(workspaceId) && isValidId(docId) && canManageInventory(workspaceId) && isValidStockMovement(incoming(), workspaceId) && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if false;
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && isWsAdmin(workspaceId);
+      }
+
+      // Vendors
+      match /vendors/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && isWsStaff(workspaceId);
+        allow list: if isWsStaff(workspaceId) && resource.data.workspaceId == workspaceId;
+        allow create: if isValidId(workspaceId) && isValidId(docId) && canManageInventory(workspaceId) && isValidVendor(incoming(), workspaceId) && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if isValidId(workspaceId) && isValidId(docId) && canManageInventory(workspaceId) && isValidVendor(incoming(), workspaceId) && incoming().createdBy == existing().createdBy && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'category', 'contactName', 'email', 'phone', 'gstin', 'status', 'updatedAt']);
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && isWsAdmin(workspaceId);
+      }
+
+      // Purchase Orders
+      match /purchaseOrders/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && isWsStaff(workspaceId);
+        allow list: if isWsStaff(workspaceId) && resource.data.workspaceId == workspaceId;
+        allow create: if isValidId(workspaceId) && isValidId(docId) && (canManageInventory(workspaceId) || canManageFinance(workspaceId)) && isValidPurchaseOrder(incoming(), workspaceId) && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if isValidId(workspaceId) && isValidId(docId) && (canManageInventory(workspaceId) || canManageFinance(workspaceId)) && isValidPurchaseOrder(incoming(), workspaceId) && incoming().createdBy == existing().createdBy && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time && incoming().diff(existing()).affectedKeys().hasOnly(['supplierName', 'itemSummary', 'totalPaise', 'status', 'expectedDate', 'updatedAt']);
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && isWsAdmin(workspaceId);
+      }
+
+      // Meal Bookings / Skips
+      match /bookings/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && (isWsStaff(workspaceId) || (isWorkspaceMember(workspaceId) && existing().userId == request.auth.uid));
+        allow list: if (isWsStaff(workspaceId) && resource.data.workspaceId == workspaceId) || (isWorkspaceMember(workspaceId) && resource.data.workspaceId == workspaceId && resource.data.userId == request.auth.uid);
+        allow create: if isValidId(workspaceId) && isValidId(docId) && isWorkspaceMember(workspaceId) && isValidBooking(incoming(), workspaceId) && incoming().userId == request.auth.uid && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if isValidId(workspaceId) && isValidId(docId) && isValidBooking(incoming(), workspaceId) && (canManageKitchen(workspaceId) || (isWorkspaceMember(workspaceId) && existing().userId == request.auth.uid && existing().status != 'locked')) && incoming().userId == existing().userId && incoming().createdBy == existing().createdBy && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'guestCount', 'tiffinRequested', 'note', 'updatedAt']);
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && isWsAdmin(workspaceId);
+      }
+
+      // Attendance
+      match /attendance/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && isWorkspaceMember(workspaceId);
+        allow list: if isWorkspaceMember(workspaceId) && resource.data.workspaceId == workspaceId;
+        allow create: if isValidId(workspaceId) && isValidId(docId) && canManageKitchen(workspaceId) && isValidAttendance(incoming(), workspaceId) && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if false;
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && isWsAdmin(workspaceId);
+      }
+
+      // Waste Logs
+      match /wasteLogs/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && isWsStaff(workspaceId);
+        allow list: if isWsStaff(workspaceId) && resource.data.workspaceId == workspaceId;
+        allow create: if isValidId(workspaceId) && isValidId(docId) && (canManageKitchen(workspaceId) || canManageInventory(workspaceId)) && isValidWasteLog(incoming(), workspaceId) && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if false;
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && isWsAdmin(workspaceId);
+      }
+
+      // Invoices
+      match /invoices/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && (canManageFinance(workspaceId) || (isWorkspaceMember(workspaceId) && existing().studentUid == request.auth.uid));
+        allow list: if (canManageFinance(workspaceId) && resource.data.workspaceId == workspaceId) || (isWorkspaceMember(workspaceId) && resource.data.workspaceId == workspaceId && resource.data.studentUid == request.auth.uid);
+        allow create: if isValidId(workspaceId) && isValidId(docId) && canManageFinance(workspaceId) && isValidInvoice(incoming(), workspaceId) && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if isValidId(workspaceId) && isValidId(docId) && canManageFinance(workspaceId) && isValidInvoice(incoming(), workspaceId) && incoming().createdBy == existing().createdBy && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time && incoming().diff(existing()).affectedKeys().hasOnly(['paidPaise', 'status', 'leaveRebatePaise', 'guestChargesPaise', 'gstPaise', 'totalPayablePaise', 'updatedAt']);
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && isWsAdmin(workspaceId);
+      }
+
+      // Payments
+      match /payments/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && (canManageFinance(workspaceId) || (isWorkspaceMember(workspaceId) && existing().studentUid == request.auth.uid));
+        allow list: if (canManageFinance(workspaceId) && resource.data.workspaceId == workspaceId) || (isWorkspaceMember(workspaceId) && resource.data.workspaceId == workspaceId && resource.data.studentUid == request.auth.uid);
+        allow create: if isValidId(workspaceId) && isValidId(docId) && canManageFinance(workspaceId) && isValidPayment(incoming(), workspaceId) && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if false;
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && isWsAdmin(workspaceId);
+      }
+
+      // Feedback
+      match /feedback/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && (isWsStaff(workspaceId) || (isWorkspaceMember(workspaceId) && existing().userId == request.auth.uid));
+        allow list: if (isWsStaff(workspaceId) && resource.data.workspaceId == workspaceId) || (isWorkspaceMember(workspaceId) && resource.data.workspaceId == workspaceId && resource.data.userId == request.auth.uid);
+        allow create: if isValidId(workspaceId) && isValidId(docId) && isWorkspaceMember(workspaceId) && isValidFeedback(incoming(), workspaceId) && incoming().userId == request.auth.uid && incoming().status == 'open' && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if isValidId(workspaceId) && isValidId(docId) && canModerateFeedbackOrComplaints(workspaceId) && isValidFeedback(incoming(), workspaceId) && incoming().userId == existing().userId && incoming().createdBy == existing().createdBy && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'moderationStatus', 'updatedAt']);
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && isWsAdmin(workspaceId);
+      }
+
+      // Complaints
+      match /complaints/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && (isWsStaff(workspaceId) || (isWorkspaceMember(workspaceId) && existing().userId == request.auth.uid));
+        allow list: if (isWsStaff(workspaceId) && resource.data.workspaceId == workspaceId) || (isWorkspaceMember(workspaceId) && resource.data.workspaceId == workspaceId && resource.data.userId == request.auth.uid);
+        allow create: if isValidId(workspaceId) && isValidId(docId) && isWorkspaceMember(workspaceId) && isValidComplaint(incoming(), workspaceId) && incoming().userId == request.auth.uid && incoming().status == 'open' && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if isValidId(workspaceId) && isValidId(docId) && canModerateFeedbackOrComplaints(workspaceId) && isValidComplaint(incoming(), workspaceId) && incoming().userId == existing().userId && incoming().createdBy == existing().createdBy && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'priority', 'assignedTo', 'escalatedToRoles', 'resolutionNote', 'updatedAt']);
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && isWsAdmin(workspaceId);
+      }
+
+      // Notifications & Emergency Broadcasts
+      match /notifications/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && isWorkspaceMember(workspaceId);
+        allow list: if isWorkspaceMember(workspaceId) && resource.data.workspaceId == workspaceId;
+        allow create: if isValidId(workspaceId) && isValidId(docId) && (
+          isWsStaff(workspaceId) ||
+          (isWorkspaceMember(workspaceId) && incoming().priority == 'High' && incoming().page == 'feedback')
+        ) && isValidNotification(incoming(), workspaceId) && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if isValidId(workspaceId) && isValidId(docId) && isWorkspaceMember(workspaceId) && isValidNotification(incoming(), workspaceId) && incoming().createdBy == existing().createdBy && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time && incoming().diff(existing()).affectedKeys().hasOnly(['readBy', 'updatedAt']);
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && isWsAdmin(workspaceId);
+      }
+
+      // Immutable Audit Logs
+      match /auditLogs/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && isWsStaff(workspaceId);
+        allow list: if isWsStaff(workspaceId) && resource.data.workspaceId == workspaceId;
+        allow create: if isValidId(workspaceId) && isValidId(docId) && isWorkspaceMember(workspaceId) && isValidAuditLog(incoming(), workspaceId) && incoming().actorUid == request.auth.uid && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update, delete: if false;
+      }
+
+      // Kitchen Tasks
+      match /kitchenTasks/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && isWsStaff(workspaceId);
+        allow list: if isWsStaff(workspaceId) && resource.data.workspaceId == workspaceId;
+        allow create: if isValidId(workspaceId) && isValidId(docId) && canManageKitchen(workspaceId) && isValidKitchenTask(incoming(), workspaceId) && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if isValidId(workspaceId) && isValidId(docId) && canManageKitchen(workspaceId) && isValidKitchenTask(incoming(), workspaceId) && incoming().createdBy == existing().createdBy && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time && incoming().diff(existing()).affectedKeys().hasOnly(['taskDate', 'mealType', 'dishName', 'plannedQuantity', 'completedQuantity', 'assignedTo', 'status', 'updatedAt']);
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && canManageKitchen(workspaceId);
+      }
+
+      // Forecasts
+      match /forecasts/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && isWsStaff(workspaceId);
+        allow list: if isWsStaff(workspaceId) && resource.data.workspaceId == workspaceId;
+        allow create: if isValidId(workspaceId) && isValidId(docId) && canManageKitchen(workspaceId) && isValidForecast(incoming(), workspaceId) && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if isValidId(workspaceId) && isValidId(docId) && canManageKitchen(workspaceId) && isValidForecast(incoming(), workspaceId) && incoming().createdBy == existing().createdBy && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time && incoming().diff(existing()).affectedKeys().hasOnly(['expectedStudents', 'confidence', 'method', 'weatherNote', 'updatedAt']);
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && isWsAdmin(workspaceId);
+      }
+
+      // Calendar Events & Feast RSVPs
+      match /calendarEvents/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && isWorkspaceMember(workspaceId);
+        allow list: if isWorkspaceMember(workspaceId) && resource.data.workspaceId == workspaceId;
+        allow create: if isValidId(workspaceId) && isValidId(docId) && (canManageKitchen(workspaceId) || workspaceRole(workspaceId) == 'warden') && isValidCalendarEvent(incoming(), workspaceId) && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if isValidId(workspaceId) && isValidId(docId) && isValidCalendarEvent(incoming(), workspaceId) && incoming().createdBy == existing().createdBy && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time && (
+          ((canManageKitchen(workspaceId) || workspaceRole(workspaceId) == 'warden') && incoming().diff(existing()).affectedKeys().hasOnly(['eventDate', 'title', 'description', 'attendanceFactor', 'rsvpStudentCodes', 'guestTokenQuota', 'updatedAt'])) ||
+          (isWorkspaceMember(workspaceId) && incoming().diff(existing()).affectedKeys().hasOnly(['rsvpStudentCodes', 'updatedAt']))
+        );
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && isWsAdmin(workspaceId);
+      }
+
+      // Service Actuals
+      match /serviceActuals/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && isWsStaff(workspaceId);
+        allow list: if isWsStaff(workspaceId) && resource.data.workspaceId == workspaceId;
+        allow create: if isValidId(workspaceId) && isValidId(docId) && canManageKitchen(workspaceId) && isValidServiceActual(incoming(), workspaceId) && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if false;
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && isWsAdmin(workspaceId);
+      }
+
+      // Leave Requests
+      match /leaveRequests/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && (isWsStaff(workspaceId) || (isWorkspaceMember(workspaceId) && existing().userId == request.auth.uid));
+        allow list: if (isWsStaff(workspaceId) && resource.data.workspaceId == workspaceId) || (isWorkspaceMember(workspaceId) && resource.data.workspaceId == workspaceId && resource.data.userId == request.auth.uid);
+        allow create: if isValidId(workspaceId) && isValidId(docId) && isWorkspaceMember(workspaceId) && isValidLeaveRequest(incoming(), workspaceId) && incoming().userId == request.auth.uid && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if isValidId(workspaceId) && isValidId(docId) && canManageLeaveRequests(workspaceId) && isValidLeaveRequest(incoming(), workspaceId) && incoming().userId == existing().userId && incoming().createdBy == existing().createdBy && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'rebatePaise', 'updatedAt']);
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && isWsAdmin(workspaceId);
+      }
+
+      // Data Health Diagnostics
+      match /healthcheck/{docId} {
+        allow get: if isValidId(workspaceId) && isValidId(docId) && isWorkspaceMember(workspaceId);
+        allow list: if isWorkspaceMember(workspaceId) && resource.data.workspaceId == workspaceId;
+        allow create: if isValidId(workspaceId) && isValidId(docId) && isWorkspaceMember(workspaceId) && isValidHealthcheck(incoming(), workspaceId) && incoming().checkedBy == request.auth.uid && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+        allow update: if isValidId(workspaceId) && isValidId(docId) && isWorkspaceMember(workspaceId) && isValidHealthcheck(incoming(), workspaceId) && incoming().checkedBy == request.auth.uid && incoming().createdBy == existing().createdBy && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'checkedBy', 'note', 'updatedAt']);
+        allow delete: if isValidId(workspaceId) && isValidId(docId) && isWorkspaceMember(workspaceId);
+      }
+    }
+
+    // Legacy Top-Level Collections (preserved for existing Student / AskFoodFlow compatibility)
+    match /meal_skips/{skipId} {
+      allow get: if isValidId(skipId) && isSignedIn() && (existing().userId == request.auth.uid || isGlobalAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isGlobalAdmin());
+      allow create: if isVerifiedUser() && isValidId(skipId) && isValidMealSkip(incoming()) && incoming().userId == request.auth.uid && incoming().status != 'locked' && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() && isValidId(skipId) && isValidMealSkip(incoming()) && (isGlobalAdmin() || (existing().userId == request.auth.uid && existing().status != 'locked' && incoming().userId == existing().userId && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time && incoming().status != 'locked' && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'guestCount', 'note', 'updatedAt'])));
+      allow delete: if isValidId(skipId) && isGlobalAdmin();
+    }
+
+    match /meal_feedback/{feedbackId} {
+      allow get: if isValidId(feedbackId) && isSignedIn() && (existing().userId == request.auth.uid || isGlobalAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isGlobalAdmin());
+      allow create: if isVerifiedUser() && isValidId(feedbackId) && isValidMealFeedback(incoming()) && incoming().userId == request.auth.uid && incoming().status == 'open' && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() && isValidId(feedbackId) && isValidMealFeedback(incoming()) && incoming().userId == existing().userId && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'rating', 'comment', 'category', 'updatedAt']);
+      allow delete: if isValidId(feedbackId) && isGlobalAdmin();
+    }
+
+    match /voice_logs/{logId} {
+      allow get: if isValidId(logId) && isSignedIn() && (existing().userId == request.auth.uid || isGlobalAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isGlobalAdmin());
+      allow create: if isVerifiedUser() && isValidId(logId) && isValidVoiceLog(incoming()) && incoming().userId == request.auth.uid && incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isValidId(logId) && isGlobalAdmin();
+    }
+  }
+}

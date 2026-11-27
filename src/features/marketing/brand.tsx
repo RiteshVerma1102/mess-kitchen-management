@@ -30,10 +30,7 @@ export function BrandMark({ className }: { className?: string }) {
         fill="#FFFFFF"
         d="M150 112c-22 0-40 18-40 40v208c0 22 18 40 40 40s40-18 40-40V192h128c22 0 40-18 40-40s-18-40-40-40z"
       />
-      <path
-        fill={`url(#${saffronId})`}
-        d="M190 250h112c22 0 40 18 40 40s-18 40-40 40H190z"
-      />
+      <path fill={`url(#${saffronId})`} d="M190 250h112c22 0 40 18 40 40s-18 40-40 40H190z" />
       <circle cx="392" cy="290" r="26" fill={`url(#${saffronId})`} />
     </svg>
   );

@@ -10,6 +10,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
+import { FirebaseProvider } from "../components/firebase-provider";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -79,10 +80,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "theme-color", content: "#1f5f63" },
       { title: "FoodFlow — Mess & canteen management" },
-      { name: "description", content: "FoodFlow runs mess kitchens for Indian colleges, hostels, schools and canteens." },
+      {
+        name: "description",
+        content: "FoodFlow runs mess kitchens for Indian colleges, hostels, schools and canteens.",
+      },
       { name: "author", content: "FoodFlow" },
       { property: "og:title", content: "FoodFlow — Mess & canteen management" },
-      { property: "og:description", content: "FoodFlow runs mess kitchens for Indian colleges, hostels, schools and canteens." },
+      {
+        property: "og:description",
+        content: "FoodFlow runs mess kitchens for Indian colleges, hostels, schools and canteens.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -127,8 +134,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <FirebaseProvider>
+        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+        <Outlet />
+      </FirebaseProvider>
     </QueryClientProvider>
   );
 }

@@ -71,7 +71,9 @@ export function calculateMealForecast(params: {
   // 1. Filter historical records for same day of week & meal type
   const matchingHistory = historicalRecords.filter((rec) => {
     if (rec.mealType !== mealType) return false;
-    const d = new Date(rec.serviceDate.includes("T") ? rec.serviceDate : `${rec.serviceDate}T12:00:00Z`);
+    const d = new Date(
+      rec.serviceDate.includes("T") ? rec.serviceDate : `${rec.serviceDate}T12:00:00Z`,
+    );
     return d.getUTCDay() === targetDow && rec.actualCount > 0;
   });
 
@@ -87,7 +89,8 @@ export function calculateMealForecast(params: {
     const sum = counts.reduce((acc, c) => acc + c, 0);
     baseCount = Math.round(sum / counts.length);
 
-    const variance = counts.reduce((acc, c) => acc + Math.pow(c - baseCount, 2), 0) / (counts.length - 1);
+    const variance =
+      counts.reduce((acc, c) => acc + Math.pow(c - baseCount, 2), 0) / (counts.length - 1);
     stdDev = Math.round(Math.sqrt(variance));
     confidenceScore = Math.min(95, 70 + counts.length * 4);
     explanation = `Derived from ${counts.length} matching ${dayNames[targetDow]} services in recent weeks (mean: ${baseCount}, std dev: ±${stdDev}).`;
@@ -122,7 +125,10 @@ export function calculateMealForecast(params: {
   const bufferPortions = Math.round(predictedCount * (bufferPercent / 100));
   const recommendedPortions = predictedCount + bufferPortions;
 
-  const lowerBound = Math.max(0, Math.round(predictedCount - Math.max(stdDev, predictedCount * 0.08)));
+  const lowerBound = Math.max(
+    0,
+    Math.round(predictedCount - Math.max(stdDev, predictedCount * 0.08)),
+  );
   const upperBound = Math.round(predictedCount + Math.max(stdDev, predictedCount * 0.08));
 
   if (eventNotes.length > 0) {
@@ -143,7 +149,9 @@ export function calculateMealForecast(params: {
       dowFactor: targetDow,
       calendarMultiplier,
       historicalDataPoints: counts.length,
-      turnoutPercentage: Math.round((predictedCount / Math.max(1, enrolledStudentsCount || 300)) * 100),
+      turnoutPercentage: Math.round(
+        (predictedCount / Math.max(1, enrolledStudentsCount || 300)) * 100,
+      ),
     },
     explanation,
   };
@@ -152,9 +160,10 @@ export function calculateMealForecast(params: {
 /**
  * Calculates Mean Absolute Percentage Error (MAPE) and accuracy rate for past predictions
  */
-export function calculateForecastAccuracy(
-  pairs: Array<{ predicted: number; actual: number }>
-): { mape: number; accuracyRate: number } {
+export function calculateForecastAccuracy(pairs: Array<{ predicted: number; actual: number }>): {
+  mape: number;
+  accuracyRate: number;
+} {
   if (!pairs.length) return { mape: 0, accuracyRate: 100 };
 
   let totalApe = 0;

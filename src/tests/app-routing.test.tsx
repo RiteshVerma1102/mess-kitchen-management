@@ -23,8 +23,9 @@ describe("App routing", () => {
     expect(router.matchRoutes("/onboarding").at(-1)?.routeId).not.toBe(rootRouteId);
   });
 
-  it("matches student portal and audit log routes", () => {
+  it("matches student portal, audit log, and 3D kitchen twin routes", () => {
     expect(router.matchRoutes("/student").at(-1)?.routeId).not.toBe(rootRouteId);
     expect(router.matchRoutes("/audit").at(-1)?.routeId).not.toBe(rootRouteId);
+    expect(router.matchRoutes("/kitchen-3d").at(-1)?.routeId).not.toBe(rootRouteId);
   });
 });
